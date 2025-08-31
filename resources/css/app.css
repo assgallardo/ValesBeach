@@ -1,11 +1,42 @@
-/* resources/css/app.css */
+@import "tailwindcss";
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* Force include all color utilities we need */
+@layer utilities {
+  .bg-gray-900 { background-color: rgb(17 24 39); }
+  .bg-green-900 { background-color: rgb(20 83 45); }
+  .bg-green-800 { background-color: rgb(22 101 52); }
+  .bg-green-700 { background-color: rgb(21 128 61); }
+  .bg-green-600 { background-color: rgb(22 163 74); }
+  .bg-green-50 { background-color: rgb(240 253 244); }
+  .text-green-50 { color: rgb(240 253 244); }
+  .text-green-100 { color: rgb(220 252 231); }
+  .text-green-200 { color: rgb(187 247 208); }
+  .text-green-900 { color: rgb(20 83 45); }
+  .hover\:bg-green-700:hover { background-color: rgb(21 128 61); }
+  .hover\:bg-green-600:hover { background-color: rgb(22 163 74); }
+  .hover\:bg-white:hover { background-color: rgb(255 255 255); }
+  .focus\:ring-green-500:focus { --tw-ring-color: rgb(34 197 94); }
+  .focus\:ring-green-300:focus { --tw-ring-color: rgb(134 239 172); }
+  .bg-white { background-color: rgb(255 255 255); }
+  .bg-opacity-5 { --tw-bg-opacity: 0.05; }
+  .bg-opacity-10 { --tw-bg-opacity: 0.1; }
+  .bg-opacity-20 { --tw-bg-opacity: 0.2; }
+  .border-white { border-color: rgb(255 255 255); }
+  .border-opacity-10 { --tw-border-opacity: 0.1; }
+  .border-opacity-20 { --tw-border-opacity: 0.2; }
+  .text-blue-400 { color: rgb(96 165 250); }
+  .text-red-400 { color: rgb(248 113 113); }
+  .bg-blue-600 { background-color: rgb(37 99 235); }
+  .bg-purple-600 { background-color: rgb(147 51 234); }
+  .bg-orange-600 { background-color: rgb(234 88 12); }
+  .bg-pink-600 { background-color: rgb(219 39 119); }
+  .bg-yellow-600 { background-color: rgb(202 138 4); }
+  .bg-gray-600 { background-color: rgb(75 85 99); }
+  .bg-gray-700 { background-color: rgb(55 65 81); }
+  .bg-gray-800 { background-color: rgb(31 41 55); }
+}
 
-/* optional: custom theme variables */
-:root {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 
-        'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+/* Backdrop blur utilities */
+.backdrop-blur-sm {
+  backdrop-filter: blur(4px);
 }
