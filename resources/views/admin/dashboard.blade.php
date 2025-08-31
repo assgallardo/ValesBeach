@@ -109,9 +109,9 @@
                         <p class="text-green-50 text-sm lg:text-base opacity-90 mb-8 flex-grow">
                             Manage user accounts, permissions, and access controls.
                         </p>
-                        <button class="w-full py-3 bg-green-50 text-green-900 font-medium text-lg rounded-lg hover:bg-white transition-colors duration-200">
+                        <a href="/admin/users" class="inline-block w-full py-3 bg-green-50 text-green-900 font-medium text-lg rounded-lg hover:bg-white transition-colors duration-200 text-center">
                             Manage Users
-                        </button>
+                        </a>
                     </div>
                 </div>
 
