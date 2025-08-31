@@ -58,7 +58,7 @@
                 <!-- Food Menu Management -->
                 <div class="bg-white bg-opacity-5 backdrop-blur-sm rounded-lg p-6 lg:p-8 border border-white border-opacity-10 hover:bg-opacity-10 transition-all duration-300 transform hover:scale-105">
                     <div class="text-center h-full flex flex-col">
-                        <h3 class="text-2xl lg:text-3xl font-bold text-white mb-6 leading-tight">
+                        <h3 class="text-2xl lg:text-3xl font-bold text-white drop-shadow-lg mb-6 leading-tight">
                             Food Menu Management
                         </h3>
                         <p class="text-gray-300 text-sm lg:text-base mb-8 flex-grow">
