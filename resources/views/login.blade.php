@@ -48,7 +48,7 @@
             <!-- Login Form -->
             <div class="max-w-md mx-auto">
                 <!-- Login Card -->
-                <div class="bg-white bg-opacity-5 backdrop-blur-sm rounded-lg p-8 border border-white border-opacity-10 shadow-xl">
+                <div class="bg-gray-800 rounded-lg p-8 shadow-xl">
                     <!-- Logo/Title -->
                     <div class="text-center mb-8">
                         <div class="w-20 h-20 bg-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -56,8 +56,8 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
                             </svg>
                         </div>
-                        <h2 class="text-3xl font-bold text-green-50 mb-2">Welcome Back</h2>
-                        <p class="text-green-200 opacity-80">Sign in to your account</p>
+                        <h2 class="text-3xl font-bold text-white mb-2">Welcome Back</h2>
+                        <p class="text-gray-400">Sign in to your account</p>
                     </div>
 
                     <!-- Login Form -->
@@ -66,17 +66,17 @@
                         
                         <!-- Email -->
                         <div>
-                            <label for="email" class="block text-sm font-medium text-green-200 mb-2">Email Address</label>
+                            <label for="email" class="block text-sm font-medium text-gray-300 mb-2">Email Address</label>
                             <input type="email" id="email" name="email" required autocomplete="email"
-                                class="w-full px-4 py-3 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg text-green-50 placeholder-green-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition duration-200"
+                                class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                 placeholder="Enter your email">
                         </div>
 
                         <!-- Password -->
                         <div>
-                            <label for="password" class="block text-sm font-medium text-green-200 mb-2">Password</label>
+                            <label for="password" class="block text-sm font-medium text-gray-300 mb-2">Password</label>
                             <input type="password" id="password" name="password" required autocomplete="current-password"
-                                class="w-full px-4 py-3 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg text-green-50 placeholder-green-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition duration-200"
+                                class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                 placeholder="Enter your password">
                         </div>
 
@@ -85,18 +85,18 @@
                             <div class="flex items-center">
                                 <input type="checkbox" id="remember" name="remember" 
                                     class="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded">
-                                <label for="remember" class="ml-2 block text-sm text-green-200">
+                                <label for="remember" class="ml-2 block text-sm text-gray-300">
                                     Remember me
                                 </label>
                             </div>
-                            <a href="#" class="text-sm text-green-300 hover:text-green-200 transition-colors duration-200">
+                            <a href="#" class="text-sm text-blue-400 hover:text-blue-300 transition-colors duration-200">
                                 Forgot password?
                             </a>
                         </div>
 
                         <!-- Login Button -->
-                        <button type="submit" 
-                            class="w-full py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 focus:ring-4 focus:ring-green-300 transition duration-200 ease-in-out transform hover:scale-105">
+                        <button type="submit"
+                            class="w-full py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 transition duration-200 ease-in-out transform hover:scale-105">
                             Sign In
                         </button>
                     </form>
@@ -105,17 +105,17 @@
                     <div class="my-6">
                         <div class="relative">
                             <div class="absolute inset-0 flex items-center">
-                                <div class="w-full border-t border-white border-opacity-20"></div>
+                                <div class="w-full border-t border-gray-600"></div>
                             </div>
                             <div class="relative flex justify-center text-sm">
-                                <span class="px-2 bg-gray-900 text-green-200">Or continue with</span>
+                                <span class="px-2 bg-gray-800 text-gray-400">Or continue with</span>
                             </div>
                         </div>
                     </div>
 
                     <!-- Social Login Options -->
                     <div class="grid grid-cols-2 gap-3">
-                        <button class="w-full inline-flex justify-center py-2 px-4 border border-white border-opacity-20 rounded-lg bg-white bg-opacity-10 text-sm font-medium text-green-200 hover:bg-opacity-20 transition duration-200">
+                        <button class="w-full inline-flex justify-center py-2 px-4 border border-gray-600 rounded-lg bg-gray-700 text-sm font-medium text-gray-300 hover:bg-gray-600 transition duration-200">
                             <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
                                 <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
                                 <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
@@ -125,7 +125,7 @@
                             <span class="ml-2">Google</span>
                         </button>
 
-                        <button class="w-full inline-flex justify-center py-2 px-4 border border-white border-opacity-20 rounded-lg bg-white bg-opacity-10 text-sm font-medium text-green-200 hover:bg-opacity-20 transition duration-200">
+                        <button class="w-full inline-flex justify-center py-2 px-4 border border-gray-600 rounded-lg bg-gray-700 text-sm font-medium text-gray-300 hover:bg-gray-600 transition duration-200">
                             <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                                 <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
                             </svg>
@@ -135,9 +135,9 @@
 
                     <!-- Sign Up Link -->
                     <div class="text-center mt-8">
-                        <p class="text-green-200">
-                            Don't have an account? 
-                            <a href="/signup" class="text-green-300 hover:text-green-200 font-medium transition-colors duration-200">
+                        <p class="text-gray-400">
+                            Don't have an account?
+                            <a href="/signup" class="text-blue-400 hover:text-blue-300 font-medium transition-colors duration-200">
                                 Sign up
                             </a>
                         </p>
@@ -146,9 +146,9 @@
 
                 <!-- Additional Links -->
                 <div class="text-center mt-6">
-                    <p class="text-green-200 text-sm">
-                        Having trouble? 
-                        <a href="#" class="text-green-300 hover:text-green-200 transition-colors duration-200">
+                    <p class="text-gray-400 text-sm">
+                        Having trouble?
+                        <a href="#" class="text-blue-400 hover:text-blue-300 transition-colors duration-200">
                             Contact support
                         </a>
                     </p>
