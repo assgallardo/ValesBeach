@@ -56,12 +56,12 @@
             <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 lg:gap-8 max-w-7xl mx-auto">
                 
                 <!-- Food Menu Management -->
-                <div class="bg-white bg-opacity-5 backdrop-blur-sm rounded-lg p-6 lg:p-8 border border-white border-opacity-10 hover:bg-opacity-10 transition-all duration-300 transform hover:scale-105">
+                <div class="bg-green-800 rounded-lg p-6 lg:p-8 hover:bg-green-700 transition-all duration-300 transform hover:scale-105 shadow-lg">
                     <div class="text-center h-full flex flex-col">
-                        <h3 class="text-2xl lg:text-3xl font-bold text-white drop-shadow-lg mb-6 leading-tight">
+                        <h3 class="text-2xl lg:text-3xl font-bold text-white mb-6 leading-tight">
                             Food Menu Management
                         </h3>
-                        <p class="text-gray-300 text-sm lg:text-base mb-8 flex-grow">
+                        <p class="text-green-100 text-sm lg:text-base mb-8 flex-grow">
                             Create, read, update, and delete food items available at the resort.
                         </p>
                         <button class="w-full py-3 bg-green-50 text-black font-medium text-lg rounded-lg hover:bg-white transition-colors duration-200">
@@ -71,12 +71,12 @@
                 </div>
 
                 <!-- Rooms & Facilities -->
-                <div class="bg-white bg-opacity-5 backdrop-blur-sm rounded-lg p-6 lg:p-8 border border-white border-opacity-10 hover:bg-opacity-10 transition-all duration-300 transform hover:scale-105">
+                <div class="bg-green-800 rounded-lg p-6 lg:p-8 hover:bg-green-700 transition-all duration-300 transform hover:scale-105 shadow-lg">
                     <div class="text-center h-full flex flex-col">
-                        <h3 class="text-2xl lg:text-3xl font-bold text-white drop-shadow-lg mb-6 leading-tight">
+                        <h3 class="text-2xl lg:text-3xl font-bold text-white mb-6 leading-tight">
                             Rooms & Facilities
                         </h3>
-                        <p class="text-gray-300 text-sm lg:text-base mb-8 flex-grow">
+                        <p class="text-green-100 text-sm lg:text-base mb-8 flex-grow">
                             Update room availability, rates, and facility details.
                         </p>
                         <button class="w-full py-3 bg-green-50 text-black font-medium text-lg rounded-lg hover:bg-white transition-colors duration-200">
@@ -86,12 +86,12 @@
                 </div>
 
                 <!-- Bookings Management -->
-                <div class="bg-white bg-opacity-5 backdrop-blur-sm rounded-lg p-6 lg:p-8 border border-white border-opacity-10 hover:bg-opacity-10 transition-all duration-300 transform hover:scale-105">
+                <div class="bg-green-800 rounded-lg p-6 lg:p-8 hover:bg-green-700 transition-all duration-300 transform hover:scale-105 shadow-lg">
                     <div class="text-center h-full flex flex-col">
-                        <h3 class="text-2xl lg:text-3xl font-bold text-white drop-shadow-lg mb-6 leading-tight">
+                        <h3 class="text-2xl lg:text-3xl font-bold text-white mb-6 leading-tight">
                             Bookings Management
                         </h3>
-                        <p class="text-gray-300 text-sm lg:text-base mb-8 flex-grow">
+                        <p class="text-green-100 text-sm lg:text-base mb-8 flex-grow">
                             Oversee guest reservations, check-ins, and check-outs.
                         </p>
                         <button class="w-full py-3 bg-green-50 text-black font-medium text-lg rounded-lg hover:bg-white transition-colors duration-200">
@@ -101,12 +101,12 @@
                 </div>
 
                 <!-- User Management -->
-                <div class="bg-white bg-opacity-5 backdrop-blur-sm rounded-lg p-6 lg:p-8 border border-white border-opacity-10 hover:bg-opacity-10 transition-all duration-300 transform hover:scale-105">
+                <div class="bg-green-800 rounded-lg p-6 lg:p-8 hover:bg-green-700 transition-all duration-300 transform hover:scale-105 shadow-lg">
                     <div class="text-center h-full flex flex-col">
-                        <h3 class="text-2xl lg:text-3xl font-bold text-white drop-shadow-lg mb-6 leading-tight">
+                        <h3 class="text-2xl lg:text-3xl font-bold text-white mb-6 leading-tight">
                             User Management
                         </h3>
-                        <p class="text-gray-300 text-sm lg:text-base mb-8 flex-grow">
+                        <p class="text-green-100 text-sm lg:text-base mb-8 flex-grow">
                             Manage user accounts, permissions, and access controls.
                         </p>
                         <a href="/admin/users" class="inline-block w-full py-3 bg-green-50 text-black font-medium text-lg rounded-lg hover:bg-white transition-colors duration-200 text-center">
@@ -116,12 +116,12 @@
                 </div>
 
                 <!-- Reports & Analytics -->
-                <div class="bg-white bg-opacity-5 backdrop-blur-sm rounded-lg p-6 lg:p-8 border border-white border-opacity-10 hover:bg-opacity-10 transition-all duration-300 transform hover:scale-105">
+                <div class="bg-green-800 rounded-lg p-6 lg:p-8 hover:bg-green-700 transition-all duration-300 transform hover:scale-105 shadow-lg">
                     <div class="text-center h-full flex flex-col">
-                        <h3 class="text-2xl lg:text-3xl font-bold text-white drop-shadow-lg mb-6 leading-tight">
+                        <h3 class="text-2xl lg:text-3xl font-bold text-white mb-6 leading-tight">
                             Reports & Analytics
                         </h3>
-                        <p class="text-gray-300 text-sm lg:text-base mb-8 flex-grow">
+                        <p class="text-green-100 text-sm lg:text-base mb-8 flex-grow">
                             Access performance reports and guest insights.
                         </p>
                         <button class="w-full py-3 bg-green-50 text-black font-medium text-lg rounded-lg hover:bg-white transition-colors duration-200">
@@ -131,12 +131,12 @@
                 </div>
 
                 <!-- Settings & Configuration -->
-                <div class="bg-white bg-opacity-5 backdrop-blur-sm rounded-lg p-6 lg:p-8 border border-white border-opacity-10 hover:bg-opacity-10 transition-all duration-300 transform hover:scale-105">
+                <div class="bg-green-800 rounded-lg p-6 lg:p-8 hover:bg-green-700 transition-all duration-300 transform hover:scale-105 shadow-lg">
                     <div class="text-center h-full flex flex-col">
-                        <h3 class="text-2xl lg:text-3xl font-bold text-white drop-shadow-lg mb-6 leading-tight">
+                        <h3 class="text-2xl lg:text-3xl font-bold text-white mb-6 leading-tight">
                             Settings & Configuration
                         </h3>
-                        <p class="text-gray-300 text-sm lg:text-base mb-8 flex-grow">
+                        <p class="text-green-100 text-sm lg:text-base mb-8 flex-grow">
                             Configure system settings and resort preferences.
                         </p>
                         <button class="w-full py-3 bg-green-50 text-black font-medium text-lg rounded-lg hover:bg-white transition-colors duration-200">
