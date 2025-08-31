@@ -64,7 +64,7 @@
                         <p class="text-green-50 text-sm lg:text-base opacity-90 mb-8 flex-grow">
                             Create, read, update, and delete food items available at the resort.
                         </p>
-                        <button class="w-full py-3 bg-green-50 text-green-900 font-medium text-lg rounded-lg hover:bg-white transition-colors duration-200">
+                        <button class="w-full py-3 bg-green-50 text-black font-medium text-lg rounded-lg hover:bg-white transition-colors duration-200">
                             Manage Menu
                         </button>
                     </div>
@@ -79,7 +79,7 @@
                         <p class="text-green-50 text-sm lg:text-base opacity-90 mb-8 flex-grow">
                             Update room availability, rates, and facility details.
                         </p>
-                        <button class="w-full py-3 bg-green-50 text-green-900 font-medium text-lg rounded-lg hover:bg-white transition-colors duration-200">
+                        <button class="w-full py-3 bg-green-50 text-black font-medium text-lg rounded-lg hover:bg-white transition-colors duration-200">
                             Manage Rooms
                         </button>
                     </div>
@@ -94,7 +94,7 @@
                         <p class="text-green-50 text-sm lg:text-base opacity-90 mb-8 flex-grow">
                             Oversee guest reservations, check-ins, and check-outs.
                         </p>
-                        <button class="w-full py-3 bg-green-50 text-green-900 font-medium text-lg rounded-lg hover:bg-white transition-colors duration-200">
+                        <button class="w-full py-3 bg-green-50 text-black font-medium text-lg rounded-lg hover:bg-white transition-colors duration-200">
                             Manage Bookings
                         </button>
                     </div>
@@ -109,7 +109,7 @@
                         <p class="text-green-50 text-sm lg:text-base opacity-90 mb-8 flex-grow">
                             Manage user accounts, permissions, and access controls.
                         </p>
-                        <a href="/admin/users" class="inline-block w-full py-3 bg-green-50 text-green-900 font-medium text-lg rounded-lg hover:bg-white transition-colors duration-200 text-center">
+                        <a href="/admin/users" class="inline-block w-full py-3 bg-green-50 text-black font-medium text-lg rounded-lg hover:bg-white transition-colors duration-200 text-center">
                             Manage Users
                         </a>
                     </div>
@@ -124,7 +124,7 @@
                         <p class="text-green-50 text-sm lg:text-base opacity-90 mb-8 flex-grow">
                             Access performance reports and guest insights.
                         </p>
-                        <button class="w-full py-3 bg-green-50 text-green-900 font-medium text-lg rounded-lg hover:bg-white transition-colors duration-200">
+                        <button class="w-full py-3 bg-green-50 text-black font-medium text-lg rounded-lg hover:bg-white transition-colors duration-200">
                             View Reports
                         </button>
                     </div>
@@ -139,7 +139,7 @@
                         <p class="text-green-50 text-sm lg:text-base opacity-90 mb-8 flex-grow">
                             Configure system settings and resort preferences.
                         </p>
-                        <button class="w-full py-3 bg-green-50 text-green-900 font-medium text-lg rounded-lg hover:bg-white transition-colors duration-200">
+                        <button class="w-full py-3 bg-green-50 text-black font-medium text-lg rounded-lg hover:bg-white transition-colors duration-200">
                             Manage Settings
                         </button>
                     </div>
