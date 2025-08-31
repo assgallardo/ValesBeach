@@ -7,6 +7,9 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="bg-gray-900 flex items-center justify-center min-h-screen">
+    <!-- Hidden div to force Tailwind to compile admin colors -->
+    <div class="hidden bg-gray-900 bg-green-900 bg-green-800 bg-green-700 bg-green-600 bg-green-50 text-green-50 text-green-100 text-green-200 text-green-900 border-green-500 ring-green-500 hover:bg-green-700 hover:bg-green-600 focus:ring-green-500 focus:ring-green-300 bg-white bg-opacity-5 bg-opacity-10 bg-opacity-20 border-white border-opacity-10 border-opacity-20 backdrop-blur-sm text-blue-400 text-red-400 bg-blue-600 bg-purple-600 bg-orange-600 bg-pink-600 bg-yellow-600"></div>
+
     <div class="text-center">
         <h1 class="text-5xl font-bold text-white mb-6">
             🎉 Tailwind is Working!
