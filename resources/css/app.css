@@ -44,3 +44,8 @@
 .backdrop-blur-sm {
   backdrop-filter: blur(4px);
 }
+
+/* Drop shadow utilities for better text readability */
+.drop-shadow-lg {
+  filter: drop-shadow(0 10px 8px rgb(0 0 0 / 0.4)) drop-shadow(0 4px 3px rgb(0 0 0 / 0.1));
+}
