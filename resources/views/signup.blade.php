@@ -13,13 +13,21 @@
             <p class="text-gray-400">Join ValesBeach today</p>
         </div>
 
-        <form action="#" method="POST" class="space-y-6">
+        <form action="{{ route('signup.post') }}" method="POST" class="space-y-6">
             @csrf
+
+            @if($errors->any())
+                <div class="bg-red-600 text-white p-3 rounded-lg text-sm">
+                    @foreach($errors->all() as $error)
+                        <p>{{ $error }}</p>
+                    @endforeach
+                </div>
+            @endif
             
             <!-- Full Name -->
             <div>
                 <label for="name" class="block text-sm font-medium text-gray-300 mb-2">Full Name</label>
-                <input type="text" id="name" name="name" required
+                <input type="text" id="name" name="name" required value="{{ old('name') }}"
                     class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="Enter your full name">
             </div>
@@ -27,7 +35,7 @@
             <!-- Email -->
             <div>
                 <label for="email" class="block text-sm font-medium text-gray-300 mb-2">Email Address</label>
-                <input type="email" id="email" name="email" required
+                <input type="email" id="email" name="email" required value="{{ old('email') }}"
                     class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="Enter your email">
             </div>
@@ -68,7 +76,7 @@
         <div class="text-center mt-6">
             <p class="text-gray-400">
                 Already have an account? 
-                <a href="/" class="text-blue-400 hover:text-blue-300 font-medium">Sign in</a>
+                <a href="{{ route('login') }}" class="text-blue-400 hover:text-blue-300 font-medium">Sign in</a>
             </p>
         </div>
 
