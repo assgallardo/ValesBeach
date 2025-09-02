@@ -134,7 +134,8 @@
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <span class="px-2 py-1 text-xs font-medium rounded-full
-                                        {{ ($user->status ?? 'active') === 'active' ? 'bg-green-600 text-white' : 'bg-yellow-600 text-white' }}">
+                                        {{ ($user->status ?? 'active') === 'active' ? 'bg-green-600 text-white' :
+                                           (($user->status ?? 'active') === 'blocked' ? 'bg-red-600 text-white' : 'bg-yellow-600 text-white') }}">
                                         {{ ucfirst($user->status ?? 'active') }}
                                     </span>
                                 </td>
@@ -142,6 +143,11 @@
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
                                     <button onclick="editUser({{ $user->id }})" class="text-blue-400 hover:text-blue-300 transition-colors duration-200">Edit</button>
                                     @if($user->id !== auth()->id())
+                                        <button onclick="toggleUserStatus({{ $user->id }})"
+                                            class="{{ ($user->status ?? 'active') === 'active' ? 'text-yellow-400 hover:text-yellow-300' : 'text-green-400 hover:text-green-300' }} transition-colors duration-200">
+                                            {{ ($user->status ?? 'active') === 'active' ? 'Deactivate' : 'Activate' }}
+                                        </button>
+                                        <button onclick="blockUser({{ $user->id }})" class="text-orange-400 hover:text-orange-300 transition-colors duration-200">Block</button>
                                         <button onclick="deleteUser({{ $user->id }})" class="text-red-400 hover:text-red-300 transition-colors duration-200">Delete</button>
                                     @endif
                                 </td>
@@ -251,7 +257,7 @@
         }
         
         function deleteUser(userId) {
-            if (confirm('Are you sure you want to delete this user?')) {
+            if (confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
                 fetch(`/admin/users/${userId}`, {
                     method: 'DELETE',
                     headers: {
@@ -271,21 +277,79 @@
                 .catch(error => showMessage('Error deleting user', 'error'));
             }
         }
+
+        function toggleUserStatus(userId) {
+            fetch(`/admin/users/${userId}/status`, {
+                method: 'PATCH',
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showMessage(data.message, 'success');
+                    location.reload(); // Reload page to update table
+                } else {
+                    showMessage(data.message || 'Error updating user status', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error details:', error);
+                showMessage('Error updating user status', 'error');
+            });
+        }
+
+        function blockUser(userId) {
+            if (confirm('Are you sure you want to block this user?')) {
+                fetch(`/admin/users/${userId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        status: 'blocked'
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showMessage('User has been blocked successfully', 'success');
+                        location.reload(); // Reload page to update table
+                    } else {
+                        showMessage(data.message || 'Error blocking user', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error details:', error);
+                    showMessage('Error blocking user', 'error');
+                });
+            }
+        }
         
         function saveUser(event) {
             event.preventDefault();
-            
+
             const formData = new FormData(event.target);
             const userId = document.getElementById('userId').value;
             const url = userId ? `/admin/users/${userId}` : '/admin/users';
             const method = userId ? 'PUT' : 'POST';
-            
+
             // Convert FormData to regular object for JSON
             const data = {};
             formData.forEach((value, key) => {
                 if (key !== 'userId') data[key] = value;
             });
-            
+
+            // Clear any empty password fields for updates
+            if (userId && (!data.password || data.password.trim() === '')) {
+                delete data.password;
+                delete data.password_confirmation;
+            }
+
             fetch(url, {
                 method: method,
                 headers: {
@@ -295,17 +359,35 @@
                 },
                 body: JSON.stringify(data)
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => Promise.reject(err));
+                }
+                return response.json();
+            })
             .then(data => {
                 if (data.success) {
                     showMessage(data.message, 'success');
                     closeModal();
                     location.reload(); // Reload page to update table
                 } else {
-                    showMessage('Validation errors occurred', 'error');
+                    let errorMessage = 'Validation errors occurred';
+                    if (data.errors) {
+                        errorMessage = Object.values(data.errors).flat().join(', ');
+                    }
+                    showMessage(errorMessage, 'error');
                 }
             })
-            .catch(error => showMessage('Error saving user', 'error'));
+            .catch(error => {
+                console.error('Error details:', error);
+                let errorMessage = 'Error saving user';
+                if (error.errors) {
+                    errorMessage = Object.values(error.errors).flat().join(', ');
+                } else if (error.message) {
+                    errorMessage = error.message;
+                }
+                showMessage(errorMessage, 'error');
+            });
         }
         
         function closeModal() {
