@@ -46,21 +46,6 @@ class UserController extends Controller
             ], 422);
         }
 
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:6|confirmed',
-            'role' => 'required|in:admin,manager,staff',
-            'status' => 'nullable|in:active,inactive,blocked',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
