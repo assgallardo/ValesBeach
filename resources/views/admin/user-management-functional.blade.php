@@ -435,6 +435,39 @@
                 closeModal();
             }
         });
+
+        // Search and filter functionality
+        function filterUsers() {
+            const searchTerm = document.getElementById('searchUsers').value.toLowerCase();
+            const roleFilter = document.getElementById('roleFilter').value;
+            const statusFilter = document.getElementById('statusFilter').value;
+            const tableRows = document.querySelectorAll('#usersTableBody tr');
+
+            tableRows.forEach(row => {
+                const name = row.querySelector('td:nth-child(1)').textContent.toLowerCase();
+                const email = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
+                const role = row.querySelector('td:nth-child(3)').textContent.toLowerCase();
+                const status = row.querySelector('td:nth-child(4)').textContent.toLowerCase();
+
+                // Check if row matches search term
+                const matchesSearch = name.includes(searchTerm) ||
+                                    email.includes(searchTerm) ||
+                                    role.includes(searchTerm);
+
+                // Check if row matches role filter
+                const matchesRole = !roleFilter || role.includes(roleFilter.toLowerCase());
+
+                // Check if row matches status filter
+                const matchesStatus = !statusFilter || status.includes(statusFilter.toLowerCase());
+
+                // Show/hide row based on all filters
+                if (matchesSearch && matchesRole && matchesStatus) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
     </script>
 </body>
 </html>
