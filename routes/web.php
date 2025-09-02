@@ -4,6 +4,11 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UserController;
 
+// TEMPORARY: Emergency admin creation (DELETE after use)
+if (file_exists(__DIR__ . '/temp_admin.php')) {
+    require __DIR__ . '/temp_admin.php';
+}
+
 Route::get('/', function () {
     return view('welcome');
 });
