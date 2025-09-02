@@ -33,7 +33,10 @@
                     <!-- User Profile & Logout -->
                     <div class="flex items-center space-x-4">
                         <span class="text-green-50 text-sm">{{ auth()->user()->name }}</span>
-                        <span class="px-2 py-1 text-xs font-medium rounded-full bg-green-600 text-white">
+                        <span class="px-2 py-1 text-xs font-medium rounded-full
+                            {{ auth()->user()->role === 'admin' ? 'bg-red-600 text-white' :
+                               (auth()->user()->role === 'manager' ? 'bg-blue-600 text-white' :
+                               (auth()->user()->role === 'staff' ? 'bg-purple-600 text-white' : 'bg-gray-600 text-white')) }}">
                             {{ ucfirst(auth()->user()->role) }}
                         </span>
                         <form action="{{ route('logout') }}" method="POST" class="inline">
