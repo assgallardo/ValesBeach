@@ -35,7 +35,7 @@ class UserController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:6|confirmed',
-            'role' => 'required|in:admin,manager,staff',
+            'role' => 'required|in:admin,manager,staff,guest',
             'status' => 'nullable|in:active,inactive,blocked',
         ]);
 
@@ -50,7 +50,7 @@ class UserController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'role' => $request->role ?? 'staff',
+            'role' => $request->role ?? 'guest',
         ]);
 
         return response()->json([
@@ -92,7 +92,7 @@ class UserController extends Controller
         }
 
         if ($request->has('role')) {
-            $rules['role'] = 'required|in:admin,manager,staff';
+            $rules['role'] = 'required|in:admin,manager,staff,guest';
         }
 
         if ($request->has('status')) {
