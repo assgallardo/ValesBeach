@@ -303,21 +303,17 @@
 
         function blockUser(userId) {
             if (confirm('Are you sure you want to block this user?')) {
-                fetch(`/admin/users/${userId}`, {
-                    method: 'PUT',
+                fetch(`/admin/users/${userId}/block`, {
+                    method: 'PATCH',
                     headers: {
                         'X-CSRF-TOKEN': csrfToken,
-                        'Content-Type': 'application/json',
                         'Accept': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        status: 'blocked'
-                    })
+                    }
                 })
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        showMessage('User has been blocked successfully', 'success');
+                        showMessage(data.message, 'success');
                         location.reload(); // Reload page to update table
                     } else {
                         showMessage(data.message || 'Error blocking user', 'error');
