@@ -30,4 +30,5 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/admin/users/{id}', [UserController::class, 'update'])->name('admin.users.update');
     Route::delete('/admin/users/{id}', [UserController::class, 'destroy'])->name('admin.users.destroy');
     Route::patch('/admin/users/{id}/status', [UserController::class, 'toggleStatus'])->name('admin.users.toggle');
+    Route::patch('/admin/users/{id}/block', [UserController::class, 'blockUser'])->name('admin.users.block');
 });
