@@ -36,6 +36,22 @@ class UserController extends Controller
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:6|confirmed',
             'role' => 'required|in:admin,manager,staff',
+            'status' => 'nullable|in:active,inactive,blocked',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users',
+            'password' => 'required|string|min:6|confirmed',
+            'role' => 'required|in:admin,manager,staff',
+            'status' => 'nullable|in:active,inactive,blocked',
         ]);
 
         if ($validator->fails()) {
@@ -75,12 +91,30 @@ class UserController extends Controller
     {
         $user = User::findOrFail($id);
 
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users,email,' . $id,
-            'password' => 'nullable|string|min:6|confirmed',
-            'role' => 'required|in:admin,manager,staff',
-        ]);
+        // Define validation rules based on what's being updated
+        $rules = [];
+
+        if ($request->has('name')) {
+            $rules['name'] = 'required|string|max:255';
+        }
+
+        if ($request->has('email')) {
+            $rules['email'] = 'required|string|email|max:255|unique:users,email,' . $id;
+        }
+
+        if ($request->has('password') && $request->filled('password')) {
+            $rules['password'] = 'string|min:6|confirmed';
+        }
+
+        if ($request->has('role')) {
+            $rules['role'] = 'required|in:admin,manager,staff';
+        }
+
+        if ($request->has('status')) {
+            $rules['status'] = 'required|in:active,inactive,blocked';
+        }
+
+        $validator = Validator::make($request->all(), $rules);
 
         if ($validator->fails()) {
             return response()->json([
@@ -89,11 +123,23 @@ class UserController extends Controller
             ], 422);
         }
 
-        $updateData = [
-            'name' => $request->name,
-            'email' => $request->email,
-            'role' => $request->role,
-        ];
+        $updateData = [];
+
+        if ($request->has('name')) {
+            $updateData['name'] = $request->name;
+        }
+
+        if ($request->has('email')) {
+            $updateData['email'] = $request->email;
+        }
+
+        if ($request->has('role')) {
+            $updateData['role'] = $request->role;
+        }
+
+        if ($request->has('status')) {
+            $updateData['status'] = $request->status;
+        }
 
         if ($request->filled('password')) {
             $updateData['password'] = Hash::make($request->password);
@@ -137,11 +183,45 @@ class UserController extends Controller
     public function toggleStatus($id)
     {
         $user = User::findOrFail($id);
-        $user->update(['status' => $user->status === 'active' ? 'inactive' : 'active']);
+
+        // Prevent toggling your own status
+        if ($user->id === auth()->id()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You cannot change your own status!'
+            ], 403);
+        }
+
+        $newStatus = $user->status === 'active' ? 'inactive' : 'active';
+        $user->update(['status' => $newStatus]);
 
         return response()->json([
             'success' => true,
-            'message' => 'User status updated successfully!',
+            'message' => "User status changed to {$newStatus}!",
+            'user' => $user
+        ]);
+    }
+
+    /**
+     * Block a user
+     */
+    public function blockUser($id)
+    {
+        $user = User::findOrFail($id);
+
+        // Prevent blocking your own account
+        if ($user->id === auth()->id()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You cannot block your own account!'
+            ], 403);
+        }
+
+        $user->update(['status' => 'blocked']);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'User has been blocked successfully!',
             'user' => $user
         ]);
     }
