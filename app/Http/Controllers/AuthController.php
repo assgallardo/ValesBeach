@@ -44,14 +44,30 @@ class AuthController extends Controller
         $remember = $request->has('remember');
 
         if (Auth::attempt($credentials, $remember)) {
-            $request->session()->regenerate();
-            
-            // Check if user is admin (you can modify this logic)
-            if (Auth::user()->email === 'admin@valesbeach.com') {
-                return redirect()->intended('/admin');
+            $user = Auth::user();
+
+            // Check if user account is blocked or inactive
+            if (in_array($user->status, ['blocked', 'inactive'])) {
+                Auth::logout();
+
+                $message = $user->status === 'blocked'
+                    ? 'Your account has been blocked. Please contact the administrator.'
+                    : 'Your account has been deactivated. Please contact the administrator.';
+
+                return back()->withErrors(['status' => $message])->withInput();
             }
-            
-            return redirect()->intended('/');
+
+            $request->session()->regenerate();
+
+            // Redirect based on user role
+            switch ($user->role) {
+                case 'admin':
+                    return redirect()->intended('/admin');
+                case 'manager':
+                case 'staff':
+                default:
+                    return redirect()->intended('/');
+            }
         }
 
         return back()->withErrors([
