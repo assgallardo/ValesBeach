@@ -48,11 +48,19 @@ Route::middleware(['auth', 'user.status'])->group(function () {
         // Route::get('/admin/settings', [SettingsController::class, 'index'])->name('admin.settings');
     });
 
-    // All authenticated users (Staff, Manager, Admin) - Bookings, Rooms, Food Menu
+    // Staff, Manager, Admin - Administrative access to bookings, rooms, and food menu
     Route::middleware(['role:admin,manager,staff'])->group(function () {
-        // Future routes for bookings, rooms, and food menu management
+        // Future routes for administrative bookings, rooms, and food menu management
         // Route::get('/admin/bookings', [BookingController::class, 'index'])->name('admin.bookings');
         // Route::get('/admin/rooms', [RoomController::class, 'index'])->name('admin.rooms');
         // Route::get('/admin/menu', [MenuController::class, 'index'])->name('admin.menu');
+    });
+
+    // Guest services - All authenticated users including guests
+    Route::middleware(['role:admin,manager,staff,guest'])->group(function () {
+        // Future guest services routes
+        // Route::get('/rooms', [GuestRoomController::class, 'index'])->name('guest.rooms');
+        // Route::get('/menu', [GuestMenuController::class, 'index'])->name('guest.menu');
+        // Route::get('/services', [GuestServiceController::class, 'index'])->name('guest.services');
     });
 });
