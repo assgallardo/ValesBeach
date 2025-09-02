@@ -68,12 +68,33 @@
                     <!-- Search Bar -->
                     <div class="flex-1 max-w-md">
                         <div class="relative">
-                            <input type="text" id="searchUsers" placeholder="Search users..." 
+                            <input type="text" id="searchUsers" placeholder="Search users by name, email, or role..."
                                 class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                             <svg class="absolute right-3 top-3.5 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                             </svg>
                         </div>
+                    </div>
+
+                    <!-- Filter Dropdown -->
+                    <div class="relative">
+                        <select id="roleFilter" class="px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="">All Roles</option>
+                            <option value="guest">Guest</option>
+                            <option value="staff">Staff</option>
+                            <option value="manager">Manager</option>
+                            <option value="admin">Admin</option>
+                        </select>
+                    </div>
+
+                    <!-- Status Filter -->
+                    <div class="relative">
+                        <select id="statusFilter" class="px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="">All Status</option>
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                            <option value="blocked">Blocked</option>
+                        </select>
                     </div>
 
                     <!-- Add User Button -->
@@ -127,9 +148,10 @@
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-300">{{ $user->email }}</td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <span class="px-2 py-1 text-xs font-medium rounded-full
-                                        {{ $user->role === 'admin' ? 'bg-red-600 text-white' : 
-                                           ($user->role === 'manager' ? 'bg-blue-600 text-white' : 'bg-gray-600 text-white') }}">
-                                        {{ ucfirst($user->role ?? 'staff') }}
+                                        {{ $user->role === 'admin' ? 'bg-red-600 text-white' :
+                                           ($user->role === 'manager' ? 'bg-blue-600 text-white' :
+                                           ($user->role === 'staff' ? 'bg-purple-600 text-white' : 'bg-gray-600 text-white')) }}">
+                                        {{ ucfirst($user->role ?? 'guest') }}
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
@@ -200,6 +222,7 @@
                             <label class="block text-sm font-medium text-gray-300 mb-2">Role</label>
                             <select id="userRole" name="role" required
                                 class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500">
+                                <option value="guest">Guest</option>
                                 <option value="staff">Staff</option>
                                 <option value="manager">Manager</option>
                                 <option value="admin">Admin</option>
@@ -227,6 +250,9 @@
         // Add event listeners
         document.getElementById('addUserBtn').addEventListener('click', openAddModal);
         document.getElementById('userForm').addEventListener('submit', saveUser);
+        document.getElementById('searchUsers').addEventListener('input', filterUsers);
+        document.getElementById('roleFilter').addEventListener('change', filterUsers);
+        document.getElementById('statusFilter').addEventListener('change', filterUsers);
         
         function openAddModal() {
             document.getElementById('modalTitle').textContent = 'Add New User';
@@ -248,7 +274,7 @@
                 document.getElementById('userId').value = user.id;
                 document.getElementById('userName').value = user.name;
                 document.getElementById('userEmail').value = user.email;
-                document.getElementById('userRole').value = user.role || 'staff';
+                document.getElementById('userRole').value = user.role || 'guest';
                 document.getElementById('userPassword').value = '';
                 document.getElementById('userPasswordConfirm').value = '';
                 document.getElementById('userModal').classList.remove('hidden');
