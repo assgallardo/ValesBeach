@@ -65,6 +65,8 @@ class AuthController extends Controller
                     return redirect()->intended('/admin');
                 case 'manager':
                 case 'staff':
+                    return redirect()->intended('/admin');
+                case 'guest':
                 default:
                     return redirect()->intended('/');
             }
@@ -95,6 +97,8 @@ class AuthController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
+            'role' => 'guest',
+            'status' => 'active',
         ]);
 
         Auth::login($user);
