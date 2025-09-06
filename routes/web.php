@@ -3,14 +3,24 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\GuestController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\RoomController;
 
 // TEMPORARY: Emergency admin creation (DELETE after use)
 if (file_exists(__DIR__ . '/temp_admin.php')) {
     require __DIR__ . '/temp_admin.php';
 }
 
+// Welcome page as home
 Route::get('/', function () {
     return view('welcome');
+});
+
+// Guest Routes - Protected by guest role middleware
+Route::prefix('guest')->name('guest.')->middleware(['auth', 'role:guest'])->group(function () {
+    Route::get('/dashboard', [GuestController::class, 'dashboard'])->name('dashboard');
+    Route::get('/rooms', [GuestController::class, 'rooms'])->name('rooms');
 });
 
 // Authentication Routes
