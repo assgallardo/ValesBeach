@@ -60,14 +60,14 @@ class AuthController extends Controller
             $request->session()->regenerate();
 
             // Redirect based on user role
-            switch ($user->role) {
-                case 'admin':
-                    return redirect()->intended('/admin');
-                case 'manager':
-                case 'staff':
-                default:
-                    return redirect()->intended('/');
-            }
+            // Redirect based on user role
+            return match($user->role) {
+                'admin' => redirect()->intended(route('admin.dashboard')),
+                'manager' => redirect()->intended(route('admin.dashboard')),
+                'staff' => redirect()->intended(route('admin.dashboard')),
+                'guest' => redirect()->intended(route('guest.dashboard')),
+                default => redirect()->intended('/')
+            };
         }
 
         return back()->withErrors([
@@ -95,11 +95,15 @@ class AuthController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
+            'role' => 'guest',
+            'status' => 'active'
         ]);
 
         Auth::login($user);
+        
+        $request->session()->regenerate();
 
-        return redirect('/')->with('success', 'Account created successfully!');
+        return redirect()->route('guest.dashboard')->with('success', 'Account created successfully!');
     }
 
     /**

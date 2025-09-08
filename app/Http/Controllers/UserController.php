@@ -10,12 +10,39 @@ use Illuminate\Support\Facades\Validator;
 class UserController extends Controller
 {
     /**
-     * Display the user management page
+     * Display the user management page with filters
      */
-    public function index()
+    public function index(Request $request)
     {
-        $users = User::orderBy('created_at', 'desc')->get();
-        return view('admin.user-management-functional', compact('users'));
+        $query = User::query();
+
+        // Apply filters
+        if ($request->has('role')) {
+            $query->byRole($request->role);
+        }
+
+        if ($request->has('status')) {
+            $query->byStatus($request->status);
+        }
+
+        // Apply search
+        if ($request->has('search')) {
+            $query->search($request->search);
+        }
+
+        // Apply sorting
+        $sortField = $request->input('sort_by', 'created_at');
+        $sortOrder = $request->input('sort_order', 'desc');
+        $query->orderBy($sortField, $sortOrder);
+
+        // Get paginated results
+        $users = $query->paginate(10)->withQueryString();
+
+        // Get available roles and statuses for filter dropdowns
+        $roles = ['admin', 'manager', 'staff', 'guest'];
+        $statuses = ['active', 'inactive', 'blocked'];
+
+        return view('admin.user-management-functional', compact('users', 'roles', 'statuses'));
     }
 
     /**
@@ -35,7 +62,7 @@ class UserController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:6|confirmed',
-            'role' => 'required|in:admin,manager,staff',
+            'role' => 'required|in:admin,manager,staff,guest',
             'status' => 'nullable|in:active,inactive,blocked',
         ]);
 
@@ -51,6 +78,7 @@ class UserController extends Controller
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'role' => $request->role ?? 'staff',
+            'status' => $request->status ?? 'active',
         ]);
 
         return response()->json([
@@ -92,7 +120,7 @@ class UserController extends Controller
         }
 
         if ($request->has('role')) {
-            $rules['role'] = 'required|in:admin,manager,staff';
+            $rules['role'] = 'required|in:admin,manager,staff,guest';
         }
 
         if ($request->has('status')) {
@@ -174,6 +202,22 @@ class UserController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'You cannot change your own status!'
+            ], 403);
+        }
+
+        // Don't allow toggling blocked users
+        if ($user->status === 'blocked') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Cannot toggle status of blocked users!'
+            ], 403);
+        }
+
+        // Prevent non-admin users from modifying admin accounts
+        if ($user->role === 'admin' && auth()->user()->role !== 'admin') {
+            return response()->json([
+                'success' => false,
+                'message' => 'You do not have permission to modify admin accounts!'
             ], 403);
         }
 
