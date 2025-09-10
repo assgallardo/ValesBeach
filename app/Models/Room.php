@@ -18,7 +18,8 @@ class Room extends Model
         'capacity',
         'beds',
         'amenities',
-        'is_available'
+        'is_available',
+        'featured_image'
     ];
 
     protected $casts = [
@@ -61,5 +62,10 @@ class Room extends Model
             })
             ->whereIn('status', ['pending', 'confirmed'])
             ->exists();
+    }
+
+    public function images()
+    {
+        return $this->hasMany(RoomImage::class);
     }
 }

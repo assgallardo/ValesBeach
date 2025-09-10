@@ -86,10 +86,32 @@
                             Member Login
                         </a>
                     @else
-                        <a href="{{ auth()->user()->role === 'guest' ? route('guest.rooms') : route('admin.dashboard') }}" 
-                           class="px-8 py-4 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200 text-lg font-medium">
-                            {{ auth()->user()->role === 'guest' ? 'Browse Rooms' : 'Go to Dashboard' }}
-                        </a>
+                        <div class="flex flex-col items-center gap-6">
+                            <!-- Welcome Message -->
+                            <div class="text-white mb-4">
+                                <h3 class="text-2xl font-bold mb-2">Welcome, {{ auth()->user()->name }}!</h3>
+                                <p class="text-gray-200">What would you like to do today?</p>
+                            </div>
+                            
+                            <!-- Action Buttons -->
+                            <div class="flex gap-4">
+                                @if(auth()->user()->role === 'guest')
+                                    <a href="{{ route('guest.rooms') }}" 
+                                       class="px-8 py-4 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200 text-lg font-medium">
+                                        Browse Rooms
+                                    </a>
+                                    <a href="{{ route('guest.dashboard') }}" 
+                                       class="px-8 py-4 bg-green-900 text-white rounded-lg hover:bg-green-800 transition-colors duration-200 text-lg font-medium">
+                                        Go to Dashboard
+                                    </a>
+                                @else
+                                    <a href="{{ route('admin.dashboard') }}" 
+                                       class="px-8 py-4 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200 text-lg font-medium">
+                                        Admin Dashboard
+                                    </a>
+                                @endif
+                            </div>
+                        </div>
                     @endguest
                 </div>
             </div>

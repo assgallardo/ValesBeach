@@ -52,17 +52,18 @@ class User extends Authenticatable
     /**
      * Scope a query to filter users by role.
      */
-    public function scopeByRole(Builder $query, string $role): Builder
+    public function scopeByRole(Builder $query, ?string $role = null): Builder
     {
-        return $query->where('role', $role);
+        return $role ? $query->where('role', $role)
+            : $query;
     }
 
     /**
      * Scope a query to filter users by status.
      */
-    public function scopeByStatus(Builder $query, string $status): Builder
+    public function scopeByStatus(Builder $query, ?string $status = null): Builder
     {
-        return $query->where('status', $status);
+        return $status ? $query->where('status', $status) : $query;
     }
 
     /**

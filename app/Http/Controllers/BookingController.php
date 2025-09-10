@@ -77,7 +77,12 @@ class BookingController extends Controller
      */
     public function myBookings()
     {
-        $bookings = auth()->user()->bookings()->latest()->paginate(10);
+        $bookings = auth()->user()
+            ->bookings()
+            ->with('room')
+            ->latest()
+            ->paginate(10);
+        
         return view('guest.bookings.index', compact('bookings'));
     }
 

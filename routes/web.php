@@ -49,7 +49,19 @@ Route::middleware(['auth', 'user.status'])->group(function () {
     })->name('admin.dashboard');
 
     // Admin Routes - Protected by admin role middleware
-    Route::prefix('admin')->name('admin.')->middleware(['role:admin'])->group(function () {
+    Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->group(function () {
+        // Dashboard
+        Route::get('/dashboard', function () {
+            return view('admin.dashboard');
+        })->name('dashboard');
+
+        // Room Management
+        Route::resource('rooms', RoomController::class);
+        Route::post('rooms/{room}/toggle-availability', [RoomController::class, 'toggleAvailability'])
+            ->name('rooms.toggle-availability');
+        Route::delete('rooms/{room}/images/{image}', [RoomController::class, 'deleteImage'])
+            ->name('rooms.deleteImage');
+
         // Booking Management
         Route::get('/bookings', [App\Http\Controllers\Admin\BookingController::class, 'index'])->name('bookings');
         Route::patch('/bookings/{booking}/status', [App\Http\Controllers\Admin\BookingController::class, 'updateStatus'])->name('bookings.status');

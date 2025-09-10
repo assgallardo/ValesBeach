@@ -88,9 +88,10 @@
                         <p class="text-green-100 text-sm lg:text-base mb-8 flex-grow">
                             Update room availability, rates, and facility details.
                         </p>
-                        <button class="w-full py-3 bg-green-50 text-black font-medium text-lg rounded-lg hover:bg-white transition-colors duration-200">
+                        <a href="{{ route('admin.rooms.index') }}" 
+                           class="w-full py-3 bg-green-50 text-black font-medium text-lg rounded-lg hover:bg-white transition-colors duration-200 text-center">
                             Manage Rooms
-                        </button>
+                        </a>
                     </div>
                 </div>
 
