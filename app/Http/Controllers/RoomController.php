@@ -178,7 +178,21 @@ class RoomController extends Controller
 
     public function show(Room $room)
     {
-        return view('admin.rooms.show', compact('room'));
+        // Load room images ordered by display order
+        $room->load(['images' => function($query) {
+            $query->orderBy('display_order');
+        }]);
+        
+        // Check if room is available
+        $isAvailable = $room->is_available;
+
+        // Get upcoming bookings for availability calendar
+        $upcomingBookings = $room->bookings()
+            ->where('check_out', '>=', now())
+            ->where('status', '!=', 'cancelled')
+            ->get(['check_in', 'check_out']);
+
+        return view('guest.rooms.show', compact('room', 'isAvailable', 'upcomingBookings'));
     }
 
     // Add method to handle image deletion
@@ -193,5 +207,47 @@ class RoomController extends Controller
         $image->delete();
 
         return response()->json(['success' => true]);
+    }
+
+    public function browse(Request $request)
+    {
+        $query = Room::query()->with('images')->where('is_available', true);
+
+        // Filter by type
+        if ($request->type) {
+            $query->where('type', $request->type);
+        }
+
+        $rooms = $query->latest()->paginate(9);
+        $types = Room::distinct()->pluck('type');
+
+        return view('guest.rooms.browse', compact('rooms', 'types'));
+    }
+
+    // Add method to handle booking form
+    public function showBookingForm(Room $room)
+    {
+        return view('guest.rooms.booking-form', compact('room'));
+    }
+
+    /**
+     * Display rooms list for staff
+     */
+    public function staffIndex()
+    {
+        $rooms = Room::with('images')
+            ->latest()
+            ->paginate(10);
+
+        return view('staff.rooms.index', compact('rooms'));
+    }
+
+    /**
+     * Display room details for staff
+     */
+    public function staffShow(Room $room)
+    {
+        $room->load('images');
+        return view('staff.rooms.show', compact('room'));
     }
 }

@@ -14,6 +14,8 @@
 
     <!-- Scripts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <!-- Add Alpine.js -->
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
 <body class="font-sans antialiased min-h-screen bg-gray-900 relative overflow-x-hidden" style="font-family: 'Poppins', sans-serif;">
     <nav class="relative z-10 bg-green-900 shadow-xl">
@@ -28,8 +30,12 @@
                 <div class="flex items-center space-x-6">
                     @auth
                         @if(auth()->user()->role === 'guest')
-                            <a href="{{ route('guest.dashboard') }}" class="text-gray-200 hover:text-white transition-colors duration-200">Dashboard</a>
-                            <a href="{{ route('guest.rooms') }}" class="text-gray-200 hover:text-white transition-colors duration-200">Rooms</a>
+                            <a href="{{ route('guest.dashboard') }}" class="text-gray-200 hover:text-white transition-colors duration-200">
+                                Dashboard
+                            </a>
+                            <a href="{{ route('guest.rooms.browse') }}" class="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">
+                                Browse Rooms
+                            </a>
                         @endif
                         
                         <div class="relative" x-data="{ open: false }">

@@ -31,48 +31,26 @@ class AuthController extends Controller
      */
     public function login(Request $request)
     {
-        $validator = Validator::make($request->all(), [
+        $credentials = $request->validate([
             'email' => 'required|email',
-            'password' => 'required|min:6',
+            'password' => 'required'
         ]);
 
-        if ($validator->fails()) {
-            return back()->withErrors($validator)->withInput();
-        }
-
-        $credentials = $request->only('email', 'password');
-        $remember = $request->has('remember');
-
-        if (Auth::attempt($credentials, $remember)) {
-            $user = Auth::user();
-
-            // Check if user account is blocked or inactive
-            if (in_array($user->status, ['blocked', 'inactive'])) {
-                Auth::logout();
-
-                $message = $user->status === 'blocked'
-                    ? 'Your account has been blocked. Please contact the administrator.'
-                    : 'Your account has been deactivated. Please contact the administrator.';
-
-                return back()->withErrors(['status' => $message])->withInput();
-            }
-
+        if (Auth::attempt($credentials)) {
             $request->session()->regenerate();
 
-            // Redirect based on user role
-            // Redirect based on user role
-            return match($user->role) {
-                'admin' => redirect()->intended(route('admin.dashboard')),
-                'manager' => redirect()->intended(route('admin.dashboard')),
-                'staff' => redirect()->intended(route('admin.dashboard')),
-                'guest' => redirect()->intended(route('guest.dashboard')),
-                default => redirect()->intended('/')
-            };
+            if (auth()->user()->role === 'staff') {
+                return redirect()->route('staff.dashboard');
+            } elseif (auth()->user()->role === 'admin') {
+                return redirect()->route('admin.dashboard');
+            } else {
+                return redirect()->route('guest.dashboard');
+            }
         }
 
         return back()->withErrors([
             'email' => 'The provided credentials do not match our records.',
-        ])->withInput();
+        ])->onlyInput('email');
     }
 
     /**
@@ -115,10 +93,11 @@ class AuthController extends Controller
     public function logout(Request $request)
     {
         Auth::logout();
-
+        
         $request->session()->invalidate();
         $request->session()->regenerateToken();
-
-        return redirect()->route('login')->with('success', 'You have been successfully logged out.');
+        
+        return redirect()->route('login')
+            ->with('success', 'You have been successfully logged out.');
     }
 }

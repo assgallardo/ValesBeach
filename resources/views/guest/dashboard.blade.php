@@ -23,7 +23,7 @@
         <!-- Quick Action Cards -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
             <!-- Browse Rooms Card -->
-            <a href="{{ route('guest.rooms') }}" class="group">
+            <a href="{{ route('guest.rooms.browse') }}" class="group">
                 <div class="bg-green-900 border-2 border-green-700 rounded-xl p-6 text-center transform transition duration-300 hover:scale-105 hover:bg-green-800 cursor-pointer shadow-lg">
                     <div class="bg-green-700 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4 group-hover:bg-green-600 transition-colors duration-300">
                         <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -36,7 +36,7 @@
             </a>
 
             <!-- My Bookings Card -->
-            <a href="#" class="group">
+            <a href="{{ route('guest.bookings') }}" class="group">
                 <div class="bg-green-900 border-2 border-green-700 rounded-xl p-6 text-center transform transition duration-300 hover:scale-105 hover:bg-green-800 cursor-pointer shadow-lg">
                     <div class="bg-green-700 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4 group-hover:bg-green-600 transition-colors duration-300">
                         <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -96,7 +96,7 @@
                             <!-- Action Buttons -->
                             <div class="flex gap-4">
                                 @if(auth()->user()->role === 'guest')
-                                    <a href="{{ route('guest.rooms') }}" 
+                                    <a href="{{ route('guest.rooms.browse') }}" 
                                        class="px-8 py-4 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200 text-lg font-medium">
                                         Browse Rooms
                                     </a>

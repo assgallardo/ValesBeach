@@ -32,44 +32,46 @@ class BookingController extends Controller
     public function store(Request $request, Room $room)
     {
         $validated = $request->validate([
-            'check_in' => ['required', 'date', 'after:today'],
-            'check_out' => ['required', 'date', 'after:check_in'],
-            'guests' => ['required', 'integer', 'min:1', 'max:' . $room->capacity],
-            'special_requests' => ['nullable', 'string', 'max:500'],
+            'check_in' => 'required|date|after_or_equal:today',
+            'check_out' => 'required|date|after:check_in',
+            'guests' => 'nullable|integer|min:1|max:' . $room->capacity
         ]);
 
-        // Check if room is available for these dates
-        $conflictingBooking = Booking::where('room_id', $room->id)
-            ->where('status', '!=', 'cancelled')
-            ->where(function($query) use ($validated) {
-                $query->whereBetween('check_in', [$validated['check_in'], $validated['check_out']])
-                    ->orWhereBetween('check_out', [$validated['check_in'], $validated['check_out']]);
-            })->exists();
-
-        if ($conflictingBooking) {
-            return back()->withErrors(['check_in' => 'Room is not available for these dates']);
-        }
-
-        // Calculate number of nights and total price
         $checkIn = Carbon::parse($validated['check_in']);
         $checkOut = Carbon::parse($validated['check_out']);
         $nights = $checkIn->diffInDays($checkOut);
         $totalPrice = $room->price * $nights;
 
+        // Check if room is available for these dates
+        $isAvailable = !$room->bookings()
+            ->where(function($query) use ($checkIn, $checkOut) {
+                $query->whereBetween('check_in', [$checkIn, $checkOut])
+                      ->orWhereBetween('check_out', [$checkIn, $checkOut])
+                      ->orWhere(function($q) use ($checkIn, $checkOut) {
+                          $q->where('check_in', '<=', $checkIn)
+                            ->where('check_out', '>=', $checkOut);
+                      });
+            })
+            ->where('status', '!=', 'cancelled')
+            ->exists();
+
+        if (!$isAvailable) {
+            return back()->withErrors(['message' => 'Room is not available for the selected dates.']);
+        }
+
         // Create the booking
-        $booking = Booking::create([
+        $booking = $room->bookings()->create([
             'user_id' => auth()->id(),
-            'room_id' => $room->id,
-            'check_in' => $validated['check_in'],
-            'check_out' => $validated['check_out'],
-            'guests' => $validated['guests'],
+            'check_in' => $checkIn,
+            'check_out' => $checkOut,
             'total_price' => $totalPrice,
-            'special_requests' => $validated['special_requests'],
+            'guests' => $request->guests ?? 1,  // Set default to 1 if not provided
             'status' => 'pending'
         ]);
 
-        return redirect()->route('guest.bookings.show', $booking)
-            ->with('success', 'Booking created successfully! Please wait for confirmation.');
+        return redirect()
+            ->route('guest.bookings')
+            ->with('success', 'Room booked successfully! Please wait for confirmation.');
     }
 
     /**
@@ -77,12 +79,11 @@ class BookingController extends Controller
      */
     public function myBookings()
     {
-        $bookings = auth()->user()
-            ->bookings()
+        $bookings = auth()->user()->bookings()
             ->with('room')
             ->latest()
             ->paginate(10);
-        
+
         return view('guest.bookings.index', compact('bookings'));
     }
 

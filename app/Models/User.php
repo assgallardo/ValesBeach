@@ -119,4 +119,12 @@ class User extends Authenticatable
     {
         return $this->status === 'blocked';
     }
+
+    /**
+     * Get the bookings for the user.
+     */
+    public function bookings()
+    {
+        return $this->hasMany(Booking::class);
+    }
 }

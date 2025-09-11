@@ -19,10 +19,9 @@ class Booking extends Model
         'room_id',
         'check_in',
         'check_out',
-        'guests',
         'total_price',
-        'status',
-        'special_requests',
+        'guests',
+        'status'
     ];
 
     /**
@@ -34,6 +33,7 @@ class Booking extends Model
         'check_in' => 'datetime',
         'check_out' => 'datetime',
         'total_price' => 'decimal:2',
+        'guests' => 'integer'
     ];
 
     /**
