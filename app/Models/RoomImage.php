@@ -5,7 +5,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class RoomImage extends Model
 {
-    protected $fillable = ['room_id', 'image_path', 'is_featured'];
+    protected $fillable = ['room_id', 'image_path', 'is_featured', 'display_order'];
 
     public function room()
     {

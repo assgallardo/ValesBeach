@@ -18,8 +18,7 @@ class Room extends Model
         'capacity',
         'beds',
         'amenities',
-        'is_available',
-        'featured_image'
+        'is_available'
     ];
 
     protected $casts = [
@@ -47,6 +46,24 @@ class Room extends Model
     /**
      * Check if the room is available for the given dates
      */
+    /**
+     * Get the images associated with the room.
+     */
+    public function images(): HasMany
+    {
+        return $this->hasMany(RoomImage::class)->orderBy('display_order');
+    }
+
+    /**
+     * Get the featured image of the room.
+     */
+    public function getFeaturedImageAttribute()
+    {
+        return $this->images()->where('is_featured', true)->first()?->image_path
+            ?? $this->images()->first()?->image_path
+            ?? 'rooms/default.jpg';
+    }
+
     public function isAvailableForDates($checkIn, $checkOut): bool
     {
         if (!$this->is_available) {
@@ -64,8 +81,5 @@ class Room extends Model
             ->exists();
     }
 
-    public function images()
-    {
-        return $this->hasMany(RoomImage::class);
-    }
+
 }

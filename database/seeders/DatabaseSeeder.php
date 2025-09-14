@@ -14,18 +14,10 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // Create default admin user
-        User::factory()->create([
-            'name' => 'Admin User',
-            'email' => 'admin@valesbeach.com',
-            'password' => bcrypt('password'),
-            'role' => 'admin',
-            'status' => 'active'
-        ]);
-
-        // Create example rooms
         $this->call([
-            RoomSeeder::class
+            AdminUserSeeder::class,
+            RoomSeeder::class,
+            BookingSeeder::class
         ]);
     }
 }

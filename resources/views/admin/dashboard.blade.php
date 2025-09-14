@@ -1,53 +1,14 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard - Vales Beach Resort</title>
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-</head>
-<body class="min-h-screen bg-gray-900 relative overflow-x-hidden" style="font-family: 'Poppins', sans-serif;">
-    <!-- Background decorative blur elements -->
-    <div class="fixed inset-0 overflow-hidden pointer-events-none">
-        <div class="absolute w-96 h-96 bg-green-800 opacity-30 rounded-full blur-3xl -top-48 -left-48"></div>
-        <div class="absolute w-80 h-80 bg-green-700 opacity-20 rounded-full blur-3xl top-1/3 right-1/4"></div>
-        <div class="absolute w-72 h-72 bg-green-800 opacity-25 rounded-full blur-3xl bottom-1/4 left-1/3"></div>
-    </div>
+@extends('layouts.admin')
 
-    <!-- Header -->
-    <header class="relative z-10 bg-green-900 shadow-xl">
-        <div class="container mx-auto px-4 lg:px-16">
-            <div class="flex items-center justify-between h-32">
-                <!-- Resort Name -->
-                <h1 class="text-2xl md:text-3xl lg:text-4xl font-bold text-green-50">
-                    VALES BEACH RESORT
-                </h1>
-                
-                <!-- Navigation -->
-                <div class="flex items-center space-x-6 lg:space-x-8">
-                    <a href="/" class="text-green-50 text-lg lg:text-xl font-light hover:text-green-200 transition-colors duration-200">
-                        Home
-                    </a>
-
-                    <!-- User Profile & Logout -->
-                    <div class="flex items-center space-x-4">
-                        <span class="text-green-50 text-sm">{{ auth()->user()->name }}</span>
-                        <span class="px-2 py-1 text-xs font-medium rounded-full bg-green-600 text-white">
-                            {{ ucfirst(auth()->user()->role) }}
-                        </span>
-                        <form action="{{ route('logout') }}" method="POST" class="inline">
-                            @csrf
-                            <button type="submit" class="text-green-50 text-sm hover:text-green-200 transition-colors duration-200">
-                                Logout
-                            </button>
-                        </form>
-                    </div>
-                </div>
-            </div>
+@section('content')
+    <header class="bg-green-900 shadow">
+        <div class="container mx-auto px-4 lg:px-16 py-6">
+            <h2 class="text-2xl font-semibold text-white">
+                Admin Dashboard
+            </h2>
         </div>
     </header>
-
+    
     <!-- Main Content -->
     <main class="relative z-10 py-8 lg:py-16">
         <div class="container mx-auto px-4 lg:px-16">
@@ -102,11 +63,12 @@
                             Bookings Management
                         </h3>
                         <p class="text-green-100 text-sm lg:text-base mb-8 flex-grow">
-                            Oversee guest reservations, check-ins, and check-outs.
+                            View and manage all resort bookings and reservations.
                         </p>
-                        <button class="w-full py-3 bg-green-50 text-black font-medium text-lg rounded-lg hover:bg-white transition-colors duration-200">
+                        <a href="{{ route('admin.bookings') }}" 
+                           class="w-full py-3 bg-green-50 text-black font-medium text-lg rounded-lg hover:bg-white transition-colors duration-200 text-center">
                             Manage Bookings
-                        </button>
+                        </a>
                     </div>
                 </div>
 
@@ -162,5 +124,4 @@
             </div>
         </div>
     </main>
-</body>
-</html>
+@endsection

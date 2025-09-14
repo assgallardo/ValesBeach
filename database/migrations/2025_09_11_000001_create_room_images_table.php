@@ -16,14 +16,6 @@ return new class extends Migration
             $table->integer('display_order')->default(0);
             $table->timestamps();
         });
-
-        \App\Models\User::create([
-            'name' => 'Admin User',
-            'email' => 'admin@valesbeach.com',
-            'password' => bcrypt('password123'),
-            'role' => 'admin',
-            'status' => 'active'
-        ]);
     }
 
     public function down(): void
