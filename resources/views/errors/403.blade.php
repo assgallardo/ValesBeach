@@ -6,7 +6,11 @@
         <h1 class="text-6xl font-bold text-red-500 mb-4">403</h1>
         <h2 class="text-2xl font-bold text-white mb-4">Access Forbidden</h2>
         <p class="text-gray-300 mb-6">
-            You don't have permission to access this resource.
+            @if(auth()->check() && auth()->user()->role === 'staff')
+                Staff members don't have access to user management features.
+            @else
+                You don't have permission to access this resource.
+            @endif
         </p>
         
         <div class="space-x-4">

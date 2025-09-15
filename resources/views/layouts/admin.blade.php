@@ -46,9 +46,16 @@
                         </a>
                         <a href="{{ route('admin.bookings') }}" 
                            class="text-gray-300 hover:bg-green-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium
-                                  {{ request()->routeIs('admin.bookings') ? 'bg-green-700 text-white' : '' }}">
+                                  {{ request()->routeIs('admin.bookings*') ? 'bg-green-700 text-white' : '' }}">
                             Bookings
                         </a>
+                        @if(in_array(auth()->user()->role, ['admin', 'manager']))
+                        <a href="{{ route('admin.users') }}" 
+                           class="text-gray-300 hover:bg-green-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium
+                                  {{ request()->routeIs('admin.users*') ? 'bg-green-700 text-white' : '' }}">
+                            Users
+                        </a>
+                        @endif
                     </div>
                 </div>
 

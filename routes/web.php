@@ -26,9 +26,16 @@ Route::get('/test-system', function () {
     <p>Rooms: ' . $roomCount . '</p>
     <p>Database: Working</p>
     <p>Laravel: Running</p>
-    <a href="/admin/bookings">Test Admin Bookings</a>
-    <br><br>
-    <a href="/test-login">Test Admin Login</a>
+    
+    <h2>Test Logins:</h2>
+    <a href="/test-login/admin" style="display: block; margin: 5px 0; padding: 10px; background: #16a34a; color: white; text-decoration: none;">Test Admin Login</a>
+    <a href="/test-login/manager" style="display: block; margin: 5px 0; padding: 10px; background: #2563eb; color: white; text-decoration: none;">Test Manager Login</a>
+    <a href="/test-login/staff" style="display: block; margin: 5px 0; padding: 10px; background: #dc2626; color: white; text-decoration: none;">Test Staff Login</a>
+    
+    <h2>Direct Access Tests:</h2>
+    <a href="/admin/dashboard" style="display: block; margin: 5px 0;">Admin Dashboard</a>
+    <a href="/admin/bookings" style="display: block; margin: 5px 0;">Admin Bookings</a>
+    <a href="/admin/users" style="display: block; margin: 5px 0;">Admin Users (should fail for staff)</a>
 </body>
 </html>');
     } catch (\Exception $e) {
@@ -36,20 +43,20 @@ Route::get('/test-system', function () {
     }
 });
 
-// Test route for admin login
-Route::get('/test-login', function () {
+// Test route for role-based admin login
+Route::get('/test-login/{role}', function ($role) {
     try {
-        // Find admin user
-        $admin = \App\Models\User::where('role', 'admin')->first();
+        // Find user by role
+        $user = \App\Models\User::where('role', $role)->first();
         
-        if (!$admin) {
-            return response('No admin user found', 404);
+        if (!$user) {
+            return response('No ' . $role . ' user found', 404);
         }
         
-        // Log in the admin user
-        \Illuminate\Support\Facades\Auth::login($admin);
+        // Log in the user
+        \Illuminate\Support\Facades\Auth::login($user);
         
-        return redirect('/admin/bookings');
+        return redirect('/admin/dashboard');
         
     } catch (\Exception $e) {
         return response('Login Error: ' . $e->getMessage(), 500);
@@ -86,8 +93,8 @@ Route::middleware('guest')->group(function () {
 });
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
-// Admin Routes
-Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager'])->group(function () {
+// Admin Routes - Accessible by admin, manager, and staff (except user management)
+Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager,staff'])->group(function () {
     // Dashboard
     Route::get('/dashboard', function () {
         return view('admin.dashboard');
@@ -103,10 +110,14 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager'
     // Booking Management
     Route::controller(\App\Http\Controllers\Admin\BookingController::class)->group(function () {
         Route::get('/bookings', 'index')->name('bookings');
+        Route::post('/bookings', 'index')->name('bookings.update'); // Handle status updates
         Route::get('/bookings/{booking}', 'show')->name('bookings.show');
         Route::patch('/bookings/{booking}/status', 'updateStatus')->name('bookings.status');
     });
+});
 
+// Admin-only Routes - User Management (restricted to admin and manager only)
+Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager'])->group(function () {
     // User Management
     Route::controller(UserController::class)->group(function () {
         Route::get('/users', 'index')->name('users');
@@ -120,26 +131,10 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager'
     });
 });
 
-// Staff Routes
+// Staff Routes - Redirect to admin dashboard since staff now has access to admin features
 Route::prefix('staff')->name('staff.')->middleware(['auth', 'role:staff'])->group(function () {
-    // Dashboard
+    // Redirect staff dashboard to admin dashboard
     Route::get('/dashboard', function () {
-        return view('staff.dashboard');
+        return redirect()->route('admin.dashboard');
     })->name('dashboard');
-
-    // Rooms Management
-    Route::get('/rooms', [RoomController::class, 'staffIndex'])->name('rooms.index');
-    Route::get('/rooms/{room}', [RoomController::class, 'staffShow'])->name('rooms.show');
-    
-    // Bookings Management
-    Route::get('/bookings', [BookingController::class, 'staffIndex'])->name('bookings.index');
-    Route::patch('/bookings/{booking}/status', [BookingController::class, 'updateStatus'])->name('bookings.status');
-    
-    // Food Menu Management - Commented out until MenuController is created
-    // Route::get('/menu', [MenuController::class, 'index'])->name('menu.index');
-    // Route::post('/menu', [MenuController::class, 'store'])->name('menu.store');
-    // Route::get('/menu/create', [MenuController::class, 'create'])->name('menu.create');
-    // Route::get('/menu/{menu}', [MenuController::class, 'show'])->name('menu.show');
-    // Route::put('/menu/{menu}', [MenuController::class, 'update'])->name('menu.update');
-    // Route::delete('/menu/{menu}', [MenuController::class, 'destroy'])->name('menu.destroy');
 });

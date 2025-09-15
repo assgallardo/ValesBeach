@@ -24,6 +24,28 @@ class AdminUserSeeder extends Seeder
             ]
         );
         
-        $this->command->info('Admin user created/updated successfully.');
+        // Create manager user
+        User::updateOrCreate(
+            ['email' => 'manager@valesbeach.com'],
+            [
+                'name' => 'Manager User',
+                'password' => Hash::make('manager123'),
+                'role' => 'manager',
+                'status' => 'active'
+            ]
+        );
+        
+        // Create staff user
+        User::updateOrCreate(
+            ['email' => 'staff@valesbeach.com'],
+            [
+                'name' => 'Staff User',
+                'password' => Hash::make('staff123'),
+                'role' => 'staff',
+                'status' => 'active'
+            ]
+        );
+        
+        $this->command->info('Admin, Manager, and Staff users created/updated successfully.');
     }
 }
