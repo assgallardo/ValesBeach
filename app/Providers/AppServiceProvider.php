@@ -19,11 +19,6 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // Register global helper for PHP currency formatting
-        if (!function_exists('format_currency')) {
-            function format_currency($amount) {
-                return '₱' . number_format((float)$amount, 2, '.', ',');
-            }
-        }
+        // No global helper functions needed - using model accessors instead
     }
 }

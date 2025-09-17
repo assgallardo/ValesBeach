@@ -14,8 +14,8 @@
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         @foreach($rooms as $room)
         <div class="bg-gray-800 rounded-lg overflow-hidden shadow-lg">
-            @if($room->image_url)
-                <img src="{{ $room->image_url }}" alt="{{ $room->name }}" class="w-full h-48 object-cover">
+            @if($room->images->isNotEmpty())
+                <img src="{{ asset('storage/' . $room->images->first()->image_path) }}" alt="{{ $room->name }}" class="w-full h-48 object-cover">
             @else
                 <div class="w-full h-48 bg-gray-700 flex items-center justify-center">
                     <span class="text-gray-500">No image available</span>

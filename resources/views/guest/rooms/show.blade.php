@@ -201,7 +201,3 @@
     </div>
 </div>
 @endsection
-
-<?php
-Route::get('/guest/rooms/{room}', [RoomController::class, 'show'])->name('guest.rooms.show');
-?>
