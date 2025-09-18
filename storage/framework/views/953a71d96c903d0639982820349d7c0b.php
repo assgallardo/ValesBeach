@@ -21,21 +21,31 @@
 
                             </h3>
                             <p class="text-gray-300">
-                                Check-in: <?php echo e($booking->check_in->format('M d, Y')); ?>
+                                Check-in: <?php echo e($booking->check_in->format('M d, Y \a\t g:i A')); ?>
 
                             </p>
                             <p class="text-gray-300">
-                                Check-out: <?php echo e($booking->check_out->format('M d, Y')); ?>
+                                Check-out: <?php echo e($booking->check_out->format('M d, Y \a\t g:i A')); ?>
 
                             </p>
                         </div>
                         <div class="text-right">
-                            <p class="text-2xl font-bold text-white">
+                            <p class="text-sm text-gray-400 mb-1">Total Amount</p>
+                            <p class="text-2xl font-bold text-green-400">
                                 <?php echo e($booking->formatted_total_price); ?>
 
                             </p>
-                            <p class="text-sm text-gray-400">
-                                Status: <span class="text-green-400"><?php echo e($booking->status); ?></span>
+                            <p class="text-sm text-gray-400 mt-2">
+                                Status: <span class="capitalize px-2 py-1 rounded text-xs font-medium
+                                    <?php if($booking->status === 'confirmed'): ?> bg-green-600 text-white
+                                    <?php elseif($booking->status === 'pending'): ?> bg-yellow-600 text-white
+                                    <?php elseif($booking->status === 'checked_in'): ?> bg-blue-600 text-white
+                                    <?php elseif($booking->status === 'checked_out'): ?> bg-gray-600 text-white
+                                    <?php elseif($booking->status === 'cancelled'): ?> bg-red-600 text-white
+                                    <?php else: ?> bg-gray-600 text-white <?php endif; ?>">
+                                    <?php echo e(str_replace('_', ' ', $booking->status)); ?>
+
+                                </span>
                             </p>
                         </div>
                     </div>

@@ -54,10 +54,10 @@ unset($__errorArgs, $__bag); ?>
                         <option value="">Choose a room...</option>
                         <?php $__currentLoopData = $rooms; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $room): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                             <option value="<?php echo e($room->id); ?>" 
-                                    data-price="<?php echo e($room->price_per_night); ?>"
+                                    data-price="<?php echo e($room->price); ?>"
                                     data-capacity="<?php echo e($room->capacity); ?>"
                                     <?php echo e(old('room_id') == $room->id ? 'selected' : ''); ?>>
-                                <?php echo e($room->name); ?> - ₱<?php echo e(number_format($room->price_per_night, 2)); ?>/night (<?php echo e($room->capacity); ?> guests max)
+                                <?php echo e($room->name); ?> - ₱<?php echo e(number_format($room->price, 2)); ?>/night (<?php echo e($room->capacity); ?> guests max)
                             </option>
                         <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                     </select>
