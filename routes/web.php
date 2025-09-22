@@ -69,7 +69,7 @@ Route::get('/', function () {
 });
 
 // Guest Routes
-Route::prefix('guest')->name('guest.')->middleware(['auth', 'role:guest'])->group(function () {
+Route::prefix('guest')->name('guest.')->middleware(['auth', 'user.status', 'role:guest'])->group(function () {
     Route::get('/dashboard', [GuestController::class, 'dashboard'])->name('dashboard');
     
     // Rooms and Booking Routes
@@ -94,7 +94,7 @@ Route::middleware('guest')->group(function () {
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 // Admin Routes - Accessible by admin, manager, and staff (except user management)
-Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager,staff'])->group(function () {
+Route::prefix('admin')->name('admin.')->middleware(['auth', 'user.status', 'role:admin,manager,staff'])->group(function () {
     // Dashboard
     Route::get('/dashboard', function () {
         return view('admin.dashboard');
@@ -145,7 +145,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager,
 });
 
 // Admin-only Routes - User Management (restricted to admin only)
-Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->group(function () {
+Route::prefix('admin')->name('admin.')->middleware(['auth', 'user.status', 'role:admin'])->group(function () {
     // User Management
     Route::controller(UserController::class)->group(function () {
         Route::get('/users', 'index')->name('users');
@@ -156,13 +156,12 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->grou
         Route::delete('/users/{id}', 'destroy')->name('users.destroy');
         Route::patch('/users/{id}/status', 'toggleStatus')->name('users.toggle');
         Route::patch('/users/{id}/block', 'blockUser')->name('users.block');
+        Route::patch('/users/{id}/unblock', 'unblockUser')->name('users.unblock');
     });
 });
 
 // Staff Routes - Redirect to admin dashboard since staff now has access to admin features
-Route::prefix('staff')->name('staff.')->middleware(['auth', 'role:staff'])->group(function () {
-    // Redirect staff dashboard to admin dashboard
-    Route::get('/dashboard', function () {
-        return redirect()->route('admin.dashboard');
-    })->name('dashboard');
+Route::prefix('staff')->name('staff.')->middleware(['auth', 'user.status', 'role:staff'])->group(function () {
+    // Staff dashboard
+    Route::get('/dashboard', [\App\Http\Controllers\Staff\DashboardController::class, 'index'])->name('dashboard');
 });

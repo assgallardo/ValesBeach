@@ -248,5 +248,36 @@ class UserController extends Controller
             'message' => 'User has been blocked successfully!',
             'user' => $user
         ]);
+        }
+
+        /**
+         * Unblock a user
+         */
+        public function unblockUser($id)
+        {
+            $user = User::findOrFail($id);
+
+            // Prevent unblocking your own account (optional)
+            if ($user->id === auth()->id()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'You cannot unblock your own account!'
+                ], 403);
+            }
+
+            if ($user->status !== 'blocked') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'User is not blocked!'
+                ], 400);
+            }
+
+            $user->update(['status' => 'active']);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'User has been unblocked successfully!',
+                'user' => $user
+            ]);
     }
 }

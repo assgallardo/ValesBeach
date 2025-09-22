@@ -67,7 +67,7 @@ class RoomController extends Controller
             'capacity' => 'required|integer|min:1',
             'beds' => 'required|integer|min:1',
             'amenities' => 'nullable|array',
-            'room_images' => 'required|array|min:1|max:10',
+            'room_images' => 'nullable|array|max:10',
             'room_images.*' => 'image|mimes:jpeg,png,jpg|max:2048'
         ]);
 

@@ -188,11 +188,15 @@
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
                                     <button onclick="editUser({{ $user->id }})" class="text-blue-400 hover:text-blue-300 transition-colors duration-200">Edit</button>
                                     @if($user->id !== auth()->id())
-                                        <button onclick="toggleUserStatus({{ $user->id }})"
-                                            class="{{ ($user->status ?? 'active') === 'active' ? 'text-yellow-400 hover:text-yellow-300' : 'text-green-400 hover:text-green-300' }} transition-colors duration-200">
-                                            {{ ($user->status ?? 'active') === 'active' ? 'Deactivate' : 'Activate' }}
-                                        </button>
-                                        <button onclick="blockUser({{ $user->id }})" class="text-orange-400 hover:text-orange-300 transition-colors duration-200">Block</button>
+                                        @if(($user->status ?? 'active') === 'blocked')
+                                            <button onclick="unblockUser({{ $user->id }})" class="text-green-400 hover:text-green-300 transition-colors duration-200">Unblock</button>
+                                        @else
+                                            <button onclick="toggleUserStatus({{ $user->id }})"
+                                                class="{{ ($user->status ?? 'active') === 'active' ? 'text-yellow-400 hover:text-yellow-300' : 'text-green-400 hover:text-green-300' }} transition-colors duration-200">
+                                                {{ ($user->status ?? 'active') === 'active' ? 'Deactivate' : 'Activate' }}
+                                            </button>
+                                            <button onclick="blockUser({{ $user->id }})" class="text-orange-400 hover:text-orange-300 transition-colors duration-200">Block</button>
+                                        @endif
                                         <button onclick="deleteUser({{ $user->id }})" class="text-red-400 hover:text-red-300 transition-colors duration-200">Delete</button>
                                     @endif
                                 </td>
@@ -378,6 +382,31 @@
                 .catch(error => {
                     console.error('Error details:', error);
                     showMessage('Error blocking user', 'error');
+                });
+            }
+        }
+
+        function unblockUser(userId) {
+            if (confirm('Are you sure you want to unblock this user?')) {
+                fetch(`/admin/users/${userId}/unblock`, {
+                    method: 'PATCH',
+                    headers: {
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Accept': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showMessage(data.message, 'success');
+                        location.reload(); // Reload page to update table
+                    } else {
+                        showMessage(data.message || 'Error unblocking user', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error details:', error);
+                    showMessage('Error unblocking user', 'error');
                 });
             }
         }

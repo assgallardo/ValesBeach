@@ -48,7 +48,14 @@
                     </div>
 
                     @if($booking->status === 'pending' || $booking->status === 'confirmed')
-                        <div class="mt-4 flex justify-end">
+                        <div class="mt-4 flex justify-end gap-3">
+                            <!-- View Details Button -->
+                            <a href="{{ route('guest.bookings.show', $booking) }}" 
+                               class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                                View Details
+                            </a>
+                            
+                            <!-- Cancel Booking Button -->
                             <form action="{{ route('guest.bookings.cancel', $booking) }}" 
                                   method="POST"
                                   onsubmit="return confirm('Are you sure you want to cancel this booking?')">
@@ -58,6 +65,14 @@
                                     Cancel Booking
                                 </button>
                             </form>
+                        </div>
+                    @else
+                        <!-- View Details Button for other statuses -->
+                        <div class="mt-4 flex justify-end">
+                            <a href="{{ route('guest.bookings.show', $booking) }}" 
+                               class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                                View Details
+                            </a>
                         </div>
                     @endif
                 </div>

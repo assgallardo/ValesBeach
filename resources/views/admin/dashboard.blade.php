@@ -1,14 +1,6 @@
 @extends('layouts.admin')
 
 @section('content')
-    <header class="bg-green-900 shadow">
-        <div class="container mx-auto px-4 lg:px-16 py-6">
-            <h2 class="text-2xl font-semibold text-white">
-                Admin Dashboard
-            </h2>
-        </div>
-    </header>
-    
     <!-- Main Content -->
     <main class="relative z-10 py-8 lg:py-16">
         <div class="container mx-auto px-4 lg:px-16">

@@ -36,7 +36,34 @@ class AuthController extends Controller
             'password' => 'required'
         ]);
 
+        // First, check if user exists and credentials are correct
         if (Auth::attempt($credentials)) {
+            $user = auth()->user();
+            
+            // Check if user account is blocked
+            if ($user->status === 'blocked') {
+                Auth::logout();
+                return back()->withErrors([
+                    'email' => 'Your account has been blocked by an administrator. Please contact support for assistance.',
+                ])->onlyInput('email');
+            }
+            
+            // Check if user account is inactive/deactivated
+            if ($user->status === 'inactive') {
+                Auth::logout();
+                return back()->withErrors([
+                    'email' => 'Your account has been deactivated by an administrator. Please contact support to reactivate your account.',
+                ])->onlyInput('email');
+            }
+            
+            // Check if user account status is active
+            if ($user->status !== 'active') {
+                Auth::logout();
+                return back()->withErrors([
+                    'email' => 'Your account access has been restricted. Please contact support for assistance.',
+                ])->onlyInput('email');
+            }
+
             $request->session()->regenerate();
 
             $role = auth()->user()->role;

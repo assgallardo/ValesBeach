@@ -9,7 +9,7 @@
                 <h1 class="text-3xl font-bold text-white">Manage Reservations</h1>
                 <p class="text-gray-400 mt-2">View and manage all resort reservations</p>
             </div>
-            @if(in_array(auth()->user()->role, ['admin', 'manager']))
+            @if(in_array(auth()->user()->role, ['admin', 'manager', 'staff']))
             <div class="flex space-x-3">
                 <!-- Quick Room Selection for Booking -->
                 <div x-data="{ open: false }" class="relative">

@@ -41,6 +41,19 @@
                         <div class="relative" x-data="{ open: false }">
                             <button @click="open = !open" class="flex items-center space-x-2 text-gray-200 hover:text-white transition-colors duration-200">
                                 <span>{{ Auth::user()->name }}</span>
+                                <!-- Role Indicator Badge -->
+                                <span class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-md
+                                    @if(auth()->user()->role === 'admin')
+                                        bg-green-600 text-white
+                                    @elseif(auth()->user()->role === 'manager')
+                                        bg-blue-600 text-white
+                                    @elseif(auth()->user()->role === 'staff')
+                                        bg-yellow-600 text-white
+                                    @else
+                                        bg-gray-600 text-white
+                                    @endif">
+                                    {{ strtoupper(auth()->user()->role) }}
+                                </span>
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                                 </svg>

@@ -5,12 +5,12 @@
     <!-- Filter Section -->
     <div class="bg-green-900/50 backdrop-blur-sm rounded-lg p-6 mb-8">
         <form action="{{ route('guest.rooms.browse') }}" method="GET" class="flex gap-4">
-            <div class="w-full">
+            <div class="w-auto">
                 <label class="block text-white mb-2">Room Type</label>
                 <select name="type" 
-                        class="w-full bg-green-800 text-white rounded-lg px-4 py-2"
+                        class="w-48 bg-white text-gray-900 rounded-lg px-4 py-2"
                         onchange="this.form.submit()">
-                    <option value="">All Types</option>
+                    <option value="">All</option>
                     @foreach($types as $type)
                         <option value="{{ $type }}" {{ request('type') == $type ? 'selected' : '' }}>
                             {{ $type }}
