@@ -7,11 +7,9 @@ use Illuminate\Http\Request;
 
 class DashboardController extends Controller
 {
-    /**
-     * Display the staff dashboard.
-     */
     public function index()
     {
-        return view('staff.dashboard');
+        // Redirect staff to admin dashboard since they have access to admin features
+        return redirect()->route('admin.dashboard');
     }
 }

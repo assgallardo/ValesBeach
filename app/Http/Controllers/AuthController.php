@@ -66,20 +66,7 @@ class AuthController extends Controller
 
             $request->session()->regenerate();
 
-            $role = auth()->user()->role;
-            
-            // Admin and Manager go to admin dashboard
-            if ($role === 'admin' || $role === 'manager') {
-                return redirect()->route('admin.dashboard');
-            }
-            
-            // Staff goes to staff dashboard
-            if ($role === 'staff') {
-                return redirect()->route('staff.dashboard');
-            }
-            
-            // All other roles (guest) go to guest dashboard
-            return redirect()->route('guest.dashboard');
+            return redirect($this->redirectTo());
         }
 
         return back()->withErrors([
@@ -133,5 +120,26 @@ class AuthController extends Controller
         
         return redirect()->route('login')
             ->with('success', 'You have been logged out.');
+    }
+    
+    /**
+     * Get the post-login redirection path based on user role
+     */
+    protected function redirectTo()
+    {
+        $user = auth()->user();
+        
+        switch ($user->role) {
+            case 'admin':
+                return route('admin.dashboard');
+            case 'manager':
+                return route('manager.dashboard');
+            case 'staff':
+                return route('staff.dashboard');
+            case 'guest':
+                return route('guest.dashboard');
+            default:
+                return route('welcome');
+        }
     }
 }

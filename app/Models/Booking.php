@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Carbon\Carbon;
 
 class Booking extends Model
 {
@@ -19,9 +20,11 @@ class Booking extends Model
         'room_id',
         'check_in',
         'check_out',
-        'total_price',
         'guests',
-        'status'
+        'total_price',
+        'status',
+        'special_requests',
+        'booking_reference'
     ];
 
     /**
@@ -32,12 +35,12 @@ class Booking extends Model
     protected $casts = [
         'check_in' => 'datetime',
         'check_out' => 'datetime',
-        'total_price' => 'decimal:2',
-        'guests' => 'integer'
+        'total_price' => 'decimal:2'
     ];
 
+    // Relationships
     /**
-     * Get the user that made the booking.
+     * Get the user that owns the booking.
      */
     public function user()
     {
@@ -45,69 +48,93 @@ class Booking extends Model
     }
 
     /**
-     * Get the room that was booked.
+     * Get the room that is booked.
      */
     public function room()
     {
         return $this->belongsTo(Room::class);
     }
 
+    // Dynamic accessors with proper date handling
     /**
-     * Get the formatted total price in Philippine Peso.
+     * Get the check-in date.
      */
-    public function getFormattedTotalPriceAttribute()
+    public function getCheckInDateAttribute()
     {
-        return '₱' . number_format((float)$this->total_price, 2, '.', ',');
+        // Try different column names and ensure proper date formatting
+        $dateValue = $this->attributes['check_in_date'] ?? 
+                    $this->attributes['checkin_date'] ?? 
+                    $this->attributes['check_in'] ?? 
+                    $this->attributes['start_date'] ?? null;
+        
+        if ($dateValue && !$dateValue instanceof Carbon) {
+            return Carbon::parse($dateValue);
+        }
+        
+        return $dateValue;
     }
 
     /**
-     * Get the total price with currency symbol.
+     * Get the check-out date.
      */
-    public function getTotalPriceWithCurrencyAttribute()
+    public function getCheckOutDateAttribute()
     {
-        return '₱' . $this->total_price;
+        $dateValue = $this->attributes['check_out_date'] ?? 
+                    $this->attributes['checkout_date'] ?? 
+                    $this->attributes['check_out'] ?? 
+                    $this->attributes['end_date'] ?? null;
+        
+        if ($dateValue && !$dateValue instanceof Carbon) {
+            return Carbon::parse($dateValue);
+        }
+        
+        return $dateValue;
     }
 
     /**
-     * Get formatted check-in datetime.
+     * Get the number of guests.
      */
-    public function getFormattedCheckInAttribute()
+    public function getGuestsAttribute()
     {
-        return $this->check_in->format('M d, Y \a\t g:i A');
+        return $this->attributes['guests'] ?? 
+               $this->attributes['guest_count'] ?? 
+               $this->attributes['number_of_guests'] ?? 1;
     }
 
     /**
-     * Get formatted check-out datetime.
+     * Get the total price.
      */
-    public function getFormattedCheckOutAttribute()
+    public function getTotalPriceAttribute()
     {
-        return $this->check_out->format('M d, Y \a\t g:i A');
+        return $this->attributes['total_price'] ?? 
+               $this->attributes['total_amount'] ?? 
+               $this->attributes['price'] ?? 
+               $this->attributes['amount'] ?? 0;
     }
 
     /**
-     * Get the number of nights.
+     * Get the booking reference.
      */
-    public function getNightsAttribute()
+    public function getBookingReferenceAttribute()
     {
-        return $this->check_in->diffInDays($this->check_out);
+        return $this->attributes['booking_reference'] ?? 
+               $this->attributes['reference'] ?? 
+               $this->attributes['booking_id'] ?? 
+               'VB' . $this->id;
     }
 
-    /**
-     * Get the status badge HTML.
-     */
-    public function getStatusBadgeAttribute()
+    // Helper method to format dates safely
+    public static function formatDate($date, $format = 'M d, Y')
     {
-        $colors = [
-            'pending' => 'bg-yellow-500',
-            'confirmed' => 'bg-green-500',
-            'cancelled' => 'bg-red-500',
-            'completed' => 'bg-blue-500',
-        ];
-
-        $color = $colors[$this->status] ?? 'bg-gray-500';
-
-        return '<span class="px-3 py-1 text-sm font-medium text-white rounded-full ' . $color . '">' 
-            . ucfirst($this->status) 
-            . '</span>';
+        if (!$date) return 'N/A';
+        
+        try {
+            if ($date instanceof Carbon) {
+                return $date->format($format);
+            }
+            return Carbon::parse($date)->format($format);
+        } catch (\Exception $e) {
+            return 'Invalid Date';
+        }
     }
 }

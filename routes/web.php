@@ -7,6 +7,7 @@ use App\Http\Controllers\GuestController;
 use App\Http\Controllers\RoomController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\Admin\BookingController as AdminBookingController;
+use App\Http\Controllers\ManagerController;
 
 // Test route to check system status
 Route::get('/test-system', function () {
@@ -34,8 +35,8 @@ Route::get('/test-system', function () {
     
     <h2>Direct Access Tests:</h2>
     <a href="/admin/dashboard" style="display: block; margin: 5px 0;">Admin Dashboard</a>
-    <a href="/admin/bookings" style="display: block; margin: 5px 0;">Admin Bookings</a>
-    <a href="/admin/users" style="display: block; margin: 5px 0;">Admin Users (should fail for staff)</a>
+    <a href="/admin/reservations" style="display: block; margin: 5px 0;">Admin Reservations</a>
+    <a href="/manager/dashboard" style="display: block; margin: 5px 0;">Manager Dashboard</a>
 </body>
 </html>');
     } catch (\Exception $e) {
@@ -56,7 +57,12 @@ Route::get('/test-login/{role}', function ($role) {
         // Log in the user
         \Illuminate\Support\Facades\Auth::login($user);
         
-        return redirect('/admin/dashboard');
+        // Redirect based on role
+        if ($role === 'manager') {
+            return redirect('/manager/dashboard');
+        } else {
+            return redirect('/admin/dashboard');
+        }
         
     } catch (\Exception $e) {
         return response('Login Error: ' . $e->getMessage(), 500);
@@ -73,7 +79,7 @@ Route::prefix('guest')->name('guest.')->middleware(['auth', 'user.status', 'role
     Route::get('/dashboard', [GuestController::class, 'dashboard'])->name('dashboard');
     
     // Rooms and Booking Routes
-    Route::get('/rooms', [RoomController::class, 'browse'])->name('rooms.browse');
+    Route::get('/rooms', [GuestController::class, 'browseRooms'])->name('rooms.browse');
     Route::get('/rooms/{room}', [RoomController::class, 'show'])->name('rooms.show');
     Route::get('/rooms/{room}/book', [BookingController::class, 'showBookingForm'])->name('rooms.book');
     Route::post('/rooms/{room}/book', [BookingController::class, 'store'])->name('rooms.book.store');
@@ -108,7 +114,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'user.status', 'role
         ->name('rooms.deleteImage');
 
     // Reservation Management (Primary booking interface)
-    Route::controller(\App\Http\Controllers\Admin\BookingController::class)->group(function () {
+    Route::controller(AdminBookingController::class)->group(function () {
         Route::get('/reservations', 'reservations')->name('reservations');
         Route::get('/reservations/create', 'create')->name('reservations.create');
         Route::get('/reservations/create-from-room/{room}', 'createFromRoom')->name('reservations.createFromRoom');
@@ -138,10 +144,10 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'user.status', 'role
         return redirect()->route('admin.reservations.show', $booking);
     })->name('bookings.show');
     
-    Route::patch('/bookings/{booking}/status', [\App\Http\Controllers\Admin\BookingController::class, 'updateStatus'])->name('bookings.status');
+    Route::patch('/bookings/{booking}/status', [AdminBookingController::class, 'updateStatus'])->name('bookings.status');
     
     // Calendar view for bookings
-    Route::get('/calendar', [\App\Http\Controllers\Admin\BookingController::class, 'calendar'])->name('calendar');
+    Route::get('/calendar', [AdminBookingController::class, 'calendar'])->name('calendar');
 });
 
 // Admin-only Routes - User Management (restricted to admin only)
@@ -162,6 +168,48 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'user.status', 'role
 
 // Staff Routes - Redirect to admin dashboard since staff now has access to admin features
 Route::prefix('staff')->name('staff.')->middleware(['auth', 'user.status', 'role:staff'])->group(function () {
-    // Staff dashboard
-    Route::get('/dashboard', [\App\Http\Controllers\Staff\DashboardController::class, 'index'])->name('dashboard');
+    // Staff dashboard - redirect to admin dashboard
+    Route::get('/dashboard', function() {
+        return redirect()->route('admin.dashboard');
+    })->name('dashboard');
+});
+
+// Manager Routes - Complete Manager System
+Route::middleware(['auth'])->prefix('manager')->name('manager.')->group(function () {
+    // Dashboard
+    Route::get('/dashboard', [App\Http\Controllers\ManagerController::class, 'dashboard'])->name('dashboard');
+    
+    // Bookings routes
+    Route::get('/bookings', [App\Http\Controllers\ManagerController::class, 'bookings'])->name('bookings.index');
+    Route::get('/bookings/create', [App\Http\Controllers\ManagerController::class, 'createBooking'])->name('bookings.create');
+    Route::post('/bookings', [App\Http\Controllers\ManagerController::class, 'storeBooking'])->name('bookings.store');
+    Route::get('/bookings/{id}', [App\Http\Controllers\ManagerController::class, 'showBooking'])->name('bookings.show');
+    
+    // ADD THESE ROUTES FOR EDIT FUNCTIONALITY:
+    Route::get('/bookings/{id}/edit', [App\Http\Controllers\ManagerController::class, 'editBooking'])->name('bookings.edit');
+    Route::put('/bookings/{id}', [App\Http\Controllers\ManagerController::class, 'updateBooking'])->name('bookings.update');
+    
+    // Booking status updates
+    Route::patch('/bookings/{id}/status', [App\Http\Controllers\ManagerController::class, 'updateBookingStatus'])->name('bookings.updateStatus');
+    
+    // Other booking actions
+    Route::patch('/bookings/{id}/confirm', [App\Http\Controllers\ManagerController::class, 'confirmBooking'])->name('bookings.confirm');
+    Route::patch('/bookings/{id}/checkin', [App\Http\Controllers\ManagerController::class, 'checkinBooking'])->name('bookings.checkin');
+    Route::patch('/bookings/{id}/checkout', [App\Http\Controllers\ManagerController::class, 'checkoutBooking'])->name('bookings.checkout');
+    Route::patch('/bookings/{id}/cancel', [App\Http\Controllers\ManagerController::class, 'cancelBooking'])->name('bookings.cancel');
+    
+    // Quick book from room
+    Route::get('/bookings/create/{room}', [App\Http\Controllers\ManagerController::class, 'createFromRoom'])->name('bookings.createFromRoom');
+    
+    // Services - Either use resource or simple routes
+    Route::resource('services', App\Http\Controllers\ManagerServicesController::class);
+    // OR if you prefer simple routes:
+    // Route::get('/services', [App\Http\Controllers\ManagerController::class, 'services'])->name('services.index');
+    
+    // Other management routes
+    Route::get('/rooms', [App\Http\Controllers\ManagerController::class, 'rooms'])->name('rooms');
+    Route::get('/staff', [App\Http\Controllers\ManagerController::class, 'staff'])->name('staff');
+    Route::get('/guests', [App\Http\Controllers\ManagerController::class, 'guests'])->name('guests');
+    Route::get('/reports', [App\Http\Controllers\ManagerController::class, 'reports'])->name('reports');
+    Route::get('/maintenance', [App\Http\Controllers\ManagerController::class, 'maintenance'])->name('maintenance');
 });

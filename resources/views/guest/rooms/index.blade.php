@@ -1,3 +1,51 @@
+
+{
+    try {
+        $query = Room::query();
+        
+        // Try to load images relationship if it exists
+        try {
+            $query = $query->with('images');
+        } catch (\Exception $e) {
+            // Continue without images if relationship doesn't exist
+        }
+        
+        // Only show available rooms
+        $query->where('status', 'available');
+        
+        $rooms = $query->get();
+        
+        // Process each room to ensure required properties exist
+        $rooms = $rooms->map(function($room) {
+            // Ensure images collection exists
+            if (!isset($room->images)) {
+                $room->images = collect([]);
+            }
+            
+            // Add formatted price if it doesn't exist
+            if (!isset($room->formatted_price)) {
+                $room->formatted_price = '₱' . number_format($room->price ?? 0, 2);
+            }
+            
+            // Ensure max_guests exists
+            if (!isset($room->max_guests)) {
+                $room->max_guests = $room->capacity ?? 1;
+            }
+            
+            return $room;
+        });
+        
+        return view('guest.rooms.index', compact('rooms'));
+        
+    } catch (\Exception $e) {
+        // Return empty collection if there's an error
+        $rooms = collect([]);
+        return view('guest.rooms.index', compact('rooms'))
+               ->with('error', 'Unable to load rooms at this time.');
+    }
+}
+?>
+
 @extends('layouts.guest')
 
 @section('content')

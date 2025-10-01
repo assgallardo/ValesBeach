@@ -1,0 +1,1 @@
+<?php /**PATH C:\xampp\htdocs\VALESBEACH_LATEST\ValesBeach\resources\views/manager/services/show.blade.php ENDPATH**/ ?>
