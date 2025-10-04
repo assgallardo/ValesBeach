@@ -55,6 +55,22 @@ class Booking extends Model
         return $this->belongsTo(Room::class);
     }
 
+    /**
+     * Get the payments for the booking.
+     */
+    public function payments()
+    {
+        return $this->hasMany(Payment::class);
+    }
+
+    /**
+     * Get the invoice for the booking.
+     */
+    public function invoice()
+    {
+        return $this->hasOne(Invoice::class);
+    }
+
     // Dynamic accessors with proper date handling
     /**
      * Get the check-in date.
@@ -121,6 +137,69 @@ class Booking extends Model
                $this->attributes['reference'] ?? 
                $this->attributes['booking_id'] ?? 
                'VB' . $this->id;
+    }
+
+    /**
+     * Get formatted total price
+     */
+    public function getFormattedTotalPriceAttribute()
+    {
+        return '₱' . number_format((float) $this->total_price, 2);
+    }
+
+    /**
+     * Check if booking is fully paid
+     */
+    public function isPaid()
+    {
+        return $this->payments()->where('status', 'completed')->sum('amount') >= $this->total_price;
+    }
+
+    /**
+     * Get remaining balance
+     */
+    public function getRemainingBalanceAttribute()
+    {
+        $paid = $this->payments()->where('status', 'completed')->sum('amount');
+        return max(0, $this->total_price - $paid);
+    }
+
+    /**
+     * Get formatted remaining balance
+     */
+    public function getFormattedRemainingBalanceAttribute()
+    {
+        return '₱' . number_format((float) $this->remaining_balance, 2);
+    }
+
+    /**
+     * Get total paid amount
+     */
+    public function getTotalPaidAttribute()
+    {
+        return $this->payments()->where('status', 'completed')->sum('amount');
+    }
+
+    /**
+     * Get formatted total paid
+     */
+    public function getFormattedTotalPaidAttribute()
+    {
+        return '₱' . number_format((float) $this->total_paid, 2);
+    }
+
+    /**
+     * Get payment status
+     */
+    public function getPaymentStatusAttribute()
+    {
+        if ($this->isPaid()) {
+            return 'paid';
+        } elseif ($this->total_paid > 0) {
+            return 'partial';
+        } else {
+            return 'unpaid';
+        }
     }
 
     // Helper method to format dates safely

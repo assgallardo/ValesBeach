@@ -8,6 +8,8 @@ use App\Http\Controllers\RoomController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\Admin\BookingController as AdminBookingController;
 use App\Http\Controllers\ManagerController;
+use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\InvoiceController;
 
 // Test route to check system status
 Route::get('/test-system', function () {
@@ -88,6 +90,39 @@ Route::prefix('guest')->name('guest.')->middleware(['auth', 'user.status', 'role
     Route::get('/bookings', [BookingController::class, 'myBookings'])->name('bookings');
     Route::get('/bookings/{booking}', [BookingController::class, 'show'])->name('bookings.show');
     Route::post('/bookings/{booking}/cancel', [BookingController::class, 'cancel'])->name('bookings.cancel');
+    
+    // Booking History
+    Route::get('/bookings/history', [BookingController::class, 'history'])->name('bookings.history');
+});
+
+// Payment Routes - Accessible by authenticated users
+Route::middleware(['auth', 'user.status'])->group(function () {
+    // Payment processing
+    Route::get('/bookings/{booking}/payment', [PaymentController::class, 'create'])->name('payments.create');
+    Route::post('/bookings/{booking}/payment', [PaymentController::class, 'store'])->name('payments.store');
+    Route::get('/payments/{payment}/confirmation', [PaymentController::class, 'confirmation'])->name('payments.confirmation');
+    Route::get('/payments/history', [PaymentController::class, 'history'])->name('payments.history');
+    Route::get('/payments/{payment}', [PaymentController::class, 'show'])->name('payments.show');
+    
+    // Invoice management
+    Route::get('/invoices', [InvoiceController::class, 'index'])->name('invoices.index');
+    Route::get('/bookings/{booking}/invoice/generate', [InvoiceController::class, 'generate'])->name('invoices.generate');
+    Route::get('/invoices/{invoice}', [InvoiceController::class, 'show'])->name('invoices.show');
+    Route::get('/invoices/{invoice}/download', [InvoiceController::class, 'download'])->name('invoices.download');
+});
+
+// Admin Payment & Billing Routes
+Route::prefix('admin')->name('admin.')->middleware(['auth', 'user.status', 'role:admin,manager'])->group(function () {
+    // Payment management
+    Route::get('/payments', [PaymentController::class, 'adminIndex'])->name('payments.index');
+    Route::patch('/payments/{payment}/status', [PaymentController::class, 'updateStatus'])->name('payments.updateStatus');
+    Route::post('/payments/{payment}/refund', [PaymentController::class, 'refund'])->name('payments.refund');
+    
+    // Invoice management
+    Route::get('/invoices', [InvoiceController::class, 'adminIndex'])->name('invoices.index');
+    Route::get('/invoices/create', [InvoiceController::class, 'create'])->name('invoices.create');
+    Route::patch('/invoices/{invoice}/status', [InvoiceController::class, 'updateStatus'])->name('invoices.updateStatus');
+    Route::post('/invoices/{invoice}/remind', [InvoiceController::class, 'sendReminder'])->name('invoices.remind');
 });
 
 // Authentication Routes

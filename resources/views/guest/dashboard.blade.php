@@ -21,7 +21,7 @@
         </div>
 
         <!-- Quick Action Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6 mb-16">
             <!-- Browse Rooms Card -->
             <a href="{{ route('guest.rooms.browse') }}" class="group">
                 <div class="bg-green-900 border-2 border-green-700 rounded-xl p-6 text-center transform transition duration-300 hover:scale-105 hover:bg-green-800 cursor-pointer shadow-lg">
@@ -45,6 +45,45 @@
                     </div>
                     <h3 class="text-xl font-semibold text-white mb-2">My Bookings</h3>
                     <p class="text-green-100">View and manage your reservations</p>
+                </div>
+            </a>
+
+            <!-- Booking History Card -->
+            <a href="{{ route('guest.bookings.history') }}" class="group">
+                <div class="bg-green-900 border-2 border-green-700 rounded-xl p-6 text-center transform transition duration-300 hover:scale-105 hover:bg-green-800 cursor-pointer shadow-lg">
+                    <div class="bg-green-700 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4 group-hover:bg-green-600 transition-colors duration-300">
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-semibold text-white mb-2">Booking History</h3>
+                    <p class="text-green-100">View your past reservations</p>
+                </div>
+            </a>
+
+            <!-- Payment History Card -->
+            <a href="{{ route('payments.history') }}" class="group">
+                <div class="bg-green-900 border-2 border-green-700 rounded-xl p-6 text-center transform transition duration-300 hover:scale-105 hover:bg-green-800 cursor-pointer shadow-lg">
+                    <div class="bg-green-700 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4 group-hover:bg-green-600 transition-colors duration-300">
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v2a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-semibold text-white mb-2">Payment History</h3>
+                    <p class="text-green-100">View your payment transactions</p>
+                </div>
+            </a>
+
+            <!-- Invoices Card -->
+            <a href="{{ route('invoices.index') }}" class="group">
+                <div class="bg-green-900 border-2 border-green-700 rounded-xl p-6 text-center transform transition duration-300 hover:scale-105 hover:bg-green-800 cursor-pointer shadow-lg">
+                    <div class="bg-green-700 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4 group-hover:bg-green-600 transition-colors duration-300">
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-semibold text-white mb-2">Invoices</h3>
+                    <p class="text-green-100">View and download invoices</p>
                 </div>
             </a>
 

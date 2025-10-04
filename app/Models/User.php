@@ -127,4 +127,20 @@ class User extends Authenticatable
     {
         return $this->hasMany(Booking::class);
     }
+
+    /**
+     * Get the payments for the user.
+     */
+    public function payments()
+    {
+        return $this->hasMany(Payment::class);
+    }
+
+    /**
+     * Get the invoices for the user.
+     */
+    public function invoices()
+    {
+        return $this->hasMany(Invoice::class);
+    }
 }
