@@ -36,6 +36,15 @@
                             <a href="{{ route('guest.rooms.browse') }}" class="text-gray-200 hover:text-white transition-colors duration-200">
                                 Browse Rooms
                             </a>
+                            <a href="{{ route('guest.services.index') }}" class="text-gray-200 hover:text-white transition-colors duration-200">
+                                Services
+                            </a>
+                            <a href="{{ route('guest.food-orders.menu') }}" class="text-gray-200 hover:text-white transition-colors duration-200">
+                                Food Menu
+                            </a>
+                            <a href="{{ route('guest.bookings') }}" class="text-gray-200 hover:text-white transition-colors duration-200">
+                                My Bookings
+                            </a>
                         @endif
                         
                         <div class="relative" x-data="{ open: false }">

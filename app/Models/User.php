@@ -143,4 +143,12 @@ class User extends Authenticatable
     {
         return $this->hasMany(Invoice::class);
     }
+
+    /**
+     * Get the food orders for the user.
+     */
+    public function foodOrders()
+    {
+        return $this->hasMany(FoodOrder::class);
+    }
 }

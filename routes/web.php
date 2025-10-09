@@ -10,6 +10,8 @@ use App\Http\Controllers\Admin\BookingController as AdminBookingController;
 use App\Http\Controllers\ManagerController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\ServiceRequestController;
+use App\Http\Controllers\FoodOrderController;
 
 // Test route to check system status
 Route::get('/test-system', function () {
@@ -95,6 +97,46 @@ Route::prefix('guest')->name('guest.')->middleware(['auth', 'user.status', 'role
     // Parameterized booking routes (must come after specific routes)
     Route::get('/bookings/{booking}', [BookingController::class, 'show'])->name('bookings.show');
     Route::post('/bookings/{booking}/cancel', [BookingController::class, 'cancel'])->name('bookings.cancel');
+    
+    // Services and Service Requests
+    Route::prefix('services')->name('services.')->group(function () {
+        // Browse available services
+        Route::get('/', [ServiceRequestController::class, 'index'])->name('index');
+        Route::get('/{service}', [ServiceRequestController::class, 'show'])->name('show');
+        
+        // Service request creation
+        Route::get('/{service}/request', [ServiceRequestController::class, 'create'])->name('request');
+        Route::post('/{service}/request', [ServiceRequestController::class, 'store'])->name('request.store');
+        
+        // Service request history and management
+        Route::get('/requests/history', [ServiceRequestController::class, 'history'])->name('requests.history');
+        Route::get('/requests/{serviceRequest}', [ServiceRequestController::class, 'showRequest'])->name('requests.show');
+        Route::post('/requests/{serviceRequest}/cancel', [ServiceRequestController::class, 'cancel'])->name('requests.cancel');
+        
+        // AJAX endpoints
+        Route::get('/api/categories', [ServiceRequestController::class, 'getCategories'])->name('api.categories');
+    });
+    
+    // Food Ordering Routes
+    Route::prefix('food-orders')->name('food-orders.')->group(function () {
+        // Menu browsing
+        Route::get('/menu', [FoodOrderController::class, 'menu'])->name('menu');
+        
+        // Cart management
+        Route::get('/cart', [FoodOrderController::class, 'cart'])->name('cart');
+        Route::post('/cart/add', [FoodOrderController::class, 'addToCart'])->name('cart.add');
+        Route::post('/cart/update', [FoodOrderController::class, 'updateCart'])->name('cart.update');
+        Route::get('/cart/count', [FoodOrderController::class, 'cartCount'])->name('cart.count');
+        
+        // Checkout and order placement
+        Route::get('/checkout', [FoodOrderController::class, 'checkout'])->name('checkout');
+        Route::post('/checkout', [FoodOrderController::class, 'placeOrder'])->name('place-order');
+        
+        // Order management
+        Route::get('/orders', [FoodOrderController::class, 'orders'])->name('orders');
+        Route::get('/orders/{foodOrder}', [FoodOrderController::class, 'show'])->name('show');
+        Route::post('/orders/{foodOrder}/cancel', [FoodOrderController::class, 'cancel'])->name('cancel');
+    });
 });
 
 // Payment Routes - Accessible by authenticated users
