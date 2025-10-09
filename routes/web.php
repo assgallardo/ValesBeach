@@ -88,11 +88,13 @@ Route::prefix('guest')->name('guest.')->middleware(['auth', 'user.status', 'role
     
     // Bookings Management
     Route::get('/bookings', [BookingController::class, 'myBookings'])->name('bookings');
+    
+    // Booking History (must come before parameterized routes)
+    Route::get('/bookings/history', [BookingController::class, 'history'])->name('bookings.history');
+    
+    // Parameterized booking routes (must come after specific routes)
     Route::get('/bookings/{booking}', [BookingController::class, 'show'])->name('bookings.show');
     Route::post('/bookings/{booking}/cancel', [BookingController::class, 'cancel'])->name('bookings.cancel');
-    
-    // Booking History
-    Route::get('/bookings/history', [BookingController::class, 'history'])->name('bookings.history');
 });
 
 // Payment Routes - Accessible by authenticated users
