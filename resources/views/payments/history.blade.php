@@ -18,7 +18,7 @@
                 <h3 class="text-xl font-semibold text-green-50 mb-2">No Payments Yet</h3>
                 <p class="text-gray-400 mb-6">You haven't made any payments yet. Make a booking to get started!</p>
                 <a 
-                    href="{{ route('guest.rooms') }}" 
+                    href="{{ route('guest.rooms.browse') }}" 
                     class="inline-flex items-center px-6 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors"
                 >
                     <i class="fas fa-search mr-2"></i>
