@@ -188,11 +188,15 @@
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
                                     <button onclick="editUser({{ $user->id }})" class="text-blue-400 hover:text-blue-300 transition-colors duration-200">Edit</button>
                                     @if($user->id !== auth()->id())
-                                        <button onclick="toggleUserStatus({{ $user->id }})"
-                                            class="{{ ($user->status ?? 'active') === 'active' ? 'text-yellow-400 hover:text-yellow-300' : 'text-green-400 hover:text-green-300' }} transition-colors duration-200">
-                                            {{ ($user->status ?? 'active') === 'active' ? 'Deactivate' : 'Activate' }}
-                                        </button>
-                                        <button onclick="blockUser({{ $user->id }})" class="text-orange-400 hover:text-orange-300 transition-colors duration-200">Block</button>
+                                        @if(($user->status ?? 'active') === 'blocked')
+                                            <button onclick="unblockUser({{ $user->id }})" class="text-green-400 hover:text-green-300 transition-colors duration-200">Unblock</button>
+                                        @else
+                                            <button onclick="toggleUserStatus({{ $user->id }})"
+                                                class="{{ ($user->status ?? 'active') === 'active' ? 'text-yellow-400 hover:text-yellow-300' : 'text-green-400 hover:text-green-300' }} transition-colors duration-200">
+                                                {{ ($user->status ?? 'active') === 'active' ? 'Deactivate' : 'Activate' }}
+                                            </button>
+                                            <button onclick="blockUser({{ $user->id }})" class="text-orange-400 hover:text-orange-300 transition-colors duration-200">Block</button>
+                                        @endif
                                         <button onclick="deleteUser({{ $user->id }})" class="text-red-400 hover:text-red-300 transition-colors duration-200">Delete</button>
                                     @endif
                                 </td>
@@ -217,25 +221,28 @@
             <div class="relative bg-gray-800 rounded-lg max-w-md w-full p-6">
                 <h3 id="modalTitle" class="text-lg font-semibold text-white mb-4">Add New User</h3>
                 
-                <form id="userForm">
+                <form id="userForm" novalidate>
                     <input type="hidden" id="userId" name="userId">
                     
                     <div class="space-y-4">
                         <div>
                             <label class="block text-sm font-medium text-gray-300 mb-2">Full Name</label>
-                            <input type="text" id="userName" name="name" required
+                            <input type="text" id="userName" name="name" required 
+                                autocomplete="name"
                                 class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500">
                         </div>
                         
                         <div>
                             <label class="block text-sm font-medium text-gray-300 mb-2">Email</label>
                             <input type="email" id="userEmail" name="email" required
+                                autocomplete="email"
                                 class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500">
                         </div>
                         
                         <div>
                             <label class="block text-sm font-medium text-gray-300 mb-2">Password</label>
                             <input type="password" id="userPassword" name="password"
+                                autocomplete="new-password"
                                 class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500">
                             <p class="text-xs text-gray-400 mt-1">Leave blank to keep current password (for edit)</p>
                         </div>
@@ -243,13 +250,16 @@
                         <div>
                             <label class="block text-sm font-medium text-gray-300 mb-2">Confirm Password</label>
                             <input type="password" id="userPasswordConfirm" name="password_confirmation"
+                                autocomplete="new-password"
                                 class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500">
                         </div>
                         
                         <div>
                             <label class="block text-sm font-medium text-gray-300 mb-2">Role</label>
                             <select id="userRole" name="role" required
+                                autocomplete="organization-title"
                                 class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500">
+                                <option value="guest">Guest</option>
                                 <option value="staff">Staff</option>
                                 <option value="manager">Manager</option>
                                 <option value="admin">Admin</option>
@@ -372,6 +382,31 @@
                 .catch(error => {
                     console.error('Error details:', error);
                     showMessage('Error blocking user', 'error');
+                });
+            }
+        }
+
+        function unblockUser(userId) {
+            if (confirm('Are you sure you want to unblock this user?')) {
+                fetch(`/admin/users/${userId}/unblock`, {
+                    method: 'PATCH',
+                    headers: {
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Accept': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showMessage(data.message, 'success');
+                        location.reload(); // Reload page to update table
+                    } else {
+                        showMessage(data.message || 'Error unblocking user', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error details:', error);
+                    showMessage('Error unblocking user', 'error');
                 });
             }
         }

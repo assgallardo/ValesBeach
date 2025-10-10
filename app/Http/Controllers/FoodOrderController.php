@@ -1,0 +1,331 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\MenuCategory;
+use App\Models\MenuItem;
+use App\Models\FoodOrder;
+use App\Models\OrderItem;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+
+class FoodOrderController extends Controller
+{
+    public function __construct()
+    {
+        // Authentication will be handled via routes
+    }
+
+    /**
+     * Display the menu with categories and items
+     */
+    public function menu()
+    {
+        $categories = MenuCategory::active()
+            ->ordered()
+            ->with(['menuItems' => function ($query) {
+                $query->available()->orderBy('name');
+            }])
+            ->get();
+
+        $featuredItems = MenuItem::featured()->available()->limit(6)->get();
+
+        return view('food-orders.menu', compact('categories', 'featuredItems'));
+    }
+
+    /**
+     * Add item to cart (session-based cart)
+     */
+    public function addToCart(Request $request)
+    {
+        $request->validate([
+            'menu_item_id' => 'required|exists:menu_items,id',
+            'quantity' => 'required|integer|min:1|max:20',
+            'special_instructions' => 'nullable|string|max:500'
+        ]);
+
+        $menuItem = MenuItem::findOrFail($request->menu_item_id);
+        
+        if (!$menuItem->is_available) {
+            return response()->json(['error' => 'This item is currently unavailable'], 400);
+        }
+
+        $cart = session('food_cart', []);
+        $cartKey = $request->menu_item_id . '_' . hash('md5', $request->special_instructions ?? '');
+
+        if (isset($cart[$cartKey])) {
+            $cart[$cartKey]['quantity'] += $request->quantity;
+        } else {
+            $cart[$cartKey] = [
+                'menu_item_id' => $menuItem->id,
+                'name' => $menuItem->name,
+                'price' => $menuItem->price,
+                'quantity' => $request->quantity,
+                'special_instructions' => $request->special_instructions,
+                'total' => $menuItem->price * $request->quantity
+            ];
+        }
+
+        $cart[$cartKey]['total'] = $cart[$cartKey]['price'] * $cart[$cartKey]['quantity'];
+
+        session(['food_cart' => $cart]);
+
+        $cartCount = array_sum(array_column($cart, 'quantity'));
+        $cartTotal = array_sum(array_column($cart, 'total'));
+
+        return response()->json([
+            'message' => 'Item added to cart',
+            'cart_count' => $cartCount,
+            'cart_total' => number_format($cartTotal, 2)
+        ]);
+    }
+
+    /**
+     * Display the cart
+     */
+    public function cart()
+    {
+        $cart = session('food_cart', []);
+        $cartItems = [];
+        $subtotal = 0;
+
+        foreach ($cart as $key => $item) {
+            $menuItem = MenuItem::find($item['menu_item_id']);
+            if ($menuItem && $menuItem->is_available) {
+                $cartItems[$key] = [
+                    'menu_item' => $menuItem,
+                    'quantity' => $item['quantity'],
+                    'special_instructions' => $item['special_instructions'],
+                    'total' => $menuItem->price * $item['quantity']
+                ];
+                $subtotal += $cartItems[$key]['total'];
+            }
+        }
+
+        return view('food-orders.cart', compact('cartItems', 'subtotal'));
+    }
+
+    /**
+     * Update cart item quantity
+     */
+    public function updateCart(Request $request)
+    {
+        $request->validate([
+            'cart_key' => 'required|string',
+            'quantity' => 'required|integer|min:0|max:20'
+        ]);
+
+        $cart = session('food_cart', []);
+
+        if ($request->quantity == 0) {
+            unset($cart[$request->cart_key]);
+        } else {
+            if (isset($cart[$request->cart_key])) {
+                $cart[$request->cart_key]['quantity'] = $request->quantity;
+                $cart[$request->cart_key]['total'] = $cart[$request->cart_key]['price'] * $request->quantity;
+            }
+        }
+
+        session(['food_cart' => $cart]);
+
+        $cartCount = array_sum(array_column($cart, 'quantity'));
+        $cartTotal = array_sum(array_column($cart, 'total'));
+
+        return response()->json([
+            'cart_count' => $cartCount,
+            'cart_total' => number_format($cartTotal, 2)
+        ]);
+    }
+
+    /**
+     * Show checkout form
+     */
+    public function checkout()
+    {
+        $cart = session('food_cart', []);
+        
+        if (empty($cart)) {
+            return redirect()->route('food-orders.menu')->with('error', 'Your cart is empty');
+        }
+
+        $cartItems = [];
+        $subtotal = 0;
+
+        foreach ($cart as $key => $item) {
+            $menuItem = MenuItem::find($item['menu_item_id']);
+            if ($menuItem && $menuItem->is_available) {
+                $cartItems[$key] = [
+                    'menu_item' => $menuItem,
+                    'quantity' => $item['quantity'],
+                    'special_instructions' => $item['special_instructions'],
+                    'total' => $menuItem->price * $item['quantity']
+                ];
+                $subtotal += $cartItems[$key]['total'];
+            }
+        }
+
+        // Get user's current booking if any
+        $currentBooking = Auth::user()->bookings()
+            ->whereIn('status', ['confirmed', 'checked_in'])
+            ->first();
+
+        return view('food-orders.checkout', compact('cartItems', 'subtotal', 'currentBooking'));
+    }
+
+    /**
+     * Process the order
+     */
+    public function placeOrder(Request $request)
+    {
+        $request->validate([
+            'delivery_type' => 'required|in:room_service,pickup,dining_room',
+            'delivery_location' => 'required_if:delivery_type,room_service|string|max:50',
+            'special_instructions' => 'nullable|string|max:1000',
+            'requested_delivery_time' => 'nullable|date|after:now'
+        ]);
+
+        $cart = session('food_cart', []);
+        
+        if (empty($cart)) {
+            return redirect()->route('food-orders.menu')->with('error', 'Your cart is empty');
+        }
+
+        DB::beginTransaction();
+        
+        try {
+            // Calculate totals
+            $subtotal = 0;
+            $validItems = [];
+
+            foreach ($cart as $key => $item) {
+                $menuItem = MenuItem::find($item['menu_item_id']);
+                if ($menuItem && $menuItem->is_available) {
+                    $itemTotal = $menuItem->price * $item['quantity'];
+                    $subtotal += $itemTotal;
+                    $validItems[] = [
+                        'menu_item' => $menuItem,
+                        'quantity' => $item['quantity'],
+                        'special_instructions' => $item['special_instructions'],
+                        'unit_price' => $menuItem->price,
+                        'total_price' => $itemTotal
+                    ];
+                }
+            }
+
+            if (empty($validItems)) {
+                throw new \Exception('No valid items in cart');
+            }
+
+            // Calculate delivery fee
+            $deliveryFee = $request->delivery_type === 'room_service' ? 5.00 : 0.00;
+            $taxRate = 0.08; // 8% tax
+            $taxAmount = ($subtotal + $deliveryFee) * $taxRate;
+            $totalAmount = $subtotal + $deliveryFee + $taxAmount;
+
+            // Get current booking
+            $currentBooking = Auth::user()->bookings()
+                ->whereIn('status', ['confirmed', 'checked_in'])
+                ->first();
+
+            // Create food order
+            $foodOrder = FoodOrder::create([
+                'order_number' => FoodOrder::generateOrderNumber(),
+                'user_id' => Auth::id(),
+                'booking_id' => $currentBooking?->id,
+                'status' => 'pending',
+                'delivery_type' => $request->delivery_type,
+                'delivery_location' => $request->delivery_location,
+                'subtotal' => $subtotal,
+                'delivery_fee' => $deliveryFee,
+                'tax_amount' => $taxAmount,
+                'total_amount' => $totalAmount,
+                'payment_status' => 'pending',
+                'special_instructions' => $request->special_instructions,
+                'requested_delivery_time' => $request->requested_delivery_time
+            ]);
+
+            // Create order items
+            foreach ($validItems as $item) {
+                OrderItem::create([
+                    'food_order_id' => $foodOrder->id,
+                    'menu_item_id' => $item['menu_item']['id'],
+                    'quantity' => $item['quantity'],
+                    'unit_price' => $item['unit_price'],
+                    'total_price' => $item['total_price'],
+                    'special_instructions' => $item['special_instructions']
+                ]);
+            }
+
+            DB::commit();
+
+            // Clear cart
+            session()->forget('food_cart');
+
+            return redirect()->route('food-orders.show', $foodOrder)->with('success', 'Your order has been placed successfully!');
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            Log::error('Food order creation failed: ' . $e->getMessage());
+            return back()->with('error', 'Failed to place order. Please try again.');
+        }
+    }
+
+    /**
+     * Display order details
+     */
+    public function show(FoodOrder $foodOrder)
+    {
+        // Ensure user can only see their own orders
+        if ($foodOrder->user_id !== Auth::id()) {
+            abort(403);
+        }
+
+        $foodOrder->load(['orderItems.menuItem', 'user', 'booking']);
+
+        return view('food-orders.show', compact('foodOrder'));
+    }
+
+    /**
+     * Display user's order history
+     */
+    public function orders()
+    {
+        $orders = Auth::user()->foodOrders()
+            ->with(['orderItems.menuItem'])
+            ->orderBy('created_at', 'desc')
+            ->paginate(10);
+
+        return view('food-orders.orders', compact('orders'));
+    }
+
+    /**
+     * Cancel an order (only if pending)
+     */
+    public function cancel(FoodOrder $foodOrder)
+    {
+        if ($foodOrder->user_id !== Auth::id()) {
+            abort(403);
+        }
+
+        if ($foodOrder->status !== 'pending') {
+            return back()->with('error', 'This order cannot be cancelled');
+        }
+
+        $foodOrder->update(['status' => 'cancelled']);
+
+        return back()->with('success', 'Order cancelled successfully');
+    }
+
+    /**
+     * Get cart count for header display
+     */
+    public function cartCount()
+    {
+        $cart = session('food_cart', []);
+        $count = array_sum(array_column($cart, 'quantity'));
+
+        return response()->json(['count' => $count]);
+    }
+}

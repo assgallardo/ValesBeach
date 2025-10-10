@@ -1,0 +1,113 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class Booking extends Model
+{
+    use HasFactory;
+
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array<string>
+     */
+    protected $fillable = [
+        'user_id',
+        'room_id',
+        'check_in',
+        'check_out',
+        'total_price',
+        'guests',
+        'status'
+    ];
+
+    /**
+     * The attributes that should be cast.
+     *
+     * @var array<string, string>
+     */
+    protected $casts = [
+        'check_in' => 'datetime',
+        'check_out' => 'datetime',
+        'total_price' => 'decimal:2',
+        'guests' => 'integer'
+    ];
+
+    /**
+     * Get the user that made the booking.
+     */
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Get the room that was booked.
+     */
+    public function room()
+    {
+        return $this->belongsTo(Room::class);
+    }
+
+    /**
+     * Get the formatted total price in Philippine Peso.
+     */
+    public function getFormattedTotalPriceAttribute()
+    {
+        return '₱' . number_format((float)$this->total_price, 2, '.', ',');
+    }
+
+    /**
+     * Get the total price with currency symbol.
+     */
+    public function getTotalPriceWithCurrencyAttribute()
+    {
+        return '₱' . $this->total_price;
+    }
+
+    /**
+     * Get formatted check-in datetime.
+     */
+    public function getFormattedCheckInAttribute()
+    {
+        return $this->check_in->format('M d, Y \a\t g:i A');
+    }
+
+    /**
+     * Get formatted check-out datetime.
+     */
+    public function getFormattedCheckOutAttribute()
+    {
+        return $this->check_out->format('M d, Y \a\t g:i A');
+    }
+
+    /**
+     * Get the number of nights.
+     */
+    public function getNightsAttribute()
+    {
+        return $this->check_in->diffInDays($this->check_out);
+    }
+
+    /**
+     * Get the status badge HTML.
+     */
+    public function getStatusBadgeAttribute()
+    {
+        $colors = [
+            'pending' => 'bg-yellow-500',
+            'confirmed' => 'bg-green-500',
+            'cancelled' => 'bg-red-500',
+            'completed' => 'bg-blue-500',
+        ];
+
+        $color = $colors[$this->status] ?? 'bg-gray-500';
+
+        return '<span class="px-3 py-1 text-sm font-medium text-white rounded-full ' . $color . '">' 
+            . ucfirst($this->status) 
+            . '</span>';
+    }
+}

@@ -52,17 +52,18 @@ class User extends Authenticatable
     /**
      * Scope a query to filter users by role.
      */
-    public function scopeByRole(Builder $query, string $role): Builder
+    public function scopeByRole(Builder $query, ?string $role = null): Builder
     {
-        return $query->where('role', $role);
+        return $role ? $query->where('role', $role)
+            : $query;
     }
 
     /**
      * Scope a query to filter users by status.
      */
-    public function scopeByStatus(Builder $query, string $status): Builder
+    public function scopeByStatus(Builder $query, ?string $status = null): Builder
     {
-        return $query->where('status', $status);
+        return $status ? $query->where('status', $status) : $query;
     }
 
     /**
@@ -117,5 +118,54 @@ class User extends Authenticatable
     public function isBlocked(): bool
     {
         return $this->status === 'blocked';
+    }
+
+    /**
+     * Get the bookings for the user.
+     */
+    public function bookings()
+    {
+        return $this->hasMany(Booking::class);
+    }
+
+    /**
+     * Get the payments for the user.
+     */
+    public function payments()
+    {
+        return $this->hasMany(Payment::class);
+    }
+
+    /**
+     * Get the invoices for the user.
+     */
+    public function invoices()
+    {
+        return $this->hasMany(Invoice::class);
+    }
+
+    /**
+     * Get the food orders for the user.
+     */
+    public function foodOrders()
+    {
+        return $this->hasMany(FoodOrder::class);
+    }
+
+    /**
+     * Get service requests assigned to this user
+     */
+    public function assignedServiceRequests()
+    {
+        return $this->hasMany(ServiceRequest::class, 'assigned_to');
+    }
+
+    /**
+     * Get pending tasks for this staff member
+     */
+    public function pendingTasks()
+    {
+        return $this->hasMany(ServiceRequest::class, 'assigned_to')
+                    ->whereIn('status', ['assigned', 'in_progress']);
     }
 }

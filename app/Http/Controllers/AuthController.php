@@ -31,48 +31,47 @@ class AuthController extends Controller
      */
     public function login(Request $request)
     {
-        $validator = Validator::make($request->all(), [
+        $credentials = $request->validate([
             'email' => 'required|email',
-            'password' => 'required|min:6',
+            'password' => 'required'
         ]);
 
-        if ($validator->fails()) {
-            return back()->withErrors($validator)->withInput();
-        }
-
-        $credentials = $request->only('email', 'password');
-        $remember = $request->has('remember');
-
-        if (Auth::attempt($credentials, $remember)) {
-            $user = Auth::user();
-
-            // Check if user account is blocked or inactive
-            if (in_array($user->status, ['blocked', 'inactive'])) {
+        // First, check if user exists and credentials are correct
+        if (Auth::attempt($credentials)) {
+            $user = auth()->user();
+            
+            // Check if user account is blocked
+            if ($user->status === 'blocked') {
                 Auth::logout();
-
-                $message = $user->status === 'blocked'
-                    ? 'Your account has been blocked. Please contact the administrator.'
-                    : 'Your account has been deactivated. Please contact the administrator.';
-
-                return back()->withErrors(['status' => $message])->withInput();
+                return back()->withErrors([
+                    'email' => 'Your account has been blocked by an administrator. Please contact support for assistance.',
+                ])->onlyInput('email');
+            }
+            
+            // Check if user account is inactive/deactivated
+            if ($user->status === 'inactive') {
+                Auth::logout();
+                return back()->withErrors([
+                    'email' => 'Your account has been deactivated by an administrator. Please contact support to reactivate your account.',
+                ])->onlyInput('email');
+            }
+            
+            // Check if user account status is active
+            if ($user->status !== 'active') {
+                Auth::logout();
+                return back()->withErrors([
+                    'email' => 'Your account access has been restricted. Please contact support for assistance.',
+                ])->onlyInput('email');
             }
 
             $request->session()->regenerate();
 
-            // Redirect based on user role
-            // Redirect based on user role
-            return match($user->role) {
-                'admin' => redirect()->intended(route('admin.dashboard')),
-                'manager' => redirect()->intended(route('admin.dashboard')),
-                'staff' => redirect()->intended(route('admin.dashboard')),
-                'guest' => redirect()->intended(route('guest.dashboard')),
-                default => redirect()->intended('/')
-            };
+            return redirect($this->redirectTo());
         }
 
         return back()->withErrors([
             'email' => 'The provided credentials do not match our records.',
-        ])->withInput();
+        ])->onlyInput('email');
     }
 
     /**
@@ -106,7 +105,7 @@ class AuthController extends Controller
         $request->session()->regenerate();
 
         // Redirect to guest dashboard
-        return redirect()->route('guest.dashboard')->with('success', 'Welcome to ValesBeach! Your account has been created successfully.');
+        return redirect()->route('guest.dashboard')->with('success', 'Account created successfully!');
     }
 
     /**
@@ -115,10 +114,32 @@ class AuthController extends Controller
     public function logout(Request $request)
     {
         Auth::logout();
-
+        
         $request->session()->invalidate();
         $request->session()->regenerateToken();
-
-        return redirect()->route('login')->with('success', 'You have been successfully logged out.');
+        
+        return redirect()->route('login')
+            ->with('success', 'You have been logged out.');
+    }
+    
+    /**
+     * Get the post-login redirection path based on user role
+     */
+    protected function redirectTo()
+    {
+        $user = auth()->user();
+        
+        switch ($user->role) {
+            case 'admin':
+                return route('admin.dashboard');
+            case 'manager':
+                return route('manager.dashboard');
+            case 'staff':
+                return route('staff.dashboard');
+            case 'guest':
+                return route('guest.dashboard');
+            default:
+                return route('welcome');
+        }
     }
 }

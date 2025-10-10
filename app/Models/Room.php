@@ -11,20 +11,28 @@ class Room extends Model
     use HasFactory;
 
     protected $fillable = [
-        'name',
+       'name',
         'type',
         'description',
-        'price',
         'capacity',
         'beds',
-        'amenities',
-        'is_available'
+        'price',
+        'is_available',
+        'amenities'
     ];
 
     protected $casts = [
-        'price' => 'decimal:2',
         'amenities' => 'array',
+        'price' => 'decimal:2',
         'is_available' => 'boolean'
+    ];
+
+    // Define default values
+    protected $attributes = [
+        'status' => 'available',
+        'is_available' => true,
+        'capacity' => 2,
+        'price' => 0
     ];
 
     /**
@@ -36,11 +44,65 @@ class Room extends Model
     }
 
     /**
+     * Get the images for the room.
+     */
+    public function images(): HasMany
+    {
+        return $this->hasMany(RoomImage::class)->ordered();
+    }
+
+    /**
+     * Get featured images for the room.
+     */
+    public function featuredImages(): HasMany
+    {
+        return $this->hasMany(RoomImage::class)->featured()->ordered();
+    }
+
+    /**
+     * Get the main/featured image for the room
+     */
+    public function getMainImageAttribute(): ?string
+    {
+        $featuredImage = $this->featuredImages()->first();
+        if ($featuredImage) {
+            return $featuredImage->image_path;
+        }
+        
+        $firstImage = $this->images()->first();
+        return $firstImage ? $firstImage->image_path : null;
+    }
+
+    /**
      * Format the price with PHP currency symbol
      */
     public function getFormattedPriceAttribute(): string
     {
-        return '₱ ' . number_format((float)$this->price, 2);
+        return '₱' . number_format($this->price, 2);
+    }
+
+    /**
+     * Get price as price_per_night for compatibility
+     */
+    public function getPricePerNightAttribute(): float
+    {
+        return (float)$this->price;
+    }
+
+    /**
+     * Get status based on is_available
+     */
+    public function getStatusAttribute(): string
+    {
+        return $this->is_available ? 'available' : 'unavailable';
+    }
+
+    /**
+     * Get size attribute (default since not in your database)
+     */
+    public function getSizeAttribute(): int
+    {
+        return 25; // default room size
     }
 
     /**
@@ -61,5 +123,28 @@ class Room extends Model
             })
             ->whereIn('status', ['pending', 'confirmed'])
             ->exists();
+    }
+
+    // Scopes
+    public function scopeAvailable($query)
+    {
+        return $query->where('is_available', 1);
+    }
+
+    public function scopeByType($query, $type)
+    {
+        return $query->where('type', $type);
+    }
+
+    // Accessors
+    public function getStatusColorAttribute()
+    {
+        return match($this->status) {
+            'available' => 'text-green-400',
+            'occupied' => 'text-red-400',
+            'maintenance' => 'text-yellow-400',
+            'cleaning' => 'text-blue-400',
+            default => 'text-gray-400'
+        };
     }
 }

@@ -1,0 +1,106 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class Service extends Model
+{
+    use HasFactory;
+
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array<string>
+     */
+    protected $fillable = [
+        'name',
+        'description',
+        'price',
+        'duration',
+        'category',
+        'status', // Add this if you added the column
+        'image',
+        'availability',
+        'max_guests'
+    ];
+
+    /**
+     * The attributes that should be cast.
+     *
+     * @var array<string, string>
+     */
+    protected $casts = [
+        'price' => 'decimal:2',
+        'duration' => 'integer',
+        'max_guests' => 'integer',
+        'availability' => 'boolean'
+    ];
+
+    /**
+     * Scope a query to only include active services.
+     */
+    public function scopeActive($query)
+    {
+        return $query->where('status', 'active');
+    }
+
+    /**
+     * Get the formatted price.
+     */
+    public function getFormattedPriceAttribute()
+    {
+        return '₱' . number_format($this->price, 2);
+    }
+
+    /**
+     * Get the formatted duration.
+     */
+    public function getFormattedDurationAttribute()
+    {
+        if (!$this->duration) return 'Not specified';
+        
+        $hours = floor($this->duration / 60);
+        $minutes = $this->duration % 60;
+        
+        if ($hours > 0 && $minutes > 0) {
+            return "{$hours}h {$minutes}m";
+        } elseif ($hours > 0) {
+            return "{$hours}h";
+        } else {
+            return "{$minutes}m";
+        }
+    }
+
+    /**
+     * Get the category label.
+     */
+    public function getCategoryLabelAttribute()
+    {
+        return match($this->category) {
+            'spa' => 'Spa',
+            'dining' => 'Dining',
+            'activities' => 'Activities',
+            'transportation' => 'Transportation',
+            'room_service' => 'Room Service',
+            default => ucfirst($this->category)
+        };
+    }
+
+    /**
+     * Get the count of today's service requests.
+     */
+    public function getTodayRequestsCountAttribute()
+    {
+        return 0; // Will be updated once service_requests table exists
+    }
+
+    /**
+     * Get service requests for this service
+     */
+    public function serviceRequests()
+    {
+        return $this->hasMany(ServiceRequest::class);
+    }
+}
