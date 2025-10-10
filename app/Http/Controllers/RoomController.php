@@ -59,6 +59,9 @@ class RoomController extends Controller
 
     public function store(Request $request)
     {
+        // Add logging for debugging
+        \Log::info('Room creation attempt:', $request->all());
+        
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'type' => 'required|string|max:255',
@@ -67,8 +70,8 @@ class RoomController extends Controller
             'capacity' => 'required|integer|min:1',
             'beds' => 'required|integer|min:1',
             'amenities' => 'nullable|array',
-            'room_images' => 'nullable|array|max:10',
-            'room_images.*' => 'image|mimes:jpeg,png,jpg|max:2048'
+            'images' => 'nullable|array|max:10',        // CHANGED FROM room_images
+            'images.*' => 'image|mimes:jpeg,png,jpg|max:2048'  // CHANGED FROM room_images.*
         ]);
 
         try {
@@ -84,9 +87,11 @@ class RoomController extends Controller
                 'is_available' => $request->has('is_available')
             ]);
 
-            // Handle image uploads
-            if ($request->hasFile('room_images')) {
-                foreach ($request->file('room_images') as $index => $image) {
+            \Log::info('Room created successfully:', ['room_id' => $room->id]);
+
+            // Handle image uploads - CHANGED FROM room_images to images
+            if ($request->hasFile('images')) {
+                foreach ($request->file('images') as $index => $image) {
                     $path = $image->store('rooms', 'public');
                     $room->images()->create([
                         'image_path' => $path,
@@ -98,11 +103,18 @@ class RoomController extends Controller
 
             return redirect()
                 ->route('admin.rooms.index')
-                ->with('success', 'Room created.');
+                ->with('success', 'Room created successfully!');
+                
         } catch (\Exception $e) {
+            \Log::error('Room creation failed:', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'request_data' => $request->all()
+            ]);
+            
             return back()
                 ->withInput()
-                ->withErrors(['error' => 'Could not create room.']);
+                ->withErrors(['error' => 'Could not create room. Error: ' . $e->getMessage()]);
         }
     }
 

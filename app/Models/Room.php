@@ -11,21 +11,20 @@ class Room extends Model
     use HasFactory;
 
     protected $fillable = [
-        'name',
+       'name',
         'type',
         'description',
         'capacity',
-        'beds',        // ADD THIS LINE
+        'beds',
         'price',
-        'status',
         'is_available',
         'amenities'
     ];
 
     protected $casts = [
+        'amenities' => 'array',
         'price' => 'decimal:2',
-        'is_available' => 'boolean',
-        'amenities' => 'array'
+        'is_available' => 'boolean'
     ];
 
     // Define default values

@@ -17,12 +17,13 @@ class Service extends Model
     protected $fillable = [
         'name',
         'description',
-        'category',
         'price',
         'duration',
-        'capacity',
+        'category',
+        'status', // Add this if you added the column
         'image',
-        'is_available',
+        'availability',
+        'max_guests'
     ];
 
     /**
@@ -31,24 +32,18 @@ class Service extends Model
      * @var array<string, string>
      */
     protected $casts = [
-        'is_available' => 'boolean',
         'price' => 'decimal:2',
+        'duration' => 'integer',
+        'max_guests' => 'integer',
+        'availability' => 'boolean'
     ];
 
     /**
      * Scope a query to only include active services.
      */
-    public function scopeAvailable($query)
+    public function scopeActive($query)
     {
-        return $query->where('is_available', true);
-    }
-
-    /**
-     * Scope a query to filter by category.
-     */
-    public function scopeByCategory($query, $category)
-    {
-        return $query->where('category', $category);
+        return $query->where('status', 'active');
     }
 
     /**
@@ -99,5 +94,13 @@ class Service extends Model
     public function getTodayRequestsCountAttribute()
     {
         return 0; // Will be updated once service_requests table exists
+    }
+
+    /**
+     * Get service requests for this service
+     */
+    public function serviceRequests()
+    {
+        return $this->hasMany(ServiceRequest::class);
     }
 }

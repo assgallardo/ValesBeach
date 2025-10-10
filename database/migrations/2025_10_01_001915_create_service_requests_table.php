@@ -10,42 +10,25 @@ return new class extends Migration
     {
         Schema::create('service_requests', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('service_id')->constrained('services')->onDelete('cascade');
-            $table->foreignId('user_id')->nullable()->constrained('users')->onDelete('cascade');
-            $table->unsignedBigInteger('reservation_id')->nullable();
-            
-            // Guest information
+            $table->foreignId('service_id')->constrained()->onDelete('cascade');
+            $table->foreignId('guest_id')->constrained('users')->onDelete('cascade');
             $table->string('guest_name');
-            $table->string('guest_email')->nullable();
-            $table->string('room_number')->nullable();
-            
-            // Booking details
-            $table->date('requested_date')->nullable();
-            $table->time('requested_time')->nullable();
-            $table->integer('guests')->default(1);
-            $table->text('special_requests')->nullable();
-            $table->text('description')->nullable();
-            
-            // Status and timing
-            $table->enum('status', ['pending', 'assigned', 'in_progress', 'completed', 'cancelled', 'confirmed'])->default('pending');
-            $table->enum('priority', ['low', 'medium', 'high', 'urgent'])->default('medium');
-            $table->datetime('requested_at')->nullable();
-            $table->datetime('scheduled_at')->nullable();
-            $table->datetime('completed_at')->nullable();
-            $table->datetime('confirmed_at')->nullable();
-            
-            // Staff assignment and notes
-            $table->unsignedBigInteger('assigned_to')->nullable();
-            $table->text('notes')->nullable();
+            $table->string('guest_email');
+            $table->foreignId('room_id')->nullable()->constrained()->onDelete('set null');
+            $table->string('service_type');
+            $table->text('description');
+            $table->datetime('scheduled_date');
+            $table->datetime('deadline');
+            $table->integer('guests_count');
             $table->text('manager_notes')->nullable();
-            
+            $table->enum('status', ['pending', 'confirmed', 'assigned', 'in_progress', 'completed', 'cancelled', 'overdue'])->default('pending');
+            $table->enum('priority', ['low', 'medium', 'high', 'urgent'])->default('medium');
+            $table->foreignId('assigned_to')->nullable()->constrained('users')->onDelete('set null');
+            $table->datetime('assigned_at')->nullable();
+            $table->integer('estimated_duration')->nullable();
+            $table->datetime('completed_at')->nullable();
+            $table->datetime('cancelled_at')->nullable();
             $table->timestamps();
-            
-            // Indexes for performance
-            $table->index(['user_id', 'status']);
-            $table->index(['service_id', 'status']);
-            $table->index('requested_date');
-            $table->index('status');
         });
     }
 

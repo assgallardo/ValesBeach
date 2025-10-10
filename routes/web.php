@@ -13,6 +13,7 @@ use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\Manager\ServiceRequestController as ManagerServiceRequestController;
 use App\Http\Controllers\FoodOrderController;
 use App\Http\Controllers\GuestServiceController;
+use App\Http\Controllers\Manager\StaffAssignmentController;
 
 // Test route to check system status
 Route::get('/test-system', function () {
@@ -249,8 +250,8 @@ Route::prefix('staff')->name('staff.')->middleware(['auth', 'user.status', 'role
     })->name('dashboard');
 });
 
-// Manager Routes - Complete Manager System
-Route::middleware(['auth'])->prefix('manager')->name('manager.')->group(function () {
+// Manager Routes - Accessible by manager and admin
+Route::prefix('manager')->name('manager.')->middleware(['auth', 'user.status', 'role:manager,admin'])->group(function () {
     // Service Request routes - use the Manager namespace
     Route::get('/service-requests', [ManagerServiceRequestController::class, 'index'])->name('service-requests.index');
     Route::get('/service-requests/{serviceRequest}', [ManagerServiceRequestController::class, 'show'])->name('service-requests.show');
@@ -294,13 +295,16 @@ Route::middleware(['auth'])->prefix('manager')->name('manager.')->group(function
     // Toggle service status
     Route::patch('/services/{service}/toggle-status', [App\Http\Controllers\Manager\ServiceController::class, 'toggleStatus'])->name('services.toggle-status');
     
-    // Staff Assignment Routes
+    // Staff Assignment Routes - ENHANCED
     Route::prefix('staff-assignment')->name('staff-assignment.')->group(function () {
-        Route::get('/', [App\Http\Controllers\Manager\StaffAssignmentController::class, 'index'])->name('index');
-        Route::post('/assign/{serviceRequest}', [App\Http\Controllers\Manager\StaffAssignmentController::class, 'assign'])->name('assign');
-        Route::patch('/{serviceRequest}/update', [App\Http\Controllers\Manager\StaffAssignmentController::class, 'updateAssignment'])->name('update');
-        Route::post('/bulk-assign', [App\Http\Controllers\Manager\StaffAssignmentController::class, 'bulkAssign'])->name('bulk-assign');
-        Route::get('/workload', [App\Http\Controllers\Manager\StaffAssignmentController::class, 'staffWorkload'])->name('workload');
+        Route::get('/', [StaffAssignmentController::class, 'index'])->name('index');
+        Route::get('/{serviceRequest}/edit', [StaffAssignmentController::class, 'edit'])->name('edit');
+        Route::put('/{serviceRequest}', [StaffAssignmentController::class, 'update'])->name('update');
+        Route::post('/assign/{serviceRequest}', [StaffAssignmentController::class, 'assign'])->name('assign');
+        Route::delete('/unassign/{serviceRequest}', [StaffAssignmentController::class, 'unassign'])->name('unassign');
+        Route::patch('/{serviceRequest}/status', [StaffAssignmentController::class, 'updateStatus'])->name('update-status');
+        Route::delete('/{serviceRequest}', [StaffAssignmentController::class, 'destroy'])->name('destroy');
+        Route::post('/bulk-assign', [StaffAssignmentController::class, 'bulkAssign'])->name('bulk-assign');
     });
 });
 
@@ -315,3 +319,44 @@ Route::middleware(['auth'])->prefix('guest')->name('guest.')->group(function () 
         Route::patch('/requests/{serviceRequest}/cancel', [GuestServiceController::class, 'cancel'])->name('cancel');
     });
 });
+
+// New guest service request routes
+Route::get('/services/{service}/request', [GuestServiceController::class, 'create'])->name('guest.services.request');
+Route::post('/services/{service}/request', [GuestServiceController::class, 'store'])->name('guest.services.request.store');
+
+// Guest Routes - Update these routes to use GuestServiceController
+Route::middleware(['auth', 'user.status'])->group(function () {
+    // Guest Service Routes - MAKE SURE TO USE GuestServiceController
+    Route::prefix('guest')->name('guest.')->group(function () {
+        Route::get('/services', [\App\Http\Controllers\GuestServiceController::class, 'index'])->name('services.index');
+        Route::get('/services/{service}', [\App\Http\Controllers\GuestServiceController::class, 'show'])->name('services.show');
+        Route::get('/services/{service}/request', [\App\Http\Controllers\GuestServiceController::class, 'create'])->name('services.request');
+        Route::post('/services/{service}/request', [\App\Http\Controllers\GuestServiceController::class, 'store'])->name('services.request.store');
+        Route::get('/service-requests/history', [\App\Http\Controllers\GuestServiceController::class, 'history'])->name('services.requests.history');
+        Route::patch('/service-requests/{serviceRequest}/cancel', [\App\Http\Controllers\GuestServiceController::class, 'cancel'])->name('services.requests.cancel');
+    });
+});
+
+// Manager Routes
+Route::prefix('manager')->name('manager.')->middleware(['auth', 'user.status', 'role:manager,admin'])->group(function () {
+    // Manager Service Routes
+    Route::resource('services', \App\Http\Controllers\Manager\ServiceController::class);
+    Route::post('/services/{service}/toggle-status', [\App\Http\Controllers\Manager\ServiceController::class, 'toggleStatus'])->name('services.toggle-status');
+    
+    // Staff Assignment Routes
+    Route::prefix('staff-assignment')->name('staff-assignment.')->group(function () {
+        Route::get('/', [StaffAssignmentController::class, 'index'])->name('index');
+        Route::get('/{serviceRequest}/edit', [StaffAssignmentController::class, 'edit'])->name('edit');
+        Route::put('/{serviceRequest}', [StaffAssignmentController::class, 'update'])->name('update');
+        Route::post('/assign/{serviceRequest}', [StaffAssignmentController::class, 'assign'])->name('assign');
+        Route::delete('/unassign/{serviceRequest}', [StaffAssignmentController::class, 'unassign'])->name('unassign');
+        Route::patch('/{serviceRequest}/status', [StaffAssignmentController::class, 'updateStatus'])->name('update-status');
+        Route::delete('/{serviceRequest}', [StaffAssignmentController::class, 'destroy'])->name('destroy');
+        Route::post('/bulk-assign', [StaffAssignmentController::class, 'bulkAssign'])->name('bulk-assign');
+    });
+});
+
+// ADD THIS EXPLICIT ROUTE RIGHT HERE
+Route::post('guest/services/submit', [App\Http\Controllers\GuestServiceController::class, 'store'])
+    ->name('guest.services.store')
+    ->middleware(['auth', 'user.status', 'role:guest']);

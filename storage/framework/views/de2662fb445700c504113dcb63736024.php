@@ -1,5 +1,3 @@
-
-
 <?php $__env->startSection('content'); ?>
 <!-- Background decorative blur elements -->
 <div class="fixed inset-0 overflow-hidden pointer-events-none">

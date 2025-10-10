@@ -177,25 +177,56 @@
                     </div>
                 </div>
 
-                <!-- NEW: Add Task Assignment Card -->
-                <a href="{{ route('manager.staff-assignment.index') }}" 
-                   class="bg-green-900/50 backdrop-blur-sm rounded-lg border border-green-700/30 p-6 hover:border-green-500/50 transition-all duration-300">
-                    <div class="flex items-center">
-                        <div class="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center mr-4">
-                            <i class="fas fa-tasks text-white text-xl"></i>
+                <!-- Task Assignment - REDESIGNED TO MATCH OTHER CARDS -->
+                <div class="bg-green-800 rounded-lg p-6 lg:p-8 hover:bg-green-700 transition-all duration-300 transform hover:scale-105 shadow-lg">
+                    <div class="text-center h-full flex flex-col">
+                        <div class="mb-4">
+                            <svg class="w-12 h-12 mx-auto text-green-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/>
+                            </svg>
                         </div>
-                        <div>
-                            <h3 class="text-green-50 font-semibold text-lg">Task Assignment</h3>
-                            <p class="text-green-300 text-sm">Assign service requests to staff</p>
-                            @php
-                                $pendingAssignments = \App\Models\ServiceRequest::whereIn('status', ['pending', 'confirmed'])->count();
-                            @endphp
-                            @if($pendingAssignments > 0)
-                            <p class="text-yellow-400 text-xs mt-1">{{ $pendingAssignments }} pending assignments</p>
-                            @endif
-                        </div>
+                        <h3 class="text-2xl lg:text-3xl font-bold text-white mb-6 leading-tight">
+                            Task Assignment
+                        </h3>
+                        <p class="text-green-100 text-sm lg:text-base mb-4 flex-grow">
+                            Assign service requests to staff members and monitor progress.
+                        </p>
+                        
+                        @php
+                            $pendingAssignments = \App\Models\ServiceRequest::whereIn('status', ['pending', 'confirmed'])->count();
+                        @endphp
+                        
+                        <!-- Pending Assignments Status Marker -->
+                        @if($pendingAssignments > 0)
+                            <div class="mb-4 bg-yellow-500/20 border border-yellow-500/30 rounded-lg p-3">
+                                <div class="flex items-center justify-center">
+                                    <svg class="w-5 h-5 text-yellow-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+                                    </svg>
+                                    <span class="text-yellow-400 text-sm font-medium">
+                                        {{ $pendingAssignments }} pending assignment{{ $pendingAssignments > 1 ? 's' : '' }}
+                                    </span>
+                                </div>
+                            </div>
+                        @else
+                            <div class="mb-4 bg-green-500/20 border border-green-500/30 rounded-lg p-3">
+                                <div class="flex items-center justify-center">
+                                    <svg class="w-5 h-5 text-green-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                    <span class="text-green-400 text-sm font-medium">
+                                        All tasks assigned
+                                    </span>
+                                </div>
+                            </div>
+                        @endif
+                        
+                        <a href="{{ route('manager.staff-assignment.index') }}" 
+                           class="w-full py-3 bg-green-50 text-black font-medium text-lg rounded-lg hover:bg-white transition-colors duration-200 text-center">
+                            Manage Assignments
+                        </a>
                     </div>
-                </a>
+                </div>
                 
             </div>
         </div>

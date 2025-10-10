@@ -26,6 +26,25 @@
             </div>
         </div>
 
+        <!-- Success/Error Messages -->
+        @if(session('success'))
+        <div class="bg-green-600/20 border border-green-500/50 rounded-lg p-4 mb-6">
+            <div class="flex items-center">
+                <i class="fas fa-check-circle text-green-400 mr-3"></i>
+                <span class="text-green-100">{{ session('success') }}</span>
+            </div>
+        </div>
+        @endif
+
+        @if(session('error'))
+        <div class="bg-red-600/20 border border-red-500/50 rounded-lg p-4 mb-6">
+            <div class="flex items-center">
+                <i class="fas fa-exclamation-triangle text-red-400 mr-3"></i>
+                <span class="text-red-100">{{ session('error') }}</span>
+            </div>
+        </div>
+        @endif
+
         <!-- Service Summary Card -->
         <div class="bg-green-900/50 backdrop-blur-sm rounded-lg border border-green-700/30 p-6 mb-8">
             <div class="flex items-center space-x-4">
@@ -64,8 +83,13 @@
 
         <!-- Booking Form -->
         <div class="bg-green-900/50 backdrop-blur-sm rounded-lg border border-green-700/30 p-8">
-            <form action="{{ route('guest.services.request.store', $service) }}" method="POST" class="space-y-6">
+            <form action="{{ route('guest.services.store') }}" method="POST" class="space-y-6">
                 @csrf
+
+                <!-- Hidden Fields for Controller -->
+                <input type="hidden" name="service_id" value="{{ $service->id }}">
+                <input type="hidden" name="service_type" value="{{ $service->name }}">
+                <input type="hidden" name="description" value="Guest booking for {{ $service->name }} - Service request">
 
                 <!-- Date and Time -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -77,7 +101,7 @@
                                id="requested_date" 
                                name="requested_date" 
                                value="{{ old('requested_date') }}"
-                               min="{{ date('Y-m-d') }}"
+                               min="{{ date('Y-m-d', strtotime('+1 day')) }}"
                                required
                                class="w-full px-4 py-3 bg-green-800/50 border border-green-600/50 rounded-lg text-green-100 focus:ring-2 focus:ring-green-500 focus:border-transparent">
                         @error('requested_date')
@@ -105,6 +129,8 @@
                             <option value="16:00" {{ old('requested_time') === '16:00' ? 'selected' : '' }}>4:00 PM</option>
                             <option value="17:00" {{ old('requested_time') === '17:00' ? 'selected' : '' }}>5:00 PM</option>
                             <option value="18:00" {{ old('requested_time') === '18:00' ? 'selected' : '' }}>6:00 PM</option>
+                            <option value="19:00" {{ old('requested_time') === '19:00' ? 'selected' : '' }}>7:00 PM</option>
+                            <option value="20:00" {{ old('requested_time') === '20:00' ? 'selected' : '' }}>8:00 PM</option>
                         </select>
                         @error('requested_time')
                             <p class="text-red-400 text-sm mt-1">{{ $message }}</p>
@@ -112,23 +138,26 @@
                     </div>
                 </div>
 
+                <!-- Hidden scheduled_date field (combination of date and time) -->
+                <input type="hidden" name="scheduled_date" id="scheduled_date">
+
                 <!-- Number of Guests -->
                 <div>
-                    <label for="guests" class="block text-green-200 text-sm font-medium mb-2">
+                    <label for="guests_count" class="block text-green-200 text-sm font-medium mb-2">
                         Number of Guests <span class="text-red-400">*</span>
                         @if($service->capacity)
                         <span class="text-green-400 text-sm">(Maximum: {{ $service->capacity }})</span>
                         @endif
                     </label>
                     <input type="number" 
-                           id="guests" 
-                           name="guests" 
-                           value="{{ old('guests', 1) }}"
+                           id="guests_count" 
+                           name="guests_count" 
+                           value="{{ old('guests_count', 1) }}"
                            min="1"
                            @if($service->capacity) max="{{ $service->capacity }}" @endif
                            required
                            class="w-full px-4 py-3 bg-green-800/50 border border-green-600/50 rounded-lg text-green-100 focus:ring-2 focus:ring-green-500 focus:border-transparent">
-                    @error('guests')
+                    @error('guests_count')
                         <p class="text-red-400 text-sm mt-1">{{ $message }}</p>
                     @enderror
                 </div>
@@ -179,4 +208,75 @@
         </div>
     </div>
 </main>
+
+<script>
+// Combine date and time into scheduled_date when form is submitted
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+    const dateInput = document.getElementById('requested_date');
+    const timeInput = document.getElementById('requested_time');
+    const scheduledDateInput = document.getElementById('scheduled_date');
+
+    // Function to update scheduled_date
+    function updateScheduledDate() {
+        const date = dateInput.value;
+        const time = timeInput.value;
+        
+        if (date && time) {
+            const scheduledDateTime = `${date} ${time}:00`;
+            scheduledDateInput.value = scheduledDateTime;
+            console.log('Updated scheduled_date:', scheduledDateTime);
+        }
+    }
+
+    // Update scheduled_date when date or time changes
+    dateInput.addEventListener('change', updateScheduledDate);
+    timeInput.addEventListener('change', updateScheduledDate);
+
+    // Update scheduled_date before form submission
+    form.addEventListener('submit', function(e) {
+        updateScheduledDate();
+        
+        // Validate that scheduled_date is set
+        if (!scheduledDateInput.value) {
+            e.preventDefault();
+            alert('Please select both date and time for your service.');
+            return false;
+        }
+
+        // Validate that the scheduled date is in the future
+        const scheduledDate = new Date(scheduledDateInput.value);
+        const now = new Date();
+        
+        if (scheduledDate <= now) {
+            e.preventDefault();
+            alert('Please select a future date and time for your service.');
+            return false;
+        }
+
+        console.log('Form submission with data:', {
+            service_id: document.querySelector('[name="service_id"]').value,
+            service_type: document.querySelector('[name="service_type"]').value,
+            description: document.querySelector('[name="description"]').value,
+            scheduled_date: scheduledDateInput.value,
+            guests_count: document.querySelector('[name="guests_count"]').value,
+            special_requests: document.querySelector('[name="special_requests"]').value
+        });
+    });
+
+    // Initialize scheduled_date if both date and time are already selected
+    updateScheduledDate();
+});
+
+// Auto-update description to include guest count when it changes
+document.getElementById('guests_count').addEventListener('change', function() {
+    const guestCount = this.value;
+    const serviceName = document.querySelector('[name="service_type"]').value;
+    const descriptionField = document.querySelector('[name="description"]');
+    
+    if (guestCount && serviceName) {
+        descriptionField.value = `Guest booking for ${serviceName} - ${guestCount} guest${guestCount > 1 ? 's' : ''}`;
+    }
+});
+</script>
 @endsection
