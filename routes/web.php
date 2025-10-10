@@ -304,6 +304,9 @@ Route::prefix('manager')->name('manager.')->middleware(['auth', 'user.status', '
         Route::post('/assign/{serviceRequest}', [StaffAssignmentController::class, 'assign'])->name('assign');
         Route::delete('/unassign/{serviceRequest}', [StaffAssignmentController::class, 'unassign'])->name('unassign');
         Route::patch('/{serviceRequest}/status', [StaffAssignmentController::class, 'updateStatus'])->name('update-status');
+        Route::patch('/{serviceRequest}/cancel', [StaffAssignmentController::class, 'cancel'])->name('cancel');
+        Route::patch('/{serviceRequest}/confirm-task', [StaffAssignmentController::class, 'confirmTask'])->name('confirm-task');
+        Route::patch('/{serviceRequest}/quick-update', [StaffAssignmentController::class, 'quickUpdate'])->name('quick-update');
         Route::delete('/{serviceRequest}', [StaffAssignmentController::class, 'destroy'])->name('destroy');
         Route::post('/bulk-assign', [StaffAssignmentController::class, 'bulkAssign'])->name('bulk-assign');
     });
@@ -352,8 +355,21 @@ Route::prefix('manager')->name('manager.')->middleware(['auth', 'user.status', '
         Route::post('/assign/{serviceRequest}', [StaffAssignmentController::class, 'assign'])->name('assign');
         Route::delete('/unassign/{serviceRequest}', [StaffAssignmentController::class, 'unassign'])->name('unassign');
         Route::patch('/{serviceRequest}/status', [StaffAssignmentController::class, 'updateStatus'])->name('update-status');
+        Route::patch('/{serviceRequest}/cancel', [StaffAssignmentController::class, 'cancel'])->name('cancel');
+        Route::patch('/{serviceRequest}/confirm-task', [StaffAssignmentController::class, 'confirmTask'])->name('confirm-task');
+        Route::patch('/{serviceRequest}/quick-update', [StaffAssignmentController::class, 'quickUpdate'])->name('quick-update');
         Route::delete('/{serviceRequest}', [StaffAssignmentController::class, 'destroy'])->name('destroy');
         Route::post('/bulk-assign', [StaffAssignmentController::class, 'bulkAssign'])->name('bulk-assign');
+    });
+});
+
+// Staff Routes - Task Management
+Route::prefix('staff')->name('staff.')->middleware(['auth', 'user.status', 'role:staff'])->group(function () {
+    Route::prefix('tasks')->name('tasks.')->group(function () {
+        Route::get('/', [App\Http\Controllers\StaffTaskController::class, 'index'])->name('index');
+        Route::patch('/{task}/status', [App\Http\Controllers\StaffTaskController::class, 'updateStatus'])->name('update-status');
+        Route::patch('/{task}/notes', [App\Http\Controllers\StaffTaskController::class, 'updateNotes'])->name('update-notes');
+        Route::get('/{task}', [App\Http\Controllers\StaffTaskController::class, 'show'])->name('show');
     });
 });
 

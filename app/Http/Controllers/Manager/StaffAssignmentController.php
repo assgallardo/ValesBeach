@@ -140,31 +140,58 @@ class StaffAssignmentController extends Controller
     {
         $request->validate([
             'assigned_to' => 'nullable|exists:users,id',
-            'deadline' => 'nullable|date|after:now',
+            'deadline' => 'nullable|date',
             'estimated_duration' => 'nullable|integer|min:15|max:480',
-            'status' => 'required|in:pending,confirmed,assigned,in_progress,completed,cancelled',
-            'manager_notes' => 'nullable|string|max:500'
+            'status' => 'nullable|in:pending,confirmed,assigned,in_progress,completed,cancelled',
+            'manager_notes' => 'nullable|string|max:500',
+            'service_type' => 'nullable|string|max:255',
+            'description' => 'nullable|string',
+            'guests_count' => 'nullable|integer|min:1'
         ]);
 
-        $serviceRequest->update($request->only([
-            'assigned_to', 'deadline', 'estimated_duration', 'status', 'manager_notes'
-        ]));
+        $updateData = $request->only([
+            'assigned_to', 'deadline', 'estimated_duration', 'status', 'manager_notes',
+            'service_type', 'description', 'guests_count'
+        ]);
 
-        // Update assignment timestamp
-        if ($request->status === 'assigned' && $request->assigned_to) {
+        // Remove null values
+        $updateData = array_filter($updateData, function($value) {
+            return $value !== null && $value !== '';
+        });
+
+        $serviceRequest->update($updateData);
+
+        // Handle assignment logic
+        if ($request->has('assigned_to') && $request->assigned_to) {
             $serviceRequest->update(['assigned_at' => now()]);
+            
+            // Create or update task when assigning to staff
             $this->createOrUpdateTask($serviceRequest, $request->assigned_to);
+            
+            // Set status to assigned if not already set
+            if (!$request->has('status') || !$request->status) {
+                $serviceRequest->update(['status' => 'assigned']);
+            }
+        } elseif ($request->has('assigned_to') && !$request->assigned_to) {
+            // Unassigning - remove task and reset status
+            if ($serviceRequest->task) {
+                $serviceRequest->task->update(['status' => 'cancelled']);
+            }
+            $serviceRequest->update([
+                'assigned_at' => null,
+                'status' => 'confirmed'
+            ]);
         }
 
         // Update completion timestamp
-        if ($request->status === 'completed') {
+        if ($request->has('status') && $request->status === 'completed') {
             $serviceRequest->update(['completed_at' => now()]);
         }
 
         return response()->json([
             'success' => true,
             'message' => 'Service request updated successfully!',
-            'serviceRequest' => $serviceRequest->fresh()->load(['assignedTo'])
+            'serviceRequest' => $serviceRequest->fresh()->load(['assignedTo', 'task'])
         ]);
     }
 
@@ -238,6 +265,39 @@ class StaffAssignmentController extends Controller
         }
 
         return response()->json(['success' => true, 'message' => 'Status updated successfully!']);
+    }
+
+    /**
+     * Confirm task assignment
+     */
+    public function confirmTask(ServiceRequest $serviceRequest)
+    {
+        // Check if the service request is assigned to someone
+        if (!$serviceRequest->assigned_to) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No staff member assigned to this service request'
+            ], 400);
+        }
+
+        // Update service request status to confirmed
+        $serviceRequest->update([
+            'status' => 'confirmed'
+        ]);
+
+        // Update or create task and set it to confirmed
+        if ($serviceRequest->task) {
+            $serviceRequest->task->update(['status' => 'confirmed']);
+        } else {
+            // Create task if it doesn't exist
+            $this->createOrUpdateTask($serviceRequest, $serviceRequest->assigned_to);
+            $serviceRequest->task->update(['status' => 'confirmed']);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Task confirmed successfully! Staff member has been notified.'
+        ]);
     }
 
     /**
@@ -322,13 +382,8 @@ class StaffAssignmentController extends Controller
      */
     private function createOrUpdateTask($serviceRequest, $staffId)
     {
-        // Check if Task model exists
-        if (!class_exists('\App\Models\Task')) {
-            return;
-        }
-
         // Create or update task
-        Task::updateOrCreate(
+        \App\Models\Task::updateOrCreate(
             ['service_request_id' => $serviceRequest->id],
             [
                 'title' => 'Service Request: ' . $serviceRequest->service_type,
