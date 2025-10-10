@@ -9,15 +9,36 @@ use Illuminate\Support\Facades\Storage;
 
 class ServiceController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        // Get services without the service_requests relationship for now
-        $services = Service::all()->groupBy('category');
+        $query = Service::query();
 
-        // Empty array for recent requests since table doesn't exist yet
-        $recentRequests = collect([]);
+        // Category filter (same as guest)
+        if ($request->filled('category')) {
+            $query->where('category', $request->category);
+        }
 
-        return view('manager.services.index', compact('services', 'recentRequests'));
+        // Search functionality
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%");
+            });
+        }
+
+        // Status filter (manager-specific)
+        if ($request->filled('status')) {
+            $isAvailable = $request->status === 'available';
+            $query->where('is_available', $isAvailable);
+        }
+
+        $services = $query->orderBy('category')
+                         ->orderBy('name')
+                         ->paginate(12)
+                         ->appends($request->query());
+
+        return view('manager.services.index', compact('services'));
     }
 
     public function create()
@@ -55,28 +76,36 @@ class ServiceController extends Controller
                         ->with('success', 'Service created successfully.');
     }
 
+    /**
+     * Display the specified service
+     */
     public function show(Service $service)
     {
-        // Don't load service requests for now
         return view('manager.services.show', compact('service'));
     }
 
+    /**
+     * Show the form for editing the specified service
+     */
     public function edit(Service $service)
     {
         return view('manager.services.edit', compact('service'));
     }
 
+    /**
+     * Update the specified service
+     */
     public function update(Request $request, Service $service)
     {
         $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'required|string',
-            'category' => 'required|in:spa,dining,activities,transportation,room_service',
+            'category' => 'required|in:spa,dining,transportation,activities,room_service',
             'price' => 'required|numeric|min:0',
             'duration' => 'nullable|integer|min:1',
             'capacity' => 'nullable|integer|min:1',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'is_available' => 'boolean',
+            'image' => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
+            'is_available' => 'boolean'
         ]);
 
         $data = $request->all();
@@ -92,25 +121,42 @@ class ServiceController extends Controller
             $data['image'] = $imagePath;
         }
 
-        // Ensure is_available is boolean
-        $data['is_available'] = $request->has('is_available');
+        // Ensure is_available is set correctly
+        $data['is_available'] = $request->has('is_available') ? true : false;
 
         $service->update($data);
 
-        return redirect()->route('manager.services.index')
-                        ->with('success', 'Service updated successfully.');
+        return redirect()->route('manager.services.show', $service)
+                         ->with('success', 'Service updated successfully!');
     }
 
+    /**
+     * Remove the specified service
+     */
     public function destroy(Service $service)
     {
-        // Delete associated image
+        // Delete image if exists
         if ($service->image) {
             Storage::disk('public')->delete($service->image);
         }
-
+        
         $service->delete();
 
         return redirect()->route('manager.services.index')
-                        ->with('success', 'Service deleted successfully.');
+                         ->with('success', 'Service deleted successfully!');
+    }
+
+    /**
+     * Toggle service availability status
+     */
+    public function toggleStatus(Service $service)
+    {
+        $service->update([
+            'is_available' => !$service->is_available
+        ]);
+
+        $status = $service->is_available ? 'available' : 'unavailable';
+        
+        return redirect()->back()->with('success', "Service '{$service->name}' marked as {$status}!");
     }
 }

@@ -8,6 +8,11 @@ use App\Http\Controllers\RoomController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\Admin\BookingController as AdminBookingController;
 use App\Http\Controllers\ManagerController;
+use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\Manager\ServiceRequestController as ManagerServiceRequestController;
+use App\Http\Controllers\FoodOrderController;
+use App\Http\Controllers\GuestServiceController;
 
 // Test route to check system status
 Route::get('/test-system', function () {
@@ -86,8 +91,78 @@ Route::prefix('guest')->name('guest.')->middleware(['auth', 'user.status', 'role
     
     // Bookings Management
     Route::get('/bookings', [BookingController::class, 'myBookings'])->name('bookings');
+    
+    // Booking History (must come before parameterized routes)
+    Route::get('/bookings/history', [BookingController::class, 'history'])->name('bookings.history');
+    
+    // Parameterized booking routes (must come after specific routes)
     Route::get('/bookings/{booking}', [BookingController::class, 'show'])->name('bookings.show');
     Route::post('/bookings/{booking}/cancel', [BookingController::class, 'cancel'])->name('bookings.cancel');
+    
+    // Services and Service Requests
+    Route::prefix('services')->name('services.')->group(function () {
+        // Browse available services
+        Route::get('/', [GuestServiceController::class, 'index'])->name('index');
+        Route::get('/{service}', [GuestServiceController::class, 'show'])->name('show');
+        
+        // Service request creation
+        Route::get('/{service}/request', [GuestServiceController::class, 'create'])->name('request');
+        Route::post('/{service}/request', [GuestServiceController::class, 'store'])->name('request.store');
+        
+        // Service request history
+        Route::get('/requests/history', [GuestServiceController::class, 'history'])->name('requests.history');
+    });
+    
+    // Food Ordering Routes
+    Route::prefix('food-orders')->name('food-orders.')->group(function () {
+        // Menu browsing
+        Route::get('/menu', [FoodOrderController::class, 'menu'])->name('menu');
+        
+        // Cart management
+        Route::get('/cart', [FoodOrderController::class, 'cart'])->name('cart');
+        Route::post('/cart/add', [FoodOrderController::class, 'addToCart'])->name('cart.add');
+        Route::post('/cart/update', [FoodOrderController::class, 'updateCart'])->name('cart.update');
+        Route::get('/cart/count', [FoodOrderController::class, 'cartCount'])->name('cart.count');
+        
+        // Checkout and order placement
+        Route::get('/checkout', [FoodOrderController::class, 'checkout'])->name('checkout');
+        Route::post('/checkout', [FoodOrderController::class, 'placeOrder'])->name('place-order');
+        
+        // Order management
+        Route::get('/orders', [FoodOrderController::class, 'orders'])->name('orders');
+        Route::get('/orders/{foodOrder}', [FoodOrderController::class, 'show'])->name('show');
+        Route::post('/orders/{foodOrder}/cancel', [FoodOrderController::class, 'cancel'])->name('cancel');
+    });
+});
+
+// Payment Routes - Accessible by authenticated users
+Route::middleware(['auth', 'user.status'])->group(function () {
+    // Payment processing
+    Route::get('/bookings/{booking}/payment', [PaymentController::class, 'create'])->name('payments.create');
+    Route::post('/bookings/{booking}/payment', [PaymentController::class, 'store'])->name('payments.store');
+    Route::get('/payments/{payment}/confirmation', [PaymentController::class, 'confirmation'])->name('payments.confirmation');
+    Route::get('/payments/history', [PaymentController::class, 'history'])->name('payments.history');
+    Route::get('/payments/{payment}', [PaymentController::class, 'show'])->name('payments.show');
+    
+    // Invoice management
+    Route::get('/invoices', [InvoiceController::class, 'index'])->name('invoices.index');
+    Route::get('/bookings/{booking}/invoice/generate', [InvoiceController::class, 'generate'])->name('invoices.generate');
+    Route::get('/invoices/{invoice}', [InvoiceController::class, 'show'])->name('invoices.show');
+    Route::get('/invoices/{invoice}/download', [InvoiceController::class, 'download'])->name('invoices.download');
+});
+
+// Admin Payment & Billing Routes
+Route::prefix('admin')->name('admin.')->middleware(['auth', 'user.status', 'role:admin,manager'])->group(function () {
+    // Payment management
+    Route::get('/payments', [PaymentController::class, 'adminIndex'])->name('payments.index');
+    Route::patch('/payments/{payment}/status', [PaymentController::class, 'updateStatus'])->name('payments.updateStatus');
+    Route::post('/payments/{payment}/refund', [PaymentController::class, 'refund'])->name('payments.refund');
+    
+    // Invoice management
+    Route::get('/invoices', [InvoiceController::class, 'adminIndex'])->name('invoices.index');
+    Route::get('/invoices/create', [InvoiceController::class, 'create'])->name('invoices.create');
+    Route::patch('/invoices/{invoice}/status', [InvoiceController::class, 'updateStatus'])->name('invoices.updateStatus');
+    Route::post('/invoices/{invoice}/remind', [InvoiceController::class, 'sendReminder'])->name('invoices.remind');
 });
 
 // Authentication Routes
@@ -176,10 +251,13 @@ Route::prefix('staff')->name('staff.')->middleware(['auth', 'user.status', 'role
 
 // Manager Routes - Complete Manager System
 Route::middleware(['auth'])->prefix('manager')->name('manager.')->group(function () {
-    // Dashboard
-    Route::get('/dashboard', [App\Http\Controllers\ManagerController::class, 'dashboard'])->name('dashboard');
+    // Service Request routes - use the Manager namespace
+    Route::get('/service-requests', [ManagerServiceRequestController::class, 'index'])->name('service-requests.index');
+    Route::get('/service-requests/{serviceRequest}', [ManagerServiceRequestController::class, 'show'])->name('service-requests.show');
+    Route::patch('/service-requests/{serviceRequest}/status', [ManagerServiceRequestController::class, 'updateStatus'])->name('service-requests.updateStatus');
     
-    // Bookings routes
+    // Other manager routes...
+    Route::get('/dashboard', [App\Http\Controllers\ManagerController::class, 'dashboard'])->name('dashboard');
     Route::get('/bookings', [App\Http\Controllers\ManagerController::class, 'bookings'])->name('bookings.index');
     Route::get('/bookings/create', [App\Http\Controllers\ManagerController::class, 'createBooking'])->name('bookings.create');
     Route::post('/bookings', [App\Http\Controllers\ManagerController::class, 'storeBooking'])->name('bookings.store');
@@ -202,7 +280,7 @@ Route::middleware(['auth'])->prefix('manager')->name('manager.')->group(function
     Route::get('/bookings/create/{room}', [App\Http\Controllers\ManagerController::class, 'createFromRoom'])->name('bookings.createFromRoom');
     
     // Services - Either use resource or simple routes
-    Route::resource('services', App\Http\Controllers\ManagerServicesController::class);
+    Route::resource('services', App\Http\Controllers\Manager\ServiceController::class);
     // OR if you prefer simple routes:
     // Route::get('/services', [App\Http\Controllers\ManagerController::class, 'services'])->name('services.index');
     
@@ -212,4 +290,28 @@ Route::middleware(['auth'])->prefix('manager')->name('manager.')->group(function
     Route::get('/guests', [App\Http\Controllers\ManagerController::class, 'guests'])->name('guests');
     Route::get('/reports', [App\Http\Controllers\ManagerController::class, 'reports'])->name('reports');
     Route::get('/maintenance', [App\Http\Controllers\ManagerController::class, 'maintenance'])->name('maintenance');
+    
+    // Toggle service status
+    Route::patch('/services/{service}/toggle-status', [App\Http\Controllers\Manager\ServiceController::class, 'toggleStatus'])->name('services.toggle-status');
+    
+    // Staff Assignment Routes
+    Route::prefix('staff-assignment')->name('staff-assignment.')->group(function () {
+        Route::get('/', [App\Http\Controllers\Manager\StaffAssignmentController::class, 'index'])->name('index');
+        Route::post('/assign/{serviceRequest}', [App\Http\Controllers\Manager\StaffAssignmentController::class, 'assign'])->name('assign');
+        Route::patch('/{serviceRequest}/update', [App\Http\Controllers\Manager\StaffAssignmentController::class, 'updateAssignment'])->name('update');
+        Route::post('/bulk-assign', [App\Http\Controllers\Manager\StaffAssignmentController::class, 'bulkAssign'])->name('bulk-assign');
+        Route::get('/workload', [App\Http\Controllers\Manager\StaffAssignmentController::class, 'staffWorkload'])->name('workload');
+    });
+});
+
+// Guest Services Routes
+Route::middleware(['auth'])->prefix('guest')->name('guest.')->group(function () {
+    Route::prefix('services')->name('services.')->group(function () {
+        Route::get('/', [GuestServiceController::class, 'index'])->name('index');
+        Route::get('/{service}', [GuestServiceController::class, 'show'])->name('show');
+        Route::get('/{service}/request', [GuestServiceController::class, 'create'])->name('request');
+        Route::post('/{service}/request', [GuestServiceController::class, 'store'])->name('request.store');
+        Route::get('/requests/history', [GuestServiceController::class, 'history'])->name('requests.history');
+        Route::patch('/requests/{serviceRequest}/cancel', [GuestServiceController::class, 'cancel'])->name('cancel');
+    });
 });

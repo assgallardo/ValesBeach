@@ -74,48 +74,90 @@ class AdminRoomController extends Controller
      */
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'number' => 'required|string|max:10|unique:rooms',
-            'name' => 'required|string|max:255',
-            'type' => 'required|string|max:50',
-            'description' => 'required|string',
-            'capacity' => 'required|integer|min:1',
-            'price' => 'required|numeric|min:0',
-            'is_available' => 'boolean',
-            'amenities' => 'nullable|array',
-            'amenities.*' => 'string',
-            'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048'
-        ]);
-
+        \Log::info('=== ROOM CREATION DEBUG ===');
+        \Log::info('All request data:', $request->all());
+        
         try {
-            $room = Room::create($validated);
+            $validated = $request->validate([
+                'name' => 'required|string|max:255',
+                'type' => 'required|string|max:100',
+                'description' => 'required|string',
+                'capacity' => 'required|integer|min:1',
+                'beds' => 'required|integer|min:1',
+                'price' => 'required|numeric|min:0',
+                'amenities' => 'nullable|array',
+                'is_available' => 'nullable',
+                'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
+            ]);
 
+            \Log::info('Validation passed. Validated data:', $validated);
+
+            // Handle checkbox and status properly
+            $isAvailable = $request->has('is_available') ? true : false;
+            $status = $isAvailable ? 'available' : 'unavailable';
+
+            $roomData = [
+                'name' => $validated['name'],
+                'type' => $validated['type'],
+                'description' => $validated['description'],
+                'capacity' => $validated['capacity'],
+                'beds' => $validated['beds'],
+                'price' => $validated['price'],
+                'amenities' => $request->amenities ? json_encode($request->amenities) : null,
+                'is_available' => $isAvailable,
+                // 'status' => $status  // COMMENTED OUT TEMPORARILY
+            ];
+
+            \Log::info('Room data to be created:', $roomData);
+
+            // Create the room
+            $room = Room::create($roomData);
+
+            \Log::info('Room created successfully with ID: ' . $room->id);
+
+            // Handle image uploads
             if ($request->hasFile('images')) {
-                foreach ($request->file('images') as $image) {
-                    $path = $image->store('rooms', 'public');
-                    $room->images()->create(['path' => $path]);
+                $this->handleImageUploads($request, $room);
+            }
+
+            return redirect()->route('admin.rooms.index')
+                ->with('success', 'Room created successfully!');
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            \Log::error('Validation failed:', $e->errors());
+            return back()->withErrors($e->errors())->withInput();
+            
+        } catch (\Exception $e) {
+            \Log::error('Room creation failed: ' . $e->getMessage());
+            \Log::error('Stack trace: ' . $e->getTraceAsString());
+            
+            return back()->withErrors(['error' => 'Could not create room. Detailed error: ' . $e->getMessage()])
+                        ->withInput();
+        }
+    }
+
+    private function handleImageUploads(Request $request, Room $room)
+    {
+        try {
+            $imagesPath = public_path('images/rooms');
+            if (!file_exists($imagesPath)) {
+                mkdir($imagesPath, 0755, true);
+            }
+
+            foreach ($request->file('images') as $image) {
+                $imageName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
+                $image->move($imagesPath, $imageName);
+                
+                // Only create image record if RoomImage model exists
+                if (class_exists('App\Models\RoomImage')) {
+                    $room->images()->create([
+                        'image_path' => 'images/rooms/' . $imageName
+                    ]);
                 }
             }
-
-            if ($request->ajax() || $request->wantsJson()) {
-                return response()->json([
-                    'message' => 'Room created successfully',
-                    'room' => $room
-                ], 201);
-            }
-
-            return redirect()->route('admin.rooms')
-                ->with('success', 'Room created.');
         } catch (\Exception $e) {
-            if ($request->ajax() || $request->wantsJson()) {
-                return response()->json([
-                    'message' => 'Error creating room',
-                    'error' => $e->getMessage()
-                ], 500);
-            }
-
-            return back()->withErrors(['error' => 'Could not create room.'])
-                ->withInput();
+            \Log::error('Image upload failed: ' . $e->getMessage());
+            // Don't fail the entire room creation for image issues
         }
     }
 

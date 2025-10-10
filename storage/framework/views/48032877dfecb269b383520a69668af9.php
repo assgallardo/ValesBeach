@@ -1,5 +1,3 @@
-
-
 <?php $__env->startSection('content'); ?>
 <div class="container mx-auto px-4 lg:px-16 py-8">
     <div class="max-w-3xl mx-auto">
@@ -137,7 +135,7 @@
                 <label class="block text-gray-300 mb-2">Room Images (Max 10)</label>
                 <div class="mt-2" id="imagePreview" class="grid grid-cols-2 md:grid-cols-4 gap-4"></div>
                 <input type="file" 
-                       name="room_images[]" 
+                       name="images[]"
                        id="roomImages"
                        accept="image/*" 
                        multiple

@@ -15,6 +15,7 @@ class Room extends Model
         'type',
         'description',
         'capacity',
+        'beds',        // ADD THIS LINE
         'price',
         'status',
         'is_available',

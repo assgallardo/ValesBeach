@@ -33,12 +33,11 @@
                     <table class="w-full text-green-50">
                         <thead class="bg-green-800/50">
                             <tr>
-                                <th class="px-4 py-3 text-left">Name</th>
-                                <th class="px-4 py-3 text-left">Email</th>
-                                <th class="px-4 py-3 text-left">Phone</th>
-                                <th class="px-4 py-3 text-left">Status</th>
-                                <th class="px-4 py-3 text-left">Joined</th>
-                                <th class="px-4 py-3 text-left">Actions</th>
+                                <th class="px-4 py-3 text-left text-green-200 font-medium">Name</th>
+                                <th class="px-4 py-3 text-left text-green-200 font-medium">Email</th>
+                                <th class="px-4 py-3 text-left text-green-200 font-medium">Phone</th>
+                                <th class="px-4 py-3 text-left text-green-200 font-medium">Active Tasks</th>
+                                <th class="px-4 py-3 text-left text-green-200 font-medium">Actions</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-green-700/30">
@@ -52,14 +51,23 @@
                                         {{ $member->name }}
                                     </div>
                                 </td>
-                                <td class="px-4 py-3">{{ $member->email }}</td>
-                                <td class="px-4 py-3">{{ $member->phone ?? 'N/A' }}</td>
+                                <td class="px-4 py-3 text-green-300">{{ $member->email }}</td>
+                                <td class="px-4 py-3 text-green-300">{{ $member->phone ?? 'N/A' }}</td>
                                 <td class="px-4 py-3">
-                                    <span class="px-2 py-1 bg-green-600 text-green-100 rounded text-sm">
-                                        {{ ucfirst($member->status ?? 'active') }}
-                                    </span>
+                                    @php
+                                        $activeTasks = $member->assignedServiceRequests()
+                                                             ->whereIn('status', ['assigned', 'in_progress'])
+                                                             ->count();
+                                    @endphp
+                                    
+                                    @if($activeTasks > 0)
+                                        <span class="px-2 py-1 bg-orange-500/20 text-orange-400 rounded text-sm">
+                                            {{ $activeTasks }} tasks
+                                        </span>
+                                    @else
+                                        <span class="text-green-400 text-sm">Available</span>
+                                    @endif
                                 </td>
-                                <td class="px-4 py-3">{{ $member->created_at->format('M d, Y') }}</td>
                                 <td class="px-4 py-3">
                                     <div class="flex gap-2">
                                         <button class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs transition-colors">
@@ -68,12 +76,16 @@
                                         <button class="bg-yellow-600 hover:bg-yellow-700 text-white px-2 py-1 rounded text-xs transition-colors">
                                             Edit
                                         </button>
+                                        <a href="{{ route('manager.staff-assignment.index', ['staff_id' => $member->id]) }}" 
+                                           class="bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded text-xs transition-colors">
+                                            Tasks
+                                        </a>
                                     </div>
                                 </td>
                             </tr>
                             @empty
                             <tr>
-                                <td colspan="6" class="px-4 py-8 text-center text-green-300">
+                                <td colspan="5" class="px-4 py-8 text-center text-green-300">
                                     No staff found.
                                 </td>
                             </tr>

@@ -127,4 +127,45 @@ class User extends Authenticatable
     {
         return $this->hasMany(Booking::class);
     }
+
+    /**
+     * Get the payments for the user.
+     */
+    public function payments()
+    {
+        return $this->hasMany(Payment::class);
+    }
+
+    /**
+     * Get the invoices for the user.
+     */
+    public function invoices()
+    {
+        return $this->hasMany(Invoice::class);
+    }
+
+    /**
+     * Get the food orders for the user.
+     */
+    public function foodOrders()
+    {
+        return $this->hasMany(FoodOrder::class);
+    }
+
+    /**
+     * Get service requests assigned to this user
+     */
+    public function assignedServiceRequests()
+    {
+        return $this->hasMany(ServiceRequest::class, 'assigned_to');
+    }
+
+    /**
+     * Get pending tasks for this staff member
+     */
+    public function pendingTasks()
+    {
+        return $this->hasMany(ServiceRequest::class, 'assigned_to')
+                    ->whereIn('status', ['assigned', 'in_progress']);
+    }
 }

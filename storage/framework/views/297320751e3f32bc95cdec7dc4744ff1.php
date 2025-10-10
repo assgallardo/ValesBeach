@@ -25,7 +25,7 @@
             </div>
 
             <!-- Management Cards Grid -->
-            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6 lg:gap-8 max-w-8xl mx-auto">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 
                 <!-- Reservations Management -->
                 <div class="bg-green-800 rounded-lg p-6 lg:p-8 hover:bg-green-700 transition-all duration-300 transform hover:scale-105 shadow-lg">
@@ -175,6 +175,26 @@
                     </div>
                 </div>
 
+                <!-- NEW: Add Task Assignment Card -->
+                <a href="<?php echo e(route('manager.staff-assignment.index')); ?>" 
+                   class="bg-green-900/50 backdrop-blur-sm rounded-lg border border-green-700/30 p-6 hover:border-green-500/50 transition-all duration-300">
+                    <div class="flex items-center">
+                        <div class="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center mr-4">
+                            <i class="fas fa-tasks text-white text-xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-green-50 font-semibold text-lg">Task Assignment</h3>
+                            <p class="text-green-300 text-sm">Assign service requests to staff</p>
+                            <?php
+                                $pendingAssignments = \App\Models\ServiceRequest::whereIn('status', ['pending', 'confirmed'])->count();
+                            ?>
+                            <?php if($pendingAssignments > 0): ?>
+                            <p class="text-yellow-400 text-xs mt-1"><?php echo e($pendingAssignments); ?> pending assignments</p>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </a>
+                
             </div>
         </div>
     </main>

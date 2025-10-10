@@ -1,5 +1,3 @@
-
-
 <?php $__env->startSection('content'); ?>
 <div class="container mx-auto px-4 lg:px-8 py-8">
     <!-- Page Title -->

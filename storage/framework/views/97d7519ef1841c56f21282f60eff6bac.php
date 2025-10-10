@@ -1,5 +1,3 @@
-
-
 <?php $__env->startSection('content'); ?>
 <main class="relative z-10 py-8 lg:py-16">
     <div class="container mx-auto px-4 lg:px-16">

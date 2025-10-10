@@ -123,4 +123,17 @@ class BookingController extends Controller
 
         return back()->with('success', 'Booking cancelled.');
     }
+
+    /**
+     * Show booking history for the authenticated user.
+     */
+    public function history()
+    {
+        $bookings = Booking::where('user_id', auth()->id())
+            ->with(['room', 'payments', 'invoice'])
+            ->orderBy('created_at', 'desc')
+            ->paginate(10);
+
+        return view('guest.bookings.history', compact('bookings'));
+    }
 }

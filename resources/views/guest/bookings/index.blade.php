@@ -48,31 +48,56 @@
                     </div>
 
                     @if($booking->status === 'pending' || $booking->status === 'confirmed')
-                        <div class="mt-4 flex justify-end gap-3">
+                        <div class="mt-4 flex flex-wrap justify-end gap-2">
                             <!-- View Details Button -->
                             <a href="{{ route('guest.bookings.show', $booking) }}" 
-                               class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-                                View Details
+                               class="px-3 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
+                                <i class="fas fa-eye mr-1"></i>View Details
                             </a>
+                            
+                            <!-- Payment Button (if payment is needed) -->
+                            @if($booking->remaining_balance > 0)
+                            <a href="{{ route('payments.create', $booking) }}" 
+                               class="px-3 py-2 bg-green-600 text-white text-sm rounded hover:bg-green-700">
+                                <i class="fas fa-credit-card mr-1"></i>Pay Now
+                            </a>
+                            @endif
+                            
+                            <!-- Invoice Button (if invoice exists) -->
+                            @if($booking->invoice)
+                            <a href="{{ route('invoices.show', $booking->invoice) }}" 
+                               class="px-3 py-2 bg-purple-600 text-white text-sm rounded hover:bg-purple-700">
+                                <i class="fas fa-file-invoice mr-1"></i>Invoice
+                            </a>
+                            @endif
                             
                             <!-- Cancel Booking Button -->
                             <form action="{{ route('guest.bookings.cancel', $booking) }}" 
                                   method="POST"
-                                  onsubmit="return confirm('Are you sure you want to cancel this booking?')">
+                                  onsubmit="return confirm('Are you sure you want to cancel this booking?')"
+                                  class="inline">
                                 @csrf
                                 <button type="submit" 
-                                        class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">
-                                    Cancel Booking
+                                        class="px-3 py-2 bg-red-600 text-white text-sm rounded hover:bg-red-700">
+                                    <i class="fas fa-times mr-1"></i>Cancel
                                 </button>
                             </form>
                         </div>
                     @else
                         <!-- View Details Button for other statuses -->
-                        <div class="mt-4 flex justify-end">
+                        <div class="mt-4 flex flex-wrap justify-end gap-2">
                             <a href="{{ route('guest.bookings.show', $booking) }}" 
-                               class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-                                View Details
+                               class="px-3 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
+                                <i class="fas fa-eye mr-1"></i>View Details
                             </a>
+                            
+                            <!-- Invoice Button (if invoice exists) -->
+                            @if($booking->invoice)
+                            <a href="{{ route('invoices.show', $booking->invoice) }}" 
+                               class="px-3 py-2 bg-purple-600 text-white text-sm rounded hover:bg-purple-700">
+                                <i class="fas fa-file-invoice mr-1"></i>Invoice
+                            </a>
+                            @endif
                         </div>
                     @endif
                 </div>
