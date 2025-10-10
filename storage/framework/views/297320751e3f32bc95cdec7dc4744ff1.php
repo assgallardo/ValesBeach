@@ -1,5 +1,3 @@
-
-
 <?php $__env->startSection('content'); ?>
     <!-- Main Content -->
     <main class="relative z-10 py-8 lg:py-16">
