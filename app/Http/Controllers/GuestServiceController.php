@@ -209,12 +209,52 @@ class GuestServiceController extends Controller
 
     public function history()
     {
-        $requests = ServiceRequest::where('guest_id', auth()->id()) // Changed from user_id to guest_id
-                                ->with('service')
-                                ->orderBy('created_at', 'desc')
-                                ->paginate(10);
-        
-        return view('guest.services.history', compact('requests'));
+        try {
+            $user = Auth::user();
+            
+            // Get service requests for the current user
+            $serviceRequests = ServiceRequest::where(function($query) use ($user) {
+                $query->where('guest_id', $user->id)
+                      ->orWhere('user_id', $user->id)
+                      ->orWhere('guest_email', $user->email);
+            })
+            ->orderBy('created_at', 'desc')
+            ->paginate(10);
+
+            // Calculate stats
+            $allRequests = ServiceRequest::where(function($query) use ($user) {
+                $query->where('guest_id', $user->id)
+                      ->orWhere('user_id', $user->id)
+                      ->orWhere('guest_email', $user->email);
+            });
+
+            $pendingRequests = (clone $allRequests)->whereIn('status', ['pending', 'confirmed'])->count();
+            $inProgressRequests = (clone $allRequests)->whereIn('status', ['assigned', 'in_progress'])->count();
+            $completedRequests = (clone $allRequests)->where('status', 'completed')->count();
+            $cancelledRequests = (clone $allRequests)->where('status', 'cancelled')->count();
+            $totalRequests = (clone $allRequests)->count();
+
+            return view('guest.services.history', compact(
+                'serviceRequests',
+                'pendingRequests',
+                'inProgressRequests',
+                'completedRequests',
+                'cancelledRequests',
+                'totalRequests'
+            ));
+            
+        } catch (\Exception $e) {
+            \Log::error('Error in guest services history: ' . $e->getMessage());
+            
+            return view('guest.services.history', [
+                'serviceRequests' => collect()->paginate(10),
+                'pendingRequests' => 0,
+                'inProgressRequests' => 0,
+                'completedRequests' => 0,
+                'cancelledRequests' => 0,
+                'totalRequests' => 0
+            ]);
+        }
     }
 
     public function cancel(ServiceRequest $serviceRequest)
@@ -237,5 +277,181 @@ class GuestServiceController extends Controller
 
         return redirect()->route('guest.services.requests.history')
                        ->with('success', 'Booking cancelled successfully.');
+    }
+
+    public function requestsHistory()
+    {
+        $serviceRequests = ServiceRequest::where('guest_id', auth()->id())
+            ->orWhere('user_id', auth()->id())
+            ->orderBy('created_at', 'desc')
+            ->paginate(10);
+        
+        $pendingRequests = $serviceRequests->where('status', 'pending')->count();
+        $inProgressRequests = $serviceRequests->whereIn('status', ['assigned', 'in_progress'])->count();
+        $completedRequests = $serviceRequests->where('status', 'completed')->count();
+        $totalRequests = $serviceRequests->count();
+        
+        return view('guest.services.requests.history', compact(
+            'serviceRequests',
+            'pendingRequests', 
+            'inProgressRequests', 
+            'completedRequests', 
+            'totalRequests'
+        ));
+    }
+
+    /**
+     * Show specific service request
+     */
+    public function showRequest($id)
+    {
+        $user = Auth::user();
+        
+        $serviceRequest = ServiceRequest::where(function($query) use ($user) {
+            $query->where('guest_id', $user->id)
+                  ->orWhere('user_id', $user->id)
+                  ->orWhere('guest_email', $user->email);
+        })
+        ->findOrFail($id);
+
+        if (request()->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'request' => $serviceRequest
+            ]);
+        }
+
+        return view('guest.services.show-request', compact('serviceRequest'));
+    }
+
+    /**
+     * Cancel a service request
+     */
+    public function cancelRequest($id)
+    {
+        $user = Auth::user();
+        
+        $serviceRequest = ServiceRequest::where(function($query) use ($user) {
+            $query->where('guest_id', $user->id)
+                  ->orWhere('user_id', $user->id)
+                  ->orWhere('guest_email', $user->email);
+        })
+        ->findOrFail($id);
+
+        // Only allow cancellation if the request is pending or confirmed
+        if (!in_array($serviceRequest->status, ['pending', 'confirmed'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This request cannot be cancelled.'
+            ], 400);
+        }
+
+        try {
+            $serviceRequest->update([
+                'status' => 'cancelled',
+                'cancelled_at' => now()
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Service request cancelled successfully.'
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error cancelling service request: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to cancel service request.'
+            ], 500);
+        }
+    }
+
+    /**
+     * Permanently delete a service request
+     */
+    public function deleteRequest($id)
+    {
+        $user = Auth::user();
+        
+        $serviceRequest = ServiceRequest::where(function($query) use ($user) {
+            $query->where('guest_id', $user->id)
+                  ->orWhere('user_id', $user->id)
+                  ->orWhere('guest_email', $user->email);
+        })
+        ->findOrFail($id);
+
+        // Only allow deletion of cancelled requests or completed requests older than 30 days
+        if ($serviceRequest->status !== 'cancelled' && 
+            !($serviceRequest->status === 'completed' && $serviceRequest->completed_at && $serviceRequest->completed_at < now()->subDays(30))) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Only cancelled requests or completed requests older than 30 days can be deleted.'
+            ], 400);
+        }
+
+        try {
+            $serviceRequest->delete();
+            
+            \Log::info('Service request deleted successfully', [
+                'id' => $id,
+                'user_id' => $user->id,
+                'status' => $serviceRequest->status
+            ]);
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Service request deleted successfully.'
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error deleting service request: ' . $e->getMessage(), [
+                'id' => $id,
+                'user_id' => $user->id,
+                'error' => $e->getMessage()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to delete service request.'
+            ], 500);
+        }
+    }
+
+    /**
+     * Delete all cancelled service requests for the current user
+     */
+    public function deleteAllCancelled()
+    {
+        $user = Auth::user();
+        
+        try {
+            $deletedCount = ServiceRequest::where(function($query) use ($user) {
+                $query->where('guest_id', $user->id)
+                      ->orWhere('user_id', $user->id)
+                      ->orWhere('guest_email', $user->email);
+            })
+            ->where('status', 'cancelled')
+            ->delete();
+            
+            \Log::info('Bulk deleted cancelled service requests', [
+                'user_id' => $user->id,
+                'deleted_count' => $deletedCount
+            ]);
+            
+            return response()->json([
+                'success' => true,
+                'message' => "All cancelled service requests deleted successfully.",
+                'deleted_count' => $deletedCount
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error deleting cancelled service requests: ' . $e->getMessage(), [
+                'user_id' => $user->id,
+                'error' => $e->getMessage()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to delete cancelled service requests.'
+            ], 500);
+        }
     }
 }

@@ -377,3 +377,44 @@ Route::prefix('staff')->name('staff.')->middleware(['auth', 'user.status', 'role
 Route::post('guest/services/submit', [App\Http\Controllers\GuestServiceController::class, 'store'])
     ->name('guest.services.store')
     ->middleware(['auth', 'user.status', 'role:guest']);
+
+// Guest service requests routes
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/guest/services/requests/history', [GuestServiceController::class, 'requestsHistory'])
+        ->name('guest.services.requests.history');
+    
+    Route::get('/guest/service-requests/{id}', [GuestServiceController::class, 'showRequest'])
+        ->name('guest.service-requests.show');
+        
+    Route::post('/guest/service-requests/{id}/cancel', [GuestServiceController::class, 'cancelRequest'])
+        ->name('guest.service-requests.cancel');
+    
+    // Guest service routes
+    Route::get('/guest/services', [GuestServiceController::class, 'index'])->name('guest.services.index');
+    Route::get('/guest/services/history', [GuestServiceController::class, 'history'])->name('guest.services.history');
+    Route::get('/guest/services/{id}', [GuestServiceController::class, 'show'])->name('guest.services.show');
+    Route::post('/guest/services/{id}/cancel', [GuestServiceController::class, 'cancel'])->name('guest.services.cancel');
+});
+
+// Guest routes
+Route::middleware(['auth', 'verified'])->group(function () {
+    // Guest routes
+    Route::prefix('guest')->name('guest.')->group(function () {
+        // Dashboard
+        Route::get('/dashboard', [GuestController::class, 'dashboard'])->name('dashboard');
+        
+        // Services - SPECIFIC routes FIRST
+        Route::get('/services', [GuestServiceController::class, 'index'])->name('services.index');
+        Route::get('/services/history', [GuestServiceController::class, 'history'])->name('services.history');
+        Route::get('/services/{service}', [GuestServiceController::class, 'show'])->name('services.show')
+            ->where('service', '[0-9]+');
+        
+        // Service requests - SPECIFIC routes FIRST
+        Route::get('/service-requests/{id}', [GuestServiceController::class, 'showRequest'])->name('service-requests.show');
+        Route::post('/service-requests/{id}/cancel', [GuestServiceController::class, 'cancelRequest'])->name('service-requests.cancel');
+        
+        // DELETE routes - make sure these are properly defined
+        Route::delete('/service-requests/{id}/delete', [GuestServiceController::class, 'deleteRequest'])->name('service-requests.delete');
+        Route::delete('/service-requests/delete-cancelled', [GuestServiceController::class, 'deleteAllCancelled'])->name('service-requests.delete-cancelled');
+    });
+});

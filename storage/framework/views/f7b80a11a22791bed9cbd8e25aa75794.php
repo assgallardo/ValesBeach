@@ -1,6 +1,4 @@
-@extends('layouts.admin')
-
-@section('content')
+<?php $__env->startSection('content'); ?>
 <div class="container mx-auto px-4 lg:px-16 py-8">
     <!-- Header -->
     <div class="mb-8">
@@ -11,19 +9,19 @@
     <!-- Quick Stats -->
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <div class="bg-red-600 rounded-lg p-4 text-white text-center">
-            <div class="text-2xl font-bold">{{ $pendingTasks }}</div>
+            <div class="text-2xl font-bold"><?php echo e($pendingTasks); ?></div>
             <div class="text-sm opacity-90">Pending</div>
         </div>
         <div class="bg-orange-600 rounded-lg p-4 text-white text-center">
-            <div class="text-2xl font-bold">{{ $inProgressTasks }}</div>
+            <div class="text-2xl font-bold"><?php echo e($inProgressTasks); ?></div>
             <div class="text-sm opacity-90">In Progress</div>
         </div>
         <div class="bg-green-600 rounded-lg p-4 text-white text-center">
-            <div class="text-2xl font-bold">{{ $completedTasks }}</div>
+            <div class="text-2xl font-bold"><?php echo e($completedTasks); ?></div>
             <div class="text-sm opacity-90">Completed Today</div>
         </div>
         <div class="bg-red-800 rounded-lg p-4 text-white text-center animate-pulse">
-            <div class="text-2xl font-bold">{{ $overdueTasks }}</div>
+            <div class="text-2xl font-bold"><?php echo e($overdueTasks); ?></div>
             <div class="text-sm opacity-90">⚠️ OVERDUE</div>
         </div>
     </div>
@@ -49,83 +47,85 @@
 
     <!-- Tasks List -->
     <div class="space-y-4" id="tasksContainer">
-        @forelse($tasks as $task)
-        @php
+        <?php $__empty_1 = true; $__currentLoopData = $tasks; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $task): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+        <?php
             $isOverdue = $task->due_date < now() && !in_array($task->status, ['completed', 'cancelled']);
             $hoursOverdue = $isOverdue ? $task->due_date->diffInHours(now()) : 0;
-        @endphp
+        ?>
         
         <div class="rounded-lg p-6 hover:bg-gray-750 transition-colors 
-                    {{ $isOverdue ? 'bg-red-900 border-2 border-red-500 animate-pulse' : 'bg-gray-800' }}" 
-             data-task-id="{{ $task->id }}" 
-             data-status="{{ $task->status }}"
-             data-overdue="{{ $isOverdue ? 'true' : 'false' }}">
+                    <?php echo e($isOverdue ? 'bg-red-900 border-2 border-red-500 animate-pulse' : 'bg-gray-800'); ?>" 
+             data-task-id="<?php echo e($task->id); ?>" 
+             data-status="<?php echo e($task->status); ?>"
+             data-overdue="<?php echo e($isOverdue ? 'true' : 'false'); ?>">
             
             <!-- Overdue Alert Banner -->
-            @if($isOverdue)
+            <?php if($isOverdue): ?>
             <div class="bg-red-600 text-white px-4 py-2 rounded-lg mb-4 flex items-center justify-between">
                 <div class="flex items-center">
                     <i class="fas fa-exclamation-triangle text-xl mr-3 animate-bounce"></i>
                     <div>
                         <div class="font-bold text-lg">⚠️ TASK OVERDUE!</div>
                         <div class="text-sm">
-                            This task was due {{ $task->due_date->diffForHumans() }}
-                            @if($hoursOverdue > 24)
-                                ({{ floor($hoursOverdue / 24) }} day{{ floor($hoursOverdue / 24) > 1 ? 's' : '' }} overdue)
-                            @else
-                                ({{ $hoursOverdue }} hour{{ $hoursOverdue > 1 ? 's' : '' }} overdue)
-                            @endif
+                            This task was due <?php echo e($task->due_date->diffForHumans()); ?>
+
+                            <?php if($hoursOverdue > 24): ?>
+                                (<?php echo e(floor($hoursOverdue / 24)); ?> day<?php echo e(floor($hoursOverdue / 24) > 1 ? 's' : ''); ?> overdue)
+                            <?php else: ?>
+                                (<?php echo e($hoursOverdue); ?> hour<?php echo e($hoursOverdue > 1 ? 's' : ''); ?> overdue)
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>
                 <div class="text-right">
                     <div class="text-xs opacity-90">Due Date:</div>
-                    <div class="font-medium">{{ $task->due_date->format('M d, Y H:i') }}</div>
+                    <div class="font-medium"><?php echo e($task->due_date->format('M d, Y H:i')); ?></div>
                 </div>
             </div>
-            @endif
+            <?php endif; ?>
             
             <!-- Task Header -->
             <div class="flex items-start justify-between mb-4">
                 <div class="flex-1">
                     <h3 class="text-xl font-semibold text-green-100 mb-2">
-                        {{ $task->title }}
-                        @if($isOverdue)
+                        <?php echo e($task->title); ?>
+
+                        <?php if($isOverdue): ?>
                             <span class="text-red-400 text-sm ml-2">[OVERDUE]</span>
-                        @endif
+                        <?php endif; ?>
                     </h3>
                     
                     <!-- Status Badge -->
                     <div class="flex items-center space-x-3 mb-3">
-                        <select onchange="updateTaskStatus({{ $task->id }}, this.value)" 
-                                class="px-3 py-1 text-xs rounded-full border-none font-medium {{ $task->status_color }}">
-                            <option value="pending" {{ $task->status === 'pending' ? 'selected' : '' }}>Pending</option>
-                            <option value="confirmed" {{ $task->status === 'confirmed' ? 'selected' : '' }}>Confirmed</option>
-                            <option value="assigned" {{ $task->status === 'assigned' ? 'selected' : '' }}>Assigned</option>
-                            <option value="in_progress" {{ $task->status === 'in_progress' ? 'selected' : '' }}>In Progress</option>
-                            <option value="completed" {{ $task->status === 'completed' ? 'selected' : '' }}>Completed</option>
+                        <select onchange="updateTaskStatus(<?php echo e($task->id); ?>, this.value)" 
+                                class="px-3 py-1 text-xs rounded-full border-none font-medium <?php echo e($task->status_color); ?>">
+                            <option value="pending" <?php echo e($task->status === 'pending' ? 'selected' : ''); ?>>Pending</option>
+                            <option value="confirmed" <?php echo e($task->status === 'confirmed' ? 'selected' : ''); ?>>Confirmed</option>
+                            <option value="assigned" <?php echo e($task->status === 'assigned' ? 'selected' : ''); ?>>Assigned</option>
+                            <option value="in_progress" <?php echo e($task->status === 'in_progress' ? 'selected' : ''); ?>>In Progress</option>
+                            <option value="completed" <?php echo e($task->status === 'completed' ? 'selected' : ''); ?>>Completed</option>
                         </select>
                         
-                        @if($task->status === 'confirmed')
+                        <?php if($task->status === 'confirmed'): ?>
                         <span class="px-2 py-1 text-xs rounded bg-green-600 text-green-100 flex items-center">
                             <i class="fas fa-check-circle mr-1"></i>
                             Manager Confirmed
                         </span>
-                        @endif
+                        <?php endif; ?>
                         
-                        @if($isOverdue)
+                        <?php if($isOverdue): ?>
                         <span class="px-3 py-1 text-sm font-bold rounded-full bg-red-600 text-white animate-pulse">
                             <i class="fas fa-clock mr-1"></i>
                             OVERDUE
                         </span>
-                        @endif
+                        <?php endif; ?>
                     </div>
                 </div>
                 
                 <!-- Task Actions -->
                 <div class="flex gap-2">
-                    <button onclick="viewTaskDetails({{ $task->id }})" 
-                            class="inline-flex items-center px-3 py-2 {{ $isOverdue ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700' }} text-white text-sm rounded-lg transition-colors" 
+                    <button onclick="viewTaskDetails(<?php echo e($task->id); ?>)" 
+                            class="inline-flex items-center px-3 py-2 <?php echo e($isOverdue ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'); ?> text-white text-sm rounded-lg transition-colors" 
                             title="View Details">
                         <i class="fas fa-eye mr-2"></i>
                         View
@@ -138,49 +138,51 @@
                 <!-- Description -->
                 <div class="space-y-1">
                     <label class="text-xs text-gray-400 uppercase tracking-wide">Description</label>
-                    <p class="text-gray-300 text-sm">{{ Str::limit($task->description, 100) }}</p>
+                    <p class="text-gray-300 text-sm"><?php echo e(Str::limit($task->description, 100)); ?></p>
                 </div>
 
                 <!-- Assigned By -->
                 <div class="space-y-1">
                     <label class="text-xs text-gray-400 uppercase tracking-wide">Assigned By</label>
-                    <p class="text-green-100 font-medium">{{ $task->assignedBy->name ?? 'System' }}</p>
+                    <p class="text-green-100 font-medium"><?php echo e($task->assignedBy->name ?? 'System'); ?></p>
                 </div>
 
                 <!-- Due Date with Enhanced Overdue Display -->
                 <div class="space-y-1">
                     <label class="text-xs text-gray-400 uppercase tracking-wide">Due Date</label>
-                    <p class="font-medium {{ $isOverdue ? 'text-red-400 font-bold' : 'text-green-100' }}">
-                        {{ $task->due_date->format('M d, Y H:i') }}
+                    <p class="font-medium <?php echo e($isOverdue ? 'text-red-400 font-bold' : 'text-green-100'); ?>">
+                        <?php echo e($task->due_date->format('M d, Y H:i')); ?>
+
                     </p>
-                    <p class="text-sm {{ $isOverdue ? 'text-red-300 font-medium' : 'text-gray-400' }}">
-                        {{ $task->due_date->diffForHumans() }}
-                        @if($isOverdue)
+                    <p class="text-sm <?php echo e($isOverdue ? 'text-red-300 font-medium' : 'text-gray-400'); ?>">
+                        <?php echo e($task->due_date->diffForHumans()); ?>
+
+                        <?php if($isOverdue): ?>
                             <span class="text-red-400 font-bold ml-1">⚠️</span>
-                        @endif
+                        <?php endif; ?>
                     </p>
                 </div>
             </div>
 
             <!-- Task Notes -->
-            @if($task->notes)
+            <?php if($task->notes): ?>
             <div class="mt-4 pt-3 border-t border-gray-700">
                 <label class="text-xs text-gray-400 uppercase tracking-wide">My Notes</label>
-                <p class="text-gray-300 text-sm mt-1">{{ $task->notes }}</p>
+                <p class="text-gray-300 text-sm mt-1"><?php echo e($task->notes); ?></p>
             </div>
-            @endif
+            <?php endif; ?>
 
             <!-- Notes Input -->
             <div class="mt-4 pt-3 border-t border-gray-700">
                 <label class="text-xs text-gray-400 uppercase tracking-wide">Add/Update Notes</label>
                 <div class="flex gap-2 mt-2">
                     <input type="text" 
-                           value="{{ $task->notes }}" 
+                           value="<?php echo e($task->notes); ?>" 
                            placeholder="Add notes about this task..."
                            class="flex-1 bg-gray-700 text-green-100 rounded px-3 py-2 text-sm border-none"
-                           data-task-id="{{ $task->id }}"
-                           onkeypress="if(event.key==='Enter') updateTaskNotes({{ $task->id }}, this.value)">
-                    <button onclick="updateTaskNotes({{ $task->id }}, document.querySelector('[data-task-id=\'{{ $task->id }}\']').value)" 
+                           data-task-id="<?php echo e($task->id); ?>"
+                           onkeypress="if(event.key==='Enter') updateTaskNotes(<?php echo e($task->id); ?>, this.value)">
+                    <button onclick="updateTaskNotes(<?php echo e($task->id); ?>, document.querySelector('[data-task-id=\'<?php echo e($task->id); ?>\']').value)" 
                             class="bg-green-600 text-white px-4 py-2 rounded text-sm hover:bg-green-700">
                         Save
                     </button>
@@ -190,32 +192,34 @@
             <!-- Timeline Footer -->
             <div class="mt-4 pt-3 border-t border-gray-700">
                 <div class="flex justify-between text-xs text-gray-400">
-                    <span>Created: {{ $task->created_at->format('M d, Y H:i') }}</span>
-                    @if($task->completed_at)
-                    <span>Completed: {{ $task->completed_at->format('M d, H:i') }}</span>
-                    @elseif($isOverdue)
+                    <span>Created: <?php echo e($task->created_at->format('M d, Y H:i')); ?></span>
+                    <?php if($task->completed_at): ?>
+                    <span>Completed: <?php echo e($task->completed_at->format('M d, H:i')); ?></span>
+                    <?php elseif($isOverdue): ?>
                     <span class="text-red-400 font-medium">
-                        ⚠️ OVERDUE BY: {{ $task->due_date->diffForHumans(null, true) }}
+                        ⚠️ OVERDUE BY: <?php echo e($task->due_date->diffForHumans(null, true)); ?>
+
                     </span>
-                    @endif
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
-        @empty
+        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
         <div class="bg-gray-800 rounded-lg p-8 text-center">
             <i class="fas fa-tasks text-4xl text-gray-600 mb-4"></i>
             <p class="text-gray-400 text-lg">No tasks assigned to you</p>
             <p class="text-gray-500 text-sm">Tasks will appear here when managers assign them to you</p>
         </div>
-        @endforelse
+        <?php endif; ?>
     </div>
 
     <!-- Pagination -->
-    @if($tasks->hasPages())
+    <?php if($tasks->hasPages()): ?>
     <div class="mt-6">
-        {{ $tasks->links() }}
+        <?php echo e($tasks->links()); ?>
+
     </div>
-    @endif
+    <?php endif; ?>
 </div>
 
 <!-- Task Details Modal -->
@@ -584,4 +588,6 @@ document.addEventListener('keydown', function(e) {
     animation: urgent-glow 2s infinite;
 }
 </style>
-@endsection
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('layouts.admin', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\VALESBEACH_LATEST\ValesBeach\resources\views/staff/tasks/index.blade.php ENDPATH**/ ?>

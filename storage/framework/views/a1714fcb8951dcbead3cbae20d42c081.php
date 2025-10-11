@@ -1,5 +1,3 @@
-
-
 <?php $__env->startSection('content'); ?>
 <div class="container mx-auto px-4 lg:px-16 py-8">
     <!-- Header -->
@@ -135,6 +133,16 @@
                 
                 <!-- Actions - Simplified -->
                 <div class="flex gap-2">
+                    <!-- Confirm Task Button (only show if assigned but not confirmed) -->
+                    <?php if($request->assigned_to && $request->status !== 'confirmed'): ?>
+                    <button onclick="confirmTask(<?php echo e($request->id); ?>)" 
+                            class="inline-flex items-center px-3 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors" 
+                            title="Confirm Task Assignment">
+                        <i class="fas fa-check-circle mr-2"></i>
+                        Confirm Task
+                    </button>
+                    <?php endif; ?>
+                    
                     <!-- Cancel Button -->
                     <button onclick="cancelRequest(<?php echo e($request->id); ?>)" 
                             class="inline-flex items-center px-3 py-2 bg-orange-600 text-white text-sm rounded-lg hover:bg-orange-700 transition-colors" 
@@ -176,7 +184,7 @@
                 <!-- Assignment -->
                 <div class="space-y-1">
                     <label class="text-xs text-gray-400 uppercase tracking-wide">Assigned To</label>
-                    <select onchange="updateAssignment(<?php echo e($request->id); ?>, this.value)" 
+                    <select id="assignment-<?php echo e($request->id); ?>" onchange="selectStaff(<?php echo e($request->id); ?>, this.value)" 
                             class="w-full bg-gray-700 text-green-100 rounded px-3 py-2 text-sm border-none">
                         <option value="">Unassigned</option>
                         <?php $__currentLoopData = $availableStaff; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $staff): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
@@ -186,6 +194,29 @@
                         </option>
                         <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                     </select>
+                    
+                    <!-- Confirm Assignment Button (Hidden by default) -->
+                    <div id="confirm-assignment-<?php echo e($request->id); ?>" class="hidden mt-2">
+                        <button onclick="confirmAssignment(<?php echo e($request->id); ?>)" 
+                                class="w-full bg-green-600 text-white px-3 py-2 rounded text-sm hover:bg-green-700 transition-colors">
+                            <i class="fas fa-check mr-2"></i>
+                            Confirm Assignment
+                        </button>
+                        <button onclick="cancelAssignment(<?php echo e($request->id); ?>)" 
+                                class="w-full bg-gray-600 text-white px-3 py-2 rounded text-sm hover:bg-gray-700 transition-colors mt-1">
+                            <i class="fas fa-times mr-2"></i>
+                            Cancel
+                        </button>
+                    </div>
+                    
+                    <!-- Assignment Status -->
+                    <?php if($request->assigned_to): ?>
+                    <div class="mt-2 text-xs text-green-300">
+                        <i class="fas fa-check-circle mr-1"></i>
+                        Assigned to <?php echo e($request->assignedTo->name ?? 'Unknown'); ?>
+
+                    </div>
+                    <?php endif; ?>
                 </div>
 
                 <!-- Deadline -->
@@ -310,29 +341,82 @@ function updateStatus(requestId, status) {
     });
 }
 
+// Select staff member (show confirmation buttons)
+function selectStaff(requestId, staffId) {
+    const confirmDiv = document.getElementById(`confirm-assignment-${requestId}`);
+    
+    if (staffId && staffId !== '') {
+        // Show confirmation buttons
+        confirmDiv.classList.remove('hidden');
+    } else {
+        // Hide confirmation buttons and immediately unassign
+        confirmDiv.classList.add('hidden');
+        updateAssignment(requestId, staffId);
+    }
+}
+
+// Confirm assignment
+function confirmAssignment(requestId) {
+    const selectElement = document.getElementById(`assignment-${requestId}`);
+    const staffId = selectElement.value;
+    
+    if (staffId && staffId !== '') {
+        updateAssignment(requestId, staffId);
+        
+        // Hide confirmation buttons
+        document.getElementById(`confirm-assignment-${requestId}`).classList.add('hidden');
+    }
+}
+
+// Cancel assignment selection
+function cancelAssignment(requestId) {
+    const selectElement = document.getElementById(`assignment-${requestId}`);
+    const originalValue = selectElement.dataset.originalValue || '';
+    
+    // Reset to original value
+    selectElement.value = originalValue;
+    
+    // Hide confirmation buttons
+    document.getElementById(`confirm-assignment-${requestId}`).classList.add('hidden');
+}
+
 // Assignment update
 function updateAssignment(requestId, staffId) {
     fetch(`/manager/staff-assignment/${requestId}/quick-update`, {
         method: 'PATCH',
         headers: {
             'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Accept': 'application/json'
         },
         body: JSON.stringify({ 
-            assigned_to: staffId,
-            status: staffId ? 'assigned' : 'confirmed'
+            assigned_to: staffId || null
         })
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
     .then(data => {
         if (data.success) {
-            showNotification('Assignment updated', 'success');
+            showNotification(staffId ? 'Task assigned successfully!' : 'Assignment removed successfully!', 'success');
             document.querySelector(`[data-request-id="${requestId}"]`).setAttribute('data-staff', staffId);
+            
+            // Store the current value as original for future reference
+            const selectElement = document.getElementById(`assignment-${requestId}`);
+            selectElement.dataset.originalValue = staffId;
+            
+            // Reload the page to show updated assignment status
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showNotification(data.message || 'Assignment update failed', 'error');
         }
     })
     .catch(error => {
-        console.error('Error:', error);
-        showNotification('Assignment update failed', 'error');
+        console.error('Assignment error:', error);
+        showNotification('Assignment update failed: ' + error.message, 'error');
     });
 }
 
@@ -409,6 +493,40 @@ function cancelRequest(requestId) {
         .catch(error => {
             console.error('Cancel error:', error);
             showNotification('Cancel failed: ' + error.message, 'error');
+        });
+    }
+}
+
+// CONFIRM TASK ASSIGNMENT
+function confirmTask(requestId) {
+    console.log('Confirming task for request:', requestId);
+    
+    if (confirm('Confirm this task assignment? This will notify the staff member and make the task active.')) {
+        fetch(`/manager/staff-assignment/${requestId}/confirm-task`, {
+            method: 'PATCH',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => {
+            console.log('Confirm task response:', response);
+            return response.json();
+        })
+        .then(data => {
+            console.log('Confirm task data:', data);
+            if (data.success) {
+                showNotification('Task confirmed successfully! Staff has been notified.', 'success');
+                // Reload the page to show updated status
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showNotification(data.message || 'Task confirmation failed', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Confirm task error:', error);
+            showNotification('Task confirmation failed: ' + error.message, 'error');
         });
     }
 }
@@ -580,6 +698,13 @@ function filterRequests() {
 document.getElementById('filterStatus').addEventListener('change', filterRequests);
 document.getElementById('filterStaff').addEventListener('change', filterRequests);
 
+// Initialize assignment dropdowns with original values
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('[id^="assignment-"]').forEach(select => {
+        select.dataset.originalValue = select.value;
+    });
+});
+
 // Notification system
 function showNotification(message, type = 'info') {
     const notification = document.createElement('div');
@@ -653,8 +778,5 @@ function updateScheduledDate(requestId, scheduledDate) {
     });
 }
 </script>
-
-<!-- Add CSRF token for AJAX requests -->
-<meta name="csrf-token" content="<?php echo e(csrf_token()); ?>">
 <?php $__env->stopSection(); ?>
 <?php echo $__env->make('layouts.admin', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\VALESBEACH_LATEST\ValesBeach\resources\views/manager/staff-assignment/index.blade.php ENDPATH**/ ?>

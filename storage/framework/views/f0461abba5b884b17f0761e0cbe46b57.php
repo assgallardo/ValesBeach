@@ -77,6 +77,51 @@
                                         Dashboard
                                     </a>
                                 <?php endif; ?>
+                                
+                                <!-- Tasks link for staff with notification badges -->
+                                <?php
+                                    // Get task counts for the current staff member
+                                    $pendingTasks = \App\Models\Task::where('assigned_to', auth()->id())
+                                        ->whereIn('status', ['pending', 'assigned'])
+                                        ->count();
+                                    
+                                    $overdueTasks = \App\Models\Task::where('assigned_to', auth()->id())
+                                        ->where('due_date', '<', now())
+                                        ->whereNotIn('status', ['completed', 'cancelled'])
+                                        ->count();
+                                    
+                                    $totalNotifications = $pendingTasks + $overdueTasks;
+                                ?>
+                                
+                                <a href="<?php echo e(route('staff.tasks.index')); ?>" 
+                                   class="relative text-gray-200 hover:text-white transition-colors duration-200 font-medium inline-flex items-center">
+                                    My Tasks
+                                    
+                                    <?php if($totalNotifications > 0): ?>
+                                        <span class="relative ml-2">
+                                            <!-- Notification badge -->
+                                            <span class="absolute -top-2 -right-2 inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white 
+                                                <?php if($overdueTasks > 0): ?>
+                                                    bg-red-600
+                                                <?php else: ?>
+                                                    bg-yellow-600
+                                                <?php endif; ?>
+                                                rounded-full animate-pulse">
+                                                <?php echo e($totalNotifications > 99 ? '99+' : $totalNotifications); ?>
+
+                                            </span>
+                                            
+                                            <!-- Notification dot for visual enhancement -->
+                                            <span class="inline-block w-2 h-2 
+                                                <?php if($overdueTasks > 0): ?>
+                                                    bg-red-600
+                                                <?php else: ?>
+                                                    bg-yellow-600
+                                                <?php endif; ?>
+                                                rounded-full"></span>
+                                        </span>
+                                    <?php endif; ?>
+                                </a>
                             <?php else: ?>
                                 <?php if(Route::has('admin.dashboard')): ?>
                                     <a href="<?php echo e(route('admin.dashboard')); ?>" 

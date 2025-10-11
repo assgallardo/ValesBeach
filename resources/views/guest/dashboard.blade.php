@@ -113,18 +113,15 @@
                     <p class="text-green-100">Delicious meals delivered to your room</p>
                 </div>
             </a>
-        </div>
 
             <!-- Service Requests Card -->
-            <a href="{{ route('guest.services.requests.history') }}" class="group">
+            <a href="{{ route('guest.services.history') }}" class="group">
                 <div class="bg-green-900 border-2 border-green-700 rounded-xl p-6 text-center transform transition duration-300 hover:scale-105 hover:bg-green-800 cursor-pointer shadow-lg">
-                    <div class="bg-green-700 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4 group-hover:bg-green-600 transition-colors duration-300">
-                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
-                        </svg>
+                    <div class="text-green-100 text-3xl mb-4">
+                        <i class="fas fa-concierge-bell"></i>
                     </div>
-                    <h3 class="text-xl font-semibold text-white mb-2">Service Requests</h3>
-                    <p class="text-green-100">Track your service requests</p>
+                    <h3 class="text-lg font-semibold text-white mb-2">Service Requests</h3>
+                    <p class="text-green-200 text-sm">View your service request history</p>
                 </div>
             </a>
         </div>
