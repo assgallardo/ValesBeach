@@ -369,6 +369,7 @@ Route::prefix('staff')->name('staff.')->middleware(['auth', 'user.status', 'role
         Route::get('/', [App\Http\Controllers\StaffTaskController::class, 'index'])->name('index');
         Route::patch('/{task}/status', [App\Http\Controllers\StaffTaskController::class, 'updateStatus'])->name('update-status');
         Route::patch('/{task}/notes', [App\Http\Controllers\StaffTaskController::class, 'updateNotes'])->name('update-notes');
+        Route::post('/{task}/cancel', [App\Http\Controllers\StaffTaskController::class, 'cancel'])->name('cancel');
         Route::get('/{task}', [App\Http\Controllers\StaffTaskController::class, 'show'])->name('show');
     });
 });

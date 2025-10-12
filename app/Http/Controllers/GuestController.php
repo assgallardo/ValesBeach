@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Booking;
 use App\Models\Room;
 use App\Models\Service;
+use App\Models\ServiceRequest;
 use Illuminate\Http\Request;
 
 class GuestController extends Controller
@@ -34,7 +35,12 @@ class GuestController extends Controller
         // Get available rooms count
         $available_rooms = Room::where('is_available', true)->count();
 
-        return view('guest.dashboard', compact('bookings', 'stats', 'available_rooms'));
+        // Get service requests count for this guest
+        $service_requests_count = ServiceRequest::where('user_id', $user->id)
+                                               ->where('status', '!=', 'cancelled')
+                                               ->count();
+
+        return view('guest.dashboard', compact('bookings', 'stats', 'available_rooms', 'service_requests_count'));
     }
 
     /**

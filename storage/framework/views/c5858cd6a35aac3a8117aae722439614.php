@@ -1,5 +1,3 @@
-
-
 <?php $__env->startSection('content'); ?>
 <div class="container mx-auto px-4 lg:px-16 py-8">
     <!-- Header -->
@@ -22,9 +20,9 @@
             <div class="text-2xl font-bold"><?php echo e($completedTasks); ?></div>
             <div class="text-sm opacity-90">Completed Today</div>
         </div>
-        <div class="bg-red-800 rounded-lg p-4 text-white text-center">
+        <div class="bg-red-800 rounded-lg p-4 text-white text-center animate-pulse">
             <div class="text-2xl font-bold"><?php echo e($overdueTasks); ?></div>
-            <div class="text-sm opacity-90">Overdue</div>
+            <div class="text-sm opacity-90">⚠️ OVERDUE</div>
         </div>
     </div>
 
@@ -38,6 +36,7 @@
                 <option value="assigned">Assigned</option>
                 <option value="in_progress">In Progress</option>
                 <option value="completed">Completed</option>
+                <option value="overdue">⚠️ Overdue</option>
             </select>
             
             <button onclick="clearFilters()" class="bg-gray-600 text-white px-3 py-2 rounded text-sm hover:bg-gray-500">
@@ -49,14 +48,52 @@
     <!-- Tasks List -->
     <div class="space-y-4" id="tasksContainer">
         <?php $__empty_1 = true; $__currentLoopData = $tasks; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $task): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
-        <div class="bg-gray-800 rounded-lg p-6 hover:bg-gray-750 transition-colors <?php echo e($task->is_overdue ? 'border-l-4 border-red-500' : ''); ?>" 
+        <?php
+            $isOverdue = $task->due_date < now() && !in_array($task->status, ['completed', 'cancelled']);
+            $hoursOverdue = $isOverdue ? $task->due_date->diffInHours(now()) : 0;
+        ?>
+        
+        <div class="rounded-lg p-6 hover:bg-gray-750 transition-colors 
+                    <?php echo e($isOverdue ? 'bg-red-900 border-2 border-red-500 animate-pulse' : 'bg-gray-800'); ?>" 
              data-task-id="<?php echo e($task->id); ?>" 
-             data-status="<?php echo e($task->status); ?>">
+             data-status="<?php echo e($task->status); ?>"
+             data-overdue="<?php echo e($isOverdue ? 'true' : 'false'); ?>">
+            
+            <!-- Overdue Alert Banner -->
+            <?php if($isOverdue): ?>
+            <div class="bg-red-600 text-white px-4 py-2 rounded-lg mb-4 flex items-center justify-between">
+                <div class="flex items-center">
+                    <i class="fas fa-exclamation-triangle text-xl mr-3 animate-bounce"></i>
+                    <div>
+                        <div class="font-bold text-lg">⚠️ TASK OVERDUE!</div>
+                        <div class="text-sm">
+                            This task was due <?php echo e($task->due_date->diffForHumans()); ?>
+
+                            <?php if($hoursOverdue > 24): ?>
+                                (<?php echo e(floor($hoursOverdue / 24)); ?> day<?php echo e(floor($hoursOverdue / 24) > 1 ? 's' : ''); ?> overdue)
+                            <?php else: ?>
+                                (<?php echo e($hoursOverdue); ?> hour<?php echo e($hoursOverdue > 1 ? 's' : ''); ?> overdue)
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <div class="text-xs opacity-90">Due Date:</div>
+                    <div class="font-medium"><?php echo e($task->due_date->format('M d, Y H:i')); ?></div>
+                </div>
+            </div>
+            <?php endif; ?>
             
             <!-- Task Header -->
             <div class="flex items-start justify-between mb-4">
                 <div class="flex-1">
-                    <h3 class="text-xl font-semibold text-green-100 mb-2"><?php echo e($task->title); ?></h3>
+                    <h3 class="text-xl font-semibold text-green-100 mb-2">
+                        <?php echo e($task->title); ?>
+
+                        <?php if($isOverdue): ?>
+                            <span class="text-red-400 text-sm ml-2">[OVERDUE]</span>
+                        <?php endif; ?>
+                    </h3>
                     
                     <!-- Status Badge -->
                     <div class="flex items-center space-x-3 mb-3">
@@ -76,9 +113,10 @@
                         </span>
                         <?php endif; ?>
                         
-                        <?php if($task->is_overdue): ?>
-                        <span class="px-2 py-1 text-xs rounded bg-red-600 text-red-100">
-                            Overdue
+                        <?php if($isOverdue): ?>
+                        <span class="px-3 py-1 text-sm font-bold rounded-full bg-red-600 text-white animate-pulse">
+                            <i class="fas fa-clock mr-1"></i>
+                            OVERDUE
                         </span>
                         <?php endif; ?>
                     </div>
@@ -87,11 +125,20 @@
                 <!-- Task Actions -->
                 <div class="flex gap-2">
                     <button onclick="viewTaskDetails(<?php echo e($task->id); ?>)" 
-                            class="inline-flex items-center px-3 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors" 
+                            class="inline-flex items-center px-3 py-2 <?php echo e($isOverdue ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'); ?> text-white text-sm rounded-lg transition-colors" 
                             title="View Details">
                         <i class="fas fa-eye mr-2"></i>
                         View
                     </button>
+                    
+                    <?php if(!in_array($task->status, ['completed', 'cancelled'])): ?>
+                    <button onclick="cancelTask(<?php echo e($task->id); ?>)" 
+                            class="inline-flex items-center px-3 py-2 bg-red-600 hover:bg-red-700 text-white text-sm rounded-lg transition-colors" 
+                            title="Cancel Task">
+                        <i class="fas fa-times mr-2"></i>
+                        Cancel
+                    </button>
+                    <?php endif; ?>
                 </div>
             </div>
 
@@ -109,11 +156,20 @@
                     <p class="text-green-100 font-medium"><?php echo e($task->assignedBy->name ?? 'System'); ?></p>
                 </div>
 
-                <!-- Due Date -->
+                <!-- Due Date with Enhanced Overdue Display -->
                 <div class="space-y-1">
                     <label class="text-xs text-gray-400 uppercase tracking-wide">Due Date</label>
-                    <p class="text-green-100 font-medium"><?php echo e($task->due_date->format('M d, Y H:i')); ?></p>
-                    <p class="text-gray-400 text-sm"><?php echo e($task->due_date->diffForHumans()); ?></p>
+                    <p class="font-medium <?php echo e($isOverdue ? 'text-red-400 font-bold' : 'text-green-100'); ?>">
+                        <?php echo e($task->due_date->format('M d, Y H:i')); ?>
+
+                    </p>
+                    <p class="text-sm <?php echo e($isOverdue ? 'text-red-300 font-medium' : 'text-gray-400'); ?>">
+                        <?php echo e($task->due_date->diffForHumans()); ?>
+
+                        <?php if($isOverdue): ?>
+                            <span class="text-red-400 font-bold ml-1">⚠️</span>
+                        <?php endif; ?>
+                    </p>
                 </div>
             </div>
 
@@ -148,6 +204,11 @@
                     <span>Created: <?php echo e($task->created_at->format('M d, Y H:i')); ?></span>
                     <?php if($task->completed_at): ?>
                     <span>Completed: <?php echo e($task->completed_at->format('M d, H:i')); ?></span>
+                    <?php elseif($isOverdue): ?>
+                    <span class="text-red-400 font-medium">
+                        ⚠️ OVERDUE BY: <?php echo e($task->due_date->diffForHumans(null, true)); ?>
+
+                    </span>
                     <?php endif; ?>
                 </div>
             </div>
@@ -177,7 +238,9 @@
             <div class="p-6">
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="text-xl font-bold text-green-100">Task Details</h3>
-                    <button onclick="closeTaskModal()" class="text-gray-400 hover:text-white">
+                    <button onclick="closeTaskModal()" 
+                            class="text-gray-400 hover:text-white hover:bg-gray-700 rounded-full p-2 transition-colors duration-200"
+                            title="Close">
                         <i class="fas fa-times text-xl"></i>
                     </button>
                 </div>
@@ -185,12 +248,48 @@
                 <div id="taskModalContent">
                     <!-- Task details will be loaded here -->
                 </div>
+                
+                <!-- Additional Close Button at Bottom -->
+                <div class="mt-6 pt-4 border-t border-gray-700 flex justify-end">
+                    <button onclick="closeTaskModal()" 
+                            class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors duration-200">
+                        <i class="fas fa-times mr-2"></i>
+                        Close
+                    </button>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
 <script>
+// Cancel task
+function cancelTask(taskId) {
+    if (confirm('Are you sure you want to cancel this task? This action cannot be undone.')) {
+        fetch(`/staff/tasks/${taskId}/cancel`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Accept': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification('Task cancelled successfully', 'success');
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showNotification(data.message || 'Failed to cancel task', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showNotification('Failed to cancel task', 'error');
+        });
+    }
+}
+
 // Update task status
 function updateTaskStatus(taskId, status) {
     fetch(`/staff/tasks/${taskId}/status`, {
@@ -255,6 +354,18 @@ function updateTaskNotes(taskId, notes) {
 
 // View task details
 function viewTaskDetails(taskId) {
+    // Show loading state
+    const modalContent = document.getElementById('taskModalContent');
+    modalContent.innerHTML = `
+        <div class="flex items-center justify-center py-8">
+            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-green-500"></div>
+            <span class="ml-3 text-green-100">Loading task details...</span>
+        </div>
+    `;
+    
+    // Show modal immediately with loading state
+    document.getElementById('taskModal').classList.remove('hidden');
+    
     fetch(`/staff/tasks/${taskId}`, {
         headers: {
             'Accept': 'application/json',
@@ -265,25 +376,57 @@ function viewTaskDetails(taskId) {
     .then(data => {
         if (data.success) {
             displayTaskDetails(data.task);
-            document.getElementById('taskModal').classList.remove('hidden');
         } else {
-            showNotification(data.message || 'Failed to load task details', 'error');
+            modalContent.innerHTML = `
+                <div class="text-center py-8">
+                    <i class="fas fa-exclamation-triangle text-4xl text-red-500 mb-4"></i>
+                    <p class="text-red-100 text-lg mb-4">Failed to load task details</p>
+                    <button onclick="closeTaskModal()" 
+                            class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700">
+                        Close
+                    </button>
+                </div>
+            `;
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        showNotification('Failed to load task details', 'error');
+        modalContent.innerHTML = `
+            <div class="text-center py-8">
+                <i class="fas fa-exclamation-triangle text-4xl text-red-500 mb-4"></i>
+                <p class="text-red-100 text-lg mb-4">Failed to load task details</p>
+                <button onclick="closeTaskModal()" 
+                        class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700">
+                    Close
+                </button>
+            </div>
+        `;
     });
 }
 
 // Display task details in modal
 function displayTaskDetails(task) {
     const modalContent = document.getElementById('taskModalContent');
+    const isOverdue = new Date(task.due_date) < new Date() && !['completed', 'cancelled'].includes(task.status);
+    
     modalContent.innerHTML = `
+        ${isOverdue ? `
+        <div class="bg-red-600 text-white p-4 rounded-lg mb-4 flex items-center">
+            <i class="fas fa-exclamation-triangle text-xl mr-3 animate-bounce"></i>
+            <div>
+                <div class="font-bold">⚠️ THIS TASK IS OVERDUE!</div>
+                <div class="text-sm">Due: ${new Date(task.due_date).toLocaleString()}</div>
+            </div>
+        </div>
+        ` : ''}
+        
         <div class="space-y-4">
             <div>
                 <label class="text-xs text-gray-400 uppercase tracking-wide">Title</label>
-                <p class="text-green-100 font-medium">${task.title}</p>
+                <p class="text-green-100 font-medium">
+                    ${task.title}
+                    ${isOverdue ? '<span class="text-red-400 ml-2">[OVERDUE]</span>' : ''}
+                </p>
             </div>
             
             <div>
@@ -294,12 +437,18 @@ function displayTaskDetails(task) {
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <label class="text-xs text-gray-400 uppercase tracking-wide">Status</label>
-                    <p class="text-green-100 font-medium capitalize">${task.status}</p>
+                    <p class="text-green-100 font-medium capitalize">
+                        ${task.status.replace('_', ' ')}
+                        ${isOverdue ? '<span class="text-red-400 ml-2">⚠️ OVERDUE</span>' : ''}
+                    </p>
                 </div>
                 
                 <div>
                     <label class="text-xs text-gray-400 uppercase tracking-wide">Due Date</label>
-                    <p class="text-green-100 font-medium">${new Date(task.due_date).toLocaleDateString()}</p>
+                    <p class="font-medium ${isOverdue ? 'text-red-400' : 'text-green-100'}">
+                        ${new Date(task.due_date).toLocaleDateString()}
+                        ${isOverdue ? ' ⚠️' : ''}
+                    </p>
                 </div>
             </div>
             
@@ -328,13 +477,58 @@ function displayTaskDetails(task) {
                 <p class="text-gray-300">${task.notes}</p>
             </div>
             ` : ''}
+            
+            <!-- Quick Actions in Modal -->
+            <div class="pt-4 border-t border-gray-700">
+                <label class="text-xs text-gray-400 uppercase tracking-wide mb-2 block">Quick Actions</label>
+                <div class="flex gap-2">
+                    ${task.status !== 'completed' ? `
+                    <button onclick="updateTaskStatusFromModal(${task.id}, 'completed')" 
+                            class="${isOverdue ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'} text-white px-3 py-2 rounded text-sm">
+                        <i class="fas fa-check mr-1"></i>
+                        ${isOverdue ? 'Complete Overdue Task' : 'Mark Complete'}
+                    </button>
+                    ` : ''}
+                    
+                    ${task.status === 'pending' ? `
+                    <button onclick="updateTaskStatusFromModal(${task.id}, 'in_progress')" 
+                            class="bg-orange-600 text-white px-3 py-2 rounded text-sm hover:bg-orange-700">
+                        <i class="fas fa-play mr-1"></i>
+                        Start Work
+                    </button>
+                    ` : ''}
+                </div>
+            </div>
         </div>
     `;
 }
 
+// Update task status from modal and close
+function updateTaskStatusFromModal(taskId, status) {
+    updateTaskStatus(taskId, status);
+    setTimeout(() => {
+        closeTaskModal();
+        // Optional: Refresh the page to show updated status
+        location.reload();
+    }, 1000);
+}
+
 // Close task modal
 function closeTaskModal() {
-    document.getElementById('taskModal').classList.add('hidden');
+    const modal = document.getElementById('taskModal');
+    modal.classList.add('hidden');
+    
+    // Clear the modal content
+    document.getElementById('taskModalContent').innerHTML = '';
+    
+    // Optional: Add a subtle animation effect
+    modal.style.opacity = '0';
+    setTimeout(() => {
+        modal.style.opacity = '1';
+    }, 150);
+    
+    // Ensure we're back to the main tasks view
+    console.log('Returned to My Tasks module');
 }
 
 // Filtering
@@ -350,8 +544,14 @@ function filterTasks() {
     cards.forEach(card => {
         let show = true;
         
-        if (statusFilter && card.dataset.status !== statusFilter) {
-            show = false;
+        if (statusFilter) {
+            if (statusFilter === 'overdue') {
+                // Show only overdue tasks
+                show = card.dataset.overdue === 'true';
+            } else {
+                // Show by status
+                show = card.dataset.status === statusFilter;
+            }
         }
         
         card.style.display = show ? 'block' : 'none';
@@ -401,7 +601,29 @@ document.getElementById('taskModal').addEventListener('click', function(e) {
         closeTaskModal();
     }
 });
+
+// Add ESC key to close modal
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        const modal = document.getElementById('taskModal');
+        if (!modal.classList.contains('hidden')) {
+            closeTaskModal();
+        }
+    }
+});
 </script>
+
+<!-- Add custom CSS for enhanced overdue styling -->
+<style>
+@keyframes urgent-glow {
+    0%, 100% { box-shadow: 0 0 5px rgba(239, 68, 68, 0.5); }
+    50% { box-shadow: 0 0 20px rgba(239, 68, 68, 0.8); }
+}
+
+[data-overdue="true"] {
+    animation: urgent-glow 2s infinite;
+}
+</style>
 <?php $__env->stopSection(); ?>
 
 <?php echo $__env->make('layouts.admin', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\valesbeachresort\ValesBeach\resources\views/staff/tasks/index.blade.php ENDPATH**/ ?>

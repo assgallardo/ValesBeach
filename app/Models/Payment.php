@@ -14,6 +14,7 @@ class Payment extends Model
      */
     protected $fillable = [
         'booking_id',
+        'service_request_id',
         'user_id',
         'payment_reference',
         'amount',
@@ -54,6 +55,14 @@ class Payment extends Model
     public function booking()
     {
         return $this->belongsTo(Booking::class);
+    }
+
+    /**
+     * Get the service request associated with the payment.
+     */
+    public function serviceRequest()
+    {
+        return $this->belongsTo(ServiceRequest::class);
     }
 
     /**
@@ -115,9 +124,31 @@ class Payment extends Model
             'bank_transfer' => 'Bank Transfer',
             'gcash' => 'GCash',
             'paymaya' => 'PayMaya',
-            'online' => 'Online Payment'
+            'online' => 'Online Payment',
+            'service_request' => 'Service Request'
         ];
 
         return $methods[$this->payment_method] ?? ucfirst($this->payment_method);
+    }
+
+    /**
+     * Get payment type (booking or service)
+     */
+    public function getPaymentTypeAttribute()
+    {
+        if ($this->service_request_id) {
+            return 'service';
+        } elseif ($this->booking_id) {
+            return 'booking';
+        }
+        return 'unknown';
+    }
+
+    /**
+     * Get payment category display name
+     */
+    public function getPaymentCategoryAttribute()
+    {
+        return $this->payment_type === 'service' ? 'Services' : 'Accommodation';
     }
 }

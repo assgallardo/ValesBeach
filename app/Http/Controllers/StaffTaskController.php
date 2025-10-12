@@ -108,6 +108,47 @@ class StaffTaskController extends Controller
     }
 
     /**
+     * Cancel a task
+     */
+    public function cancel(Request $request, Task $task)
+    {
+        // Ensure the task belongs to the current user
+        if ($task->assigned_to !== auth()->id()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized access to task'
+            ], 403);
+        }
+
+        // Check if task can be cancelled
+        if (in_array($task->status, ['completed', 'cancelled'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Cannot cancel a task that is already completed or cancelled'
+            ], 400);
+        }
+
+        $task->update([
+            'status' => 'cancelled',
+            'completed_at' => now()
+        ]);
+
+        // Also update the related service request status if it exists
+        if ($task->serviceRequest) {
+            $serviceRequest = $task->serviceRequest;
+            $serviceRequest->update([
+                'status' => 'cancelled',
+                'cancelled_at' => now()
+            ]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Task cancelled successfully!'
+        ]);
+    }
+
+    /**
      * Get task details for modal display
      */
     public function show(Task $task)

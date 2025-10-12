@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Booking;
 use App\Models\Payment;
 use App\Models\Invoice;
+use App\Models\ServiceRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -103,7 +104,7 @@ class PaymentController extends Controller
     public function history()
     {
         $payments = Auth::user()->payments()
-            ->with(['booking', 'booking.room'])
+            ->with(['booking', 'booking.room', 'serviceRequest'])
             ->orderBy('created_at', 'desc')
             ->paginate(10);
 

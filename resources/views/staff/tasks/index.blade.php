@@ -130,6 +130,15 @@
                         <i class="fas fa-eye mr-2"></i>
                         View
                     </button>
+                    
+                    @if(!in_array($task->status, ['completed', 'cancelled']))
+                    <button onclick="cancelTask({{ $task->id }})" 
+                            class="inline-flex items-center px-3 py-2 bg-red-600 hover:bg-red-700 text-white text-sm rounded-lg transition-colors" 
+                            title="Cancel Task">
+                        <i class="fas fa-times mr-2"></i>
+                        Cancel
+                    </button>
+                    @endif
                 </div>
             </div>
 
@@ -250,6 +259,33 @@
 </div>
 
 <script>
+// Cancel task
+function cancelTask(taskId) {
+    if (confirm('Are you sure you want to cancel this task? This action cannot be undone.')) {
+        fetch(`/staff/tasks/${taskId}/cancel`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Accept': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification('Task cancelled successfully', 'success');
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showNotification(data.message || 'Failed to cancel task', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showNotification('Failed to cancel task', 'error');
+        });
+    }
+}
+
 // Update task status
 function updateTaskStatus(taskId, status) {
     fetch(`/staff/tasks/${taskId}/status`, {

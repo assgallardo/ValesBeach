@@ -1,120 +1,126 @@
-@extends('layouts.guest')
-
-@section('content')
+<?php $__env->startSection('content'); ?>
 <div class="container mx-auto px-4 lg:px-16 py-8">
     <!-- Header with View History Button -->
     <div class="flex justify-between items-center mb-8">
         <h1 class="text-3xl font-bold text-white">My Bookings</h1>
-        <a href="{{ route('guest.bookings.history') }}" 
+        <a href="<?php echo e(route('guest.bookings.history')); ?>" 
            class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
             <i class="fas fa-history mr-2"></i>
             View History
         </a>
     </div>
 
-    @if($bookings->isEmpty())
+    <?php if($bookings->isEmpty()): ?>
         <div class="bg-green-900/50 rounded-lg p-8 text-center">
             <p class="text-gray-300 text-lg">You haven't made any bookings yet.</p>
-            <a href="{{ route('guest.rooms.browse') }}" 
+            <a href="<?php echo e(route('guest.rooms.browse')); ?>" 
                class="inline-block mt-4 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700">
                 Browse Rooms
             </a>
         </div>
-    @else
+    <?php else: ?>
         <div class="grid gap-6">
-            @foreach($bookings as $booking)
+            <?php $__currentLoopData = $bookings; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $booking): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                 <div class="bg-green-900/50 rounded-lg p-6">
                     <div class="flex flex-wrap justify-between items-start gap-4">
                         <div>
                             <h3 class="text-xl font-semibold text-white mb-2">
-                                {{ $booking->room->name }}
+                                <?php echo e($booking->room->name); ?>
+
                             </h3>
                             <p class="text-gray-300">
-                                Check-in: {{ $booking->check_in->format('M d, Y \a\t g:i A') }}
+                                Check-in: <?php echo e($booking->check_in->format('M d, Y \a\t g:i A')); ?>
+
                             </p>
                             <p class="text-gray-300">
-                                Check-out: {{ $booking->check_out->format('M d, Y \a\t g:i A') }}
+                                Check-out: <?php echo e($booking->check_out->format('M d, Y \a\t g:i A')); ?>
+
                             </p>
                         </div>
                         <div class="text-right">
                             <p class="text-sm text-gray-400 mb-1">Total Amount</p>
                             <p class="text-2xl font-bold text-green-400">
-                                {{ $booking->formatted_total_price }}
+                                <?php echo e($booking->formatted_total_price); ?>
+
                             </p>
                             <p class="text-sm text-gray-400 mt-2">
                                 Status: <span class="capitalize px-2 py-1 rounded text-xs font-medium
-                                    @if($booking->status === 'confirmed') bg-green-600 text-white
-                                    @elseif($booking->status === 'pending') bg-yellow-600 text-white
-                                    @elseif($booking->status === 'checked_in') bg-blue-600 text-white
-                                    @elseif($booking->status === 'checked_out') bg-gray-600 text-white
-                                    @elseif($booking->status === 'cancelled') bg-red-600 text-white
-                                    @else bg-gray-600 text-white @endif">
-                                    {{ str_replace('_', ' ', $booking->status) }}
+                                    <?php if($booking->status === 'confirmed'): ?> bg-green-600 text-white
+                                    <?php elseif($booking->status === 'pending'): ?> bg-yellow-600 text-white
+                                    <?php elseif($booking->status === 'checked_in'): ?> bg-blue-600 text-white
+                                    <?php elseif($booking->status === 'checked_out'): ?> bg-gray-600 text-white
+                                    <?php elseif($booking->status === 'cancelled'): ?> bg-red-600 text-white
+                                    <?php else: ?> bg-gray-600 text-white <?php endif; ?>">
+                                    <?php echo e(str_replace('_', ' ', $booking->status)); ?>
+
                                 </span>
                             </p>
                         </div>
                     </div>
 
-                    @if($booking->status === 'pending' || $booking->status === 'confirmed')
+                    <?php if($booking->status === 'pending' || $booking->status === 'confirmed'): ?>
                         <div class="mt-4 flex flex-wrap justify-end gap-2">
                             <!-- View Details Button -->
-                            <a href="{{ route('guest.bookings.show', $booking) }}" 
+                            <a href="<?php echo e(route('guest.bookings.show', $booking)); ?>" 
                                class="px-3 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
                                 <i class="fas fa-eye mr-1"></i>View Details
                             </a>
                             
                             <!-- Payment Button (if payment is needed) -->
-                            @if($booking->remaining_balance > 0)
-                            <a href="{{ route('payments.create', $booking) }}" 
+                            <?php if($booking->remaining_balance > 0): ?>
+                            <a href="<?php echo e(route('payments.create', $booking)); ?>" 
                                class="px-3 py-2 bg-green-600 text-white text-sm rounded hover:bg-green-700">
                                 <i class="fas fa-credit-card mr-1"></i>Pay Now
                             </a>
-                            @endif
+                            <?php endif; ?>
                             
                             <!-- Invoice Button (if invoice exists) -->
-                            @if($booking->invoice)
-                            <a href="{{ route('invoices.show', $booking->invoice) }}" 
+                            <?php if($booking->invoice): ?>
+                            <a href="<?php echo e(route('invoices.show', $booking->invoice)); ?>" 
                                class="px-3 py-2 bg-purple-600 text-white text-sm rounded hover:bg-purple-700">
                                 <i class="fas fa-file-invoice mr-1"></i>Invoice
                             </a>
-                            @endif
+                            <?php endif; ?>
                             
                             <!-- Cancel Booking Button -->
-                            <form action="{{ route('guest.bookings.cancel', $booking) }}" 
+                            <form action="<?php echo e(route('guest.bookings.cancel', $booking)); ?>" 
                                   method="POST"
                                   onsubmit="return confirm('Are you sure you want to cancel this booking?')"
                                   class="inline">
-                                @csrf
+                                <?php echo csrf_field(); ?>
                                 <button type="submit" 
                                         class="px-3 py-2 bg-red-600 text-white text-sm rounded hover:bg-red-700">
                                     <i class="fas fa-times mr-1"></i>Cancel
                                 </button>
                             </form>
                         </div>
-                    @else
+                    <?php else: ?>
                         <!-- View Details Button for other statuses -->
                         <div class="mt-4 flex flex-wrap justify-end gap-2">
-                            <a href="{{ route('guest.bookings.show', $booking) }}" 
+                            <a href="<?php echo e(route('guest.bookings.show', $booking)); ?>" 
                                class="px-3 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
                                 <i class="fas fa-eye mr-1"></i>View Details
                             </a>
                             
                             <!-- Invoice Button (if invoice exists) -->
-                            @if($booking->invoice)
-                            <a href="{{ route('invoices.show', $booking->invoice) }}" 
+                            <?php if($booking->invoice): ?>
+                            <a href="<?php echo e(route('invoices.show', $booking->invoice)); ?>" 
                                class="px-3 py-2 bg-purple-600 text-white text-sm rounded hover:bg-purple-700">
                                 <i class="fas fa-file-invoice mr-1"></i>Invoice
                             </a>
-                            @endif
+                            <?php endif; ?>
                         </div>
-                    @endif
+                    <?php endif; ?>
                 </div>
-            @endforeach
+            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
         </div>
 
         <div class="mt-6">
-            {{ $bookings->links() }}
+            <?php echo e($bookings->links()); ?>
+
         </div>
-    @endif
+    <?php endif; ?>
 </div>
-@endsection
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('layouts.guest', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\valesbeachresort\ValesBeach\resources\views/guest/bookings/index.blade.php ENDPATH**/ ?>

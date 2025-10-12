@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Service;
 use App\Models\ServiceRequest;
+use App\Models\Payment;
 use Auth;
 use Carbon\Carbon; // Add this import
 use Illuminate\Support\Facades\Log; // Add this import
@@ -179,7 +180,35 @@ class GuestServiceController extends Controller
             
             \Log::info('Service request created successfully:', $serviceRequest->toArray());
 
-            return redirect()->route('guest.services.index')
+            // Create a payment record for the service request
+            // For now, we'll assume services are free or have a default amount
+            // You can modify this based on your service pricing structure
+            $serviceAmount = 0; // Default to free, can be modified based on service pricing
+            
+            try {
+                Payment::create([
+                    'service_request_id' => $serviceRequest->id,
+                    'user_id' => $serviceRequest->guest_id, // Use guest_id from service request
+                    'amount' => $serviceAmount,
+                    'payment_method' => 'service_request', // Special method for service requests
+                    'status' => 'completed', // Service requests are considered "paid" when submitted
+                    'payment_date' => now(),
+                    'notes' => 'Service request payment - ' . ($serviceRequest->service_type ?? 'Service')
+                ]);
+                
+                \Log::info('Payment record created for service request:', [
+                    'service_request_id' => $serviceRequest->id,
+                    'amount' => $serviceAmount
+                ]);
+            } catch (\Exception $e) {
+                \Log::error('Failed to create payment record for service request:', [
+                    'service_request_id' => $serviceRequest->id,
+                    'error' => $e->getMessage()
+                ]);
+                // Don't fail the service request creation if payment record fails
+            }
+
+            return redirect()->route('guest.services.history')
                            ->with('success', 'Your service request has been submitted successfully! We will contact you soon to confirm your booking.');
 
         } catch (\Illuminate\Database\QueryException $e) {
@@ -275,7 +304,7 @@ class GuestServiceController extends Controller
             'manager_notes' => ($serviceRequest->manager_notes ?? '') . "\nCancelled by guest on " . now()->format('M d, Y g:i A')
         ]);
 
-        return redirect()->route('guest.services.requests.history')
+        return redirect()->route('guest.services.history')
                        ->with('success', 'Booking cancelled successfully.');
     }
 
@@ -338,8 +367,8 @@ class GuestServiceController extends Controller
         })
         ->findOrFail($id);
 
-        // Only allow cancellation if the request is pending or confirmed
-        if (!in_array($serviceRequest->status, ['pending', 'confirmed'])) {
+        // Only allow cancellation if the request is not already cancelled or completed
+        if (in_array($serviceRequest->status, ['cancelled', 'completed'])) {
             return response()->json([
                 'success' => false,
                 'message' => 'This request cannot be cancelled.'

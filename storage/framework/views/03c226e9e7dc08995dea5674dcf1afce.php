@@ -1,6 +1,4 @@
-@extends('layouts.guest')
-
-@section('content')
+<?php $__env->startSection('content'); ?>
 <div class="container mx-auto px-4 lg:px-16 py-8">
     <!-- Header -->
     <div class="mb-8">
@@ -9,7 +7,7 @@
                 <h1 class="text-3xl font-bold text-green-50 mb-2">My Service Requests</h1>
                 <p class="text-green-200">Track and manage your service requests</p>
             </div>
-            <a href="{{ route('guest.dashboard') }}" 
+            <a href="<?php echo e(route('guest.dashboard')); ?>" 
                class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors duration-200">
                 <i class="fas fa-arrow-left mr-2"></i>
                 Back to Dashboard
@@ -20,23 +18,23 @@
     <!-- Quick Stats -->
     <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
         <div class="bg-blue-600 rounded-lg p-4 text-white text-center">
-            <div class="text-2xl font-bold">{{ $pendingRequests }}</div>
+            <div class="text-2xl font-bold"><?php echo e($pendingRequests); ?></div>
             <div class="text-sm opacity-90">Pending</div>
         </div>
         <div class="bg-orange-600 rounded-lg p-4 text-white text-center">
-            <div class="text-2xl font-bold">{{ $inProgressRequests }}</div>
+            <div class="text-2xl font-bold"><?php echo e($inProgressRequests); ?></div>
             <div class="text-sm opacity-90">In Progress</div>
         </div>
         <div class="bg-green-600 rounded-lg p-4 text-white text-center">
-            <div class="text-2xl font-bold">{{ $completedRequests }}</div>
+            <div class="text-2xl font-bold"><?php echo e($completedRequests); ?></div>
             <div class="text-sm opacity-90">Completed</div>
         </div>
         <div class="bg-red-600 rounded-lg p-4 text-white text-center">
-            <div class="text-2xl font-bold">{{ $cancelledRequests }}</div>
+            <div class="text-2xl font-bold"><?php echo e($cancelledRequests); ?></div>
             <div class="text-sm opacity-90">Cancelled</div>
         </div>
         <div class="bg-gray-600 rounded-lg p-4 text-white text-center">
-            <div class="text-2xl font-bold">{{ $totalRequests }}</div>
+            <div class="text-2xl font-bold"><?php echo e($totalRequests); ?></div>
             <div class="text-sm opacity-90">Total</div>
         </div>
     </div>
@@ -59,98 +57,101 @@
             </button>
             
             <!-- Bulk Delete for Cancelled Requests -->
-            @if($cancelledRequests > 0)
+            <?php if($cancelledRequests > 0): ?>
             <button onclick="deleteAllCancelledRequests()" 
                     class="bg-red-700 text-white px-4 py-2 rounded text-sm hover:bg-red-800 ml-auto">
                 <i class="fas fa-trash mr-1"></i>
-                Delete All Cancelled ({{ $cancelledRequests }})
+                Delete All Cancelled (<?php echo e($cancelledRequests); ?>)
             </button>
-            @endif
+            <?php endif; ?>
         </div>
     </div>
 
     <!-- Service Requests List -->
     <div class="space-y-4" id="requestsContainer">
-        @forelse($serviceRequests as $request)
+        <?php $__empty_1 = true; $__currentLoopData = $serviceRequests; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $request): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
         <div class="bg-gray-800 rounded-lg p-6 hover:bg-gray-750 transition-colors request-card" 
-             data-request-id="{{ $request->id }}" 
-             data-status="{{ $request->status }}">
+             data-request-id="<?php echo e($request->id); ?>" 
+             data-status="<?php echo e($request->status); ?>">
             
             <!-- Request Header -->
             <div class="flex items-start justify-between mb-4">
                 <div class="flex-1">
                     <h3 class="text-xl font-semibold text-green-100 mb-2">
-                        {{ $request->service_name ?? $request->service_type ?? 'Service Request' }}
-                        @if($request->status === 'cancelled')
+                        <?php echo e($request->service_name ?? $request->service_type ?? 'Service Request'); ?>
+
+                        <?php if($request->status === 'cancelled'): ?>
                         <span class="text-red-400 text-sm ml-2">[CANCELLED]</span>
-                        @endif
+                        <?php endif; ?>
                     </h3>
                     
                     <!-- Status Badge -->
                     <div class="flex items-center space-x-3 mb-3">
                         <span class="px-3 py-1 text-sm rounded-full font-medium
-                            @switch($request->status)
-                                @case('pending')
+                            <?php switch($request->status):
+                                case ('pending'): ?>
                                     bg-yellow-600 text-yellow-100
-                                    @break
-                                @case('confirmed')
+                                    <?php break; ?>
+                                <?php case ('confirmed'): ?>
                                     bg-blue-600 text-blue-100
-                                    @break
-                                @case('assigned')
+                                    <?php break; ?>
+                                <?php case ('assigned'): ?>
                                     bg-purple-600 text-purple-100
-                                    @break
-                                @case('in_progress')
+                                    <?php break; ?>
+                                <?php case ('in_progress'): ?>
                                     bg-orange-600 text-orange-100
-                                    @break
-                                @case('completed')
+                                    <?php break; ?>
+                                <?php case ('completed'): ?>
                                     bg-green-600 text-green-100
-                                    @break
-                                @case('cancelled')
+                                    <?php break; ?>
+                                <?php case ('cancelled'): ?>
                                     bg-red-600 text-red-100
-                                    @break
-                                @default
+                                    <?php break; ?>
+                                <?php default: ?>
                                     bg-gray-600 text-gray-100
-                            @endswitch">
-                            {{ ucfirst(str_replace('_', ' ', $request->status)) }}
+                            <?php endswitch; ?>">
+                            <?php echo e(ucfirst(str_replace('_', ' ', $request->status))); ?>
+
                         </span>
                         
                         <span class="text-sm text-gray-400">
-                            Request #{{ $request->id }}
+                            Request #<?php echo e($request->id); ?>
+
                         </span>
                     </div>
                 </div>
                 
                 <!-- Request Actions -->
                 <div class="flex gap-2">
-                    <button onclick="viewRequestDetails({{ $request->id }})" 
+                    <button onclick="viewRequestDetails(<?php echo e($request->id); ?>)" 
                             class="bg-blue-600 text-white px-3 py-2 text-sm rounded-lg hover:bg-blue-700 transition-colors">
                         <i class="fas fa-eye mr-1"></i>
                         View
                     </button>
                     
-                    @if($request->status === 'cancelled')
+                    <?php if($request->status === 'cancelled'): ?>
                         <!-- Cancel option for cancelled requests (to show it was cancelled) -->
-                        <button onclick="cancelRequest({{ $request->id }})" 
+                        <button onclick="cancelRequest(<?php echo e($request->id); ?>)" 
                                 class="bg-gray-600 text-white px-3 py-2 text-sm rounded-lg hover:bg-gray-700 transition-colors"
                                 title="Request already cancelled" disabled>
                             <i class="fas fa-times mr-1"></i>
                             Cancelled
                         </button>
                         <!-- Delete option for cancelled requests -->
-                        <button onclick="deleteRequest({{ $request->id }})" 
+                        <button onclick="deleteRequest(<?php echo e($request->id); ?>)" 
                                 class="bg-red-700 text-white px-3 py-2 text-sm rounded-lg hover:bg-red-800 transition-colors"
                                 title="Permanently delete this request">
                             <i class="fas fa-trash mr-1"></i>
                             Delete
                         </button>
-                    @else
+                    <?php else: ?>
                         <!-- Cancel option for all other requests -->
-                        <button onclick="cancelRequest({{ $request->id }})" 
+                        <button onclick="cancelRequest(<?php echo e($request->id); ?>)" 
                                 class="bg-red-600 text-white px-3 py-2 text-sm rounded-lg hover:bg-red-700 transition-colors">
                             <i class="fas fa-times mr-1"></i>
                             Cancel
                         </button>
-                    @endif
+                    <?php endif; ?>
                 </div>
             </div>
 
@@ -160,58 +161,62 @@
                 <div class="space-y-1">
                     <label class="text-xs text-gray-400 uppercase tracking-wide">Description</label>
                     <p class="text-gray-300 text-sm">
-                        {{ $request->description ? Str::limit($request->description, 100) : 'No description provided' }}
+                        <?php echo e($request->description ? Str::limit($request->description, 100) : 'No description provided'); ?>
+
                     </p>
                 </div>
 
                 <!-- Scheduled Date -->
-                @if($request->scheduled_date)
+                <?php if($request->scheduled_date): ?>
                 <div class="space-y-1">
                     <label class="text-xs text-gray-400 uppercase tracking-wide">Scheduled Date</label>
                     <p class="text-green-100 font-medium">
-                        {{ \Carbon\Carbon::parse($request->scheduled_date)->format('M d, Y') }}
+                        <?php echo e(\Carbon\Carbon::parse($request->scheduled_date)->format('M d, Y')); ?>
+
                     </p>
                 </div>
-                @endif
+                <?php endif; ?>
 
                 <!-- Request Date -->
                 <div class="space-y-1">
                     <label class="text-xs text-gray-400 uppercase tracking-wide">Requested</label>
                     <p class="text-gray-400 text-sm">
-                        {{ $request->created_at->format('M d, Y H:i') }}
+                        <?php echo e($request->created_at->format('M d, Y H:i')); ?>
+
                     </p>
                 </div>
             </div>
 
-            @if($request->special_requests)
+            <?php if($request->special_requests): ?>
             <div class="mt-4 pt-3 border-t border-gray-700">
                 <label class="text-xs text-gray-400 uppercase tracking-wide">Special Requests</label>
-                <p class="text-gray-300 text-sm mt-1">{{ $request->special_requests }}</p>
+                <p class="text-gray-300 text-sm mt-1"><?php echo e($request->special_requests); ?></p>
             </div>
-            @endif
+            <?php endif; ?>
         </div>
-        @empty
+        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
         <div class="bg-gray-800 rounded-lg p-8 text-center">
             <i class="fas fa-concierge-bell text-4xl text-gray-600 mb-4"></i>
             <p class="text-gray-400 text-lg mb-4">No service requests found</p>
             <p class="text-gray-500 text-sm mb-6">You haven't made any service requests yet</p>
-            @if(Route::has('guest.services.index'))
-            <a href="{{ route('guest.services.index') }}" 
+            <?php if(Route::has('guest.services.index')): ?>
+            <a href="<?php echo e(route('guest.services.index')); ?>" 
                class="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors duration-200">
                 <i class="fas fa-plus mr-2"></i>
                 Request a Service
             </a>
-            @endif
+            <?php endif; ?>
         </div>
-        @endforelse
+        <?php endif; ?>
     </div>
 
     <!-- Pagination -->
-    @if($serviceRequests->hasPages())
+    <?php if($serviceRequests->hasPages()): ?>
     <div class="mt-6">
-        {{ $serviceRequests->links() }}
+        <?php echo e($serviceRequests->links()); ?>
+
     </div>
-    @endif
+    <?php endif; ?>
 </div>
 
 <!-- Request Details Modal -->
@@ -653,7 +658,7 @@ function updateStats() {
                 <i class="fas fa-concierge-bell text-4xl text-gray-600 mb-4"></i>
                 <p class="text-gray-400 text-lg mb-4">No service requests found</p>
                 <p class="text-gray-500 text-sm mb-6">You haven't made any service requests yet</p>
-                <a href="{{ route('guest.services.index') }}" 
+                <a href="<?php echo e(route('guest.services.index')); ?>" 
                    class="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors duration-200">
                     <i class="fas fa-plus mr-2"></i>
                     Request a Service
@@ -715,4 +720,5 @@ document.addEventListener('DOMContentLoaded', function() {
     updateStats();
 });
 </script>
-@endsection
+<?php $__env->stopSection(); ?>
+<?php echo $__env->make('layouts.guest', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\valesbeachresort\ValesBeach\resources\views/guest/services/history.blade.php ENDPATH**/ ?>

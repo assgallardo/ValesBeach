@@ -20,110 +20,112 @@
         </div>
 
         <!-- Quick Action Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6 mb-16">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 mb-16">
             <!-- Browse Rooms Card -->
             <a href="<?php echo e(route('guest.rooms.browse')); ?>" class="group">
-                <div class="bg-green-900 border-2 border-green-700 rounded-xl p-6 text-center transform transition duration-300 hover:scale-105 hover:bg-green-800 cursor-pointer shadow-lg">
-                    <div class="bg-green-700 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4 group-hover:bg-green-600 transition-colors duration-300">
-                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
-                        </svg>
+                <div class="bg-green-900 border-2 border-green-700 rounded-xl p-8 text-center transform transition duration-300 hover:scale-105 hover:bg-green-800 cursor-pointer shadow-lg h-64 flex flex-col justify-between">
+                    <div>
+                        <div class="bg-green-700 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6 group-hover:bg-green-600 transition-colors duration-300">
+                            <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-semibold text-white mb-3">Browse Rooms</h3>
+                        <p class="text-green-100 text-sm leading-relaxed">Explore our luxurious accommodations and find your perfect stay</p>
                     </div>
-                    <h3 class="text-xl font-semibold text-white mb-2">Browse Rooms</h3>
-                    <p class="text-green-100">Explore our luxurious accommodations</p>
                 </div>
             </a>
 
             <!-- My Bookings Card -->
             <a href="<?php echo e(route('guest.bookings')); ?>" class="group">
-                <div class="bg-green-900 border-2 border-green-700 rounded-xl p-6 text-center transform transition duration-300 hover:scale-105 hover:bg-green-800 cursor-pointer shadow-lg">
-                    <div class="bg-green-700 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4 group-hover:bg-green-600 transition-colors duration-300">
-                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                        </svg>
+                <div class="bg-green-900 border-2 border-green-700 rounded-xl p-8 text-center transform transition duration-300 hover:scale-105 hover:bg-green-800 cursor-pointer shadow-lg h-64 flex flex-col justify-between">
+                    <div>
+                        <div class="bg-green-700 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6 group-hover:bg-green-600 transition-colors duration-300">
+                            <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-semibold text-white mb-3">My Bookings</h3>
+                        <p class="text-green-100 text-sm leading-relaxed">View and manage your current reservations</p>
                     </div>
-                    <h3 class="text-xl font-semibold text-white mb-2">My Bookings</h3>
-                    <p class="text-green-100">View and manage your reservations</p>
-                </div>
-            </a>
-
-            <!-- Booking History Card -->
-            <a href="<?php echo e(route('guest.bookings.history')); ?>" class="group">
-                <div class="bg-green-900 border-2 border-green-700 rounded-xl p-6 text-center transform transition duration-300 hover:scale-105 hover:bg-green-800 cursor-pointer shadow-lg">
-                    <div class="bg-green-700 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4 group-hover:bg-green-600 transition-colors duration-300">
-                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/>
-                        </svg>
-                    </div>
-                    <h3 class="text-xl font-semibold text-white mb-2">Booking History</h3>
-                    <p class="text-green-100">View your past reservations</p>
                 </div>
             </a>
 
             <!-- Payment History Card -->
             <a href="<?php echo e(route('payments.history')); ?>" class="group">
-                <div class="bg-green-900 border-2 border-green-700 rounded-xl p-6 text-center transform transition duration-300 hover:scale-105 hover:bg-green-800 cursor-pointer shadow-lg">
-                    <div class="bg-green-700 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4 group-hover:bg-green-600 transition-colors duration-300">
-                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v2a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
-                        </svg>
+                <div class="bg-green-900 border-2 border-green-700 rounded-xl p-8 text-center transform transition duration-300 hover:scale-105 hover:bg-green-800 cursor-pointer shadow-lg h-64 flex flex-col justify-between">
+                    <div>
+                        <div class="bg-green-700 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6 group-hover:bg-green-600 transition-colors duration-300">
+                            <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v2a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-semibold text-white mb-3">Payment History</h3>
+                        <p class="text-green-100 text-sm leading-relaxed">View your payment transactions and billing history</p>
                     </div>
-                    <h3 class="text-xl font-semibold text-white mb-2">Payment History</h3>
-                    <p class="text-green-100">View your payment transactions</p>
-                </div>
-            </a>
-
-            <!-- Invoices Card -->
-            <a href="<?php echo e(route('invoices.index')); ?>" class="group">
-                <div class="bg-green-900 border-2 border-green-700 rounded-xl p-6 text-center transform transition duration-300 hover:scale-105 hover:bg-green-800 cursor-pointer shadow-lg">
-                    <div class="bg-green-700 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4 group-hover:bg-green-600 transition-colors duration-300">
-                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                        </svg>
-                    </div>
-                    <h3 class="text-xl font-semibold text-white mb-2">Invoices</h3>
-                    <p class="text-green-100">View and download invoices</p>
                 </div>
             </a>
 
             <!-- Resort Services Card -->
-                        <!-- Resort Services Card -->
             <a href="<?php echo e(route('guest.services.index')); ?>" class="group">
-                <div class="bg-green-900 border-2 border-green-700 rounded-xl p-6 text-center transform transition duration-300 hover:scale-105 hover:bg-green-800 cursor-pointer shadow-lg">
-                    <div class="bg-green-700 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4 group-hover:bg-green-600 transition-colors duration-300">
-                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
-                        </svg>
+                <div class="bg-green-900 border-2 border-green-700 rounded-xl p-8 text-center transform transition duration-300 hover:scale-105 hover:bg-green-800 cursor-pointer shadow-lg h-64 flex flex-col justify-between">
+                    <div>
+                        <div class="bg-green-700 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6 group-hover:bg-green-600 transition-colors duration-300">
+                            <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-semibold text-white mb-3">Resort Services</h3>
+                        <p class="text-green-100 text-sm leading-relaxed">Spa, dining, and activity services for your relaxation</p>
                     </div>
-                    <h3 class="text-xl font-semibold text-white mb-2">Resort Services</h3>
-                    <p class="text-green-100">Spa, dining, and activity services</p>
                 </div>
             </a>
 
             <!-- Food Ordering Card -->
             <a href="<?php echo e(route('guest.food-orders.menu')); ?>" class="group">
-                <div class="bg-green-900 border-2 border-green-700 rounded-xl p-6 text-center transform transition duration-300 hover:scale-105 hover:bg-green-800 cursor-pointer shadow-lg">
-                    <div class="bg-green-700 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4 group-hover:bg-green-600 transition-colors duration-300">
-                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16l-1 10a2 2 0 01-2 2H7a2 2 0 01-2-2L4 6zM4 6l-1-2m5 5v6m4-6v6m4-6v6"/>
-                        </svg>
+                <div class="bg-green-900 border-2 border-green-700 rounded-xl p-8 text-center transform transition duration-300 hover:scale-105 hover:bg-green-800 cursor-pointer shadow-lg h-64 flex flex-col justify-between">
+                    <div>
+                        <div class="bg-green-700 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6 group-hover:bg-green-600 transition-colors duration-300">
+                            <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16l-1 10a2 2 0 01-2 2H7a2 2 0 01-2-2L4 6zM4 6l-1-2m5 5v6m4-6v6m4-6v6"/>
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-semibold text-white mb-3">Food Ordering</h3>
+                        <p class="text-green-100 text-sm leading-relaxed">Delicious meals delivered directly to your room</p>
                     </div>
-                    <h3 class="text-xl font-semibold text-white mb-2">Food Ordering</h3>
-                    <p class="text-green-100">Delicious meals delivered to your room</p>
                 </div>
             </a>
-        </div>
 
             <!-- Service Requests Card -->
-            <a href="<?php echo e(route('guest.services.requests.history')); ?>" class="group">
-                <div class="bg-green-900 border-2 border-green-700 rounded-xl p-6 text-center transform transition duration-300 hover:scale-105 hover:bg-green-800 cursor-pointer shadow-lg">
-                    <div class="bg-green-700 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4 group-hover:bg-green-600 transition-colors duration-300">
-                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
-                        </svg>
+            <a href="<?php echo e(route('guest.services.history')); ?>" class="group">
+                <div class="bg-green-900 border-2 border-green-700 rounded-xl p-8 text-center transform transition duration-300 hover:scale-105 hover:bg-green-800 cursor-pointer shadow-lg h-64 flex flex-col justify-between relative">
+                    <!-- Notification Badge -->
+                    <?php if($service_requests_count > 0): ?>
+                        <div class="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center animate-pulse">
+                            <?php echo e($service_requests_count > 99 ? '99+' : $service_requests_count); ?>
+
+                        </div>
+                    <?php endif; ?>
+                    <div>
+                        <div class="bg-green-700 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6 group-hover:bg-green-600 transition-colors duration-300 relative">
+                            <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-5 5-5-5h5V7h-5l5-5 5 5h-5v10z"/>
+                            </svg>
+                            <!-- Small notification dot on icon -->
+                            <?php if($service_requests_count > 0): ?>
+                                <div class="absolute -top-1 -right-1 bg-red-500 rounded-full h-3 w-3"></div>
+                            <?php endif; ?>
+                        </div>
+                        <h3 class="text-xl font-semibold text-white mb-3">Service Requests</h3>
+                        <p class="text-green-100 text-sm leading-relaxed">
+                            <?php if($service_requests_count > 0): ?>
+                                You have <?php echo e($service_requests_count); ?> active service request<?php echo e($service_requests_count > 1 ? 's' : ''); ?>
+
+                            <?php else: ?>
+                                View and track your service request history
+                            <?php endif; ?>
+                        </p>
                     </div>
-                    <h3 class="text-xl font-semibold text-white mb-2">Service Requests</h3>
-                    <p class="text-green-100">Track your service requests</p>
                 </div>
             </a>
         </div>
