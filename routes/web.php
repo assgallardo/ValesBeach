@@ -11,6 +11,8 @@ use App\Http\Controllers\ManagerController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\Manager\ServiceRequestController as ManagerServiceRequestController;
+use App\Http\Controllers\Manager\PaymentController as ManagerPaymentController;
+use App\Http\Controllers\Manager\ReportsController as ManagerReportsController;
 use App\Http\Controllers\FoodOrderController;
 use App\Http\Controllers\GuestServiceController;
 use App\Http\Controllers\Manager\StaffAssignmentController;
@@ -156,8 +158,12 @@ Route::middleware(['auth', 'user.status'])->group(function () {
 Route::prefix('admin')->name('admin.')->middleware(['auth', 'user.status', 'role:admin,manager'])->group(function () {
     // Payment management
     Route::get('/payments', [PaymentController::class, 'adminIndex'])->name('payments.index');
-    Route::patch('/payments/{payment}/status', [PaymentController::class, 'updateStatus'])->name('payments.updateStatus');
-    Route::post('/payments/{payment}/refund', [PaymentController::class, 'refund'])->name('payments.refund');
+    Route::get('/payments/{payment}', [PaymentController::class, 'adminShow'])->name('payments.show');
+    Route::patch('/payments/{payment}/status', [PaymentController::class, 'updateStatus'])->name('payments.status');
+    
+    // Refund management
+    Route::get('/payments/{payment}/refund', [PaymentController::class, 'showRefundForm'])->name('payments.refund.form');
+    Route::post('/payments/{payment}/refund', [PaymentController::class, 'processRefund'])->name('payments.refund.process');
     
     // Invoice management
     Route::get('/invoices', [InvoiceController::class, 'adminIndex'])->name('invoices.index');
@@ -258,6 +264,20 @@ Route::prefix('manager')->name('manager.')->middleware(['auth', 'user.status', '
     Route::get('/service-requests/{serviceRequest}', [ManagerServiceRequestController::class, 'show'])->name('service-requests.show');
     Route::patch('/service-requests/{serviceRequest}/status', [ManagerServiceRequestController::class, 'updateStatus'])->name('service-requests.updateStatus');
     
+    // Payment tracking routes - use the Manager namespace
+    Route::get('/payments', [ManagerPaymentController::class, 'index'])->name('payments.index');
+    Route::get('/payments/{payment}', [ManagerPaymentController::class, 'show'])->name('payments.show');
+    Route::patch('/payments/{payment}/status', [ManagerPaymentController::class, 'updateStatus'])->name('payments.status');
+    Route::get('/payments-analytics', [ManagerPaymentController::class, 'analytics'])->name('payments.analytics');
+    Route::get('/payments-export', [ManagerPaymentController::class, 'export'])->name('payments.export');
+    
+    // Service Reports routes - use the Manager namespace
+    Route::get('/reports', [ManagerReportsController::class, 'index'])->name('reports.index');
+    Route::get('/reports/service-usage', [ManagerReportsController::class, 'serviceUsage'])->name('reports.service-usage');
+    Route::get('/reports/performance-metrics', [ManagerReportsController::class, 'performanceMetrics'])->name('reports.performance-metrics');
+    Route::get('/reports/staff-performance', [ManagerReportsController::class, 'staffPerformance'])->name('reports.staff-performance');
+    Route::get('/reports/export', [ManagerReportsController::class, 'export'])->name('reports.export');
+    
     // Other manager routes...
     Route::get('/dashboard', [App\Http\Controllers\ManagerController::class, 'dashboard'])->name('dashboard');
     Route::get('/bookings', [App\Http\Controllers\ManagerController::class, 'bookings'])->name('bookings.index');
@@ -290,7 +310,7 @@ Route::prefix('manager')->name('manager.')->middleware(['auth', 'user.status', '
     Route::get('/rooms', [App\Http\Controllers\ManagerController::class, 'rooms'])->name('rooms');
     Route::get('/staff', [App\Http\Controllers\ManagerController::class, 'staff'])->name('staff');
     Route::get('/guests', [App\Http\Controllers\ManagerController::class, 'guests'])->name('guests');
-    Route::get('/reports', [App\Http\Controllers\ManagerController::class, 'reports'])->name('reports');
+
     Route::get('/maintenance', [App\Http\Controllers\ManagerController::class, 'maintenance'])->name('maintenance');
     
     // Toggle service status

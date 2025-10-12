@@ -17,6 +17,7 @@ class ServiceRequest extends Model
         'guest_name',
         'guest_email',
         'room_id',
+        'room_number',
         'service_type',
         'type',
         'service_name',
@@ -40,7 +41,8 @@ class ServiceRequest extends Model
         'assigned_at',
         'estimated_duration',
         'completed_at',
-        'cancelled_at'
+        'cancelled_at',
+        'requested_at'
     ];
 
     protected $casts = [

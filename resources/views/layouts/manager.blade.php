@@ -38,6 +38,12 @@
                                 Rooms
                             </a>
                             
+                            <!-- Reports link -->
+                            <a href="{{ route('manager.reports.index') }}" 
+                               class="text-gray-200 hover:text-white transition-colors duration-200 font-medium {{ request()->routeIs('manager.reports.*') ? 'text-white' : '' }}">
+                                Reports
+                            </a>
+                            
                             <!-- Calendar Function - FIXED -->
                             <a href="{{ route('manager.calendar') }}" 
                                class="inline-flex items-center px-6 py-3 bg-green-50 text-black font-medium rounded-lg hover:bg-white transition-colors duration-200 {{ request()->routeIs('manager.calendar') ? 'bg-white' : '' }}">

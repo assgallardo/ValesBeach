@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 class Payment extends Model
 {
@@ -23,7 +24,11 @@ class Payment extends Model
         'transaction_id',
         'payment_details',
         'payment_date',
-        'notes'
+        'notes',
+        'refund_amount',
+        'refund_reason',
+        'refunded_at',
+        'refunded_by'
     ];
 
     /**
@@ -31,8 +36,10 @@ class Payment extends Model
      */
     protected $casts = [
         'amount' => 'decimal:2',
+        'refund_amount' => 'decimal:2',
         'payment_details' => 'array',
-        'payment_date' => 'datetime'
+        'payment_date' => 'datetime',
+        'refunded_at' => 'datetime'
     ];
 
     /**
@@ -150,5 +157,69 @@ class Payment extends Model
     public function getPaymentCategoryAttribute()
     {
         return $this->payment_type === 'service' ? 'Services' : 'Accommodation';
+    }
+
+    /**
+     * Check if payment is refunded
+     */
+    public function isRefunded()
+    {
+        return $this->status === 'refunded';
+    }
+
+    /**
+     * Check if payment is partially refunded
+     */
+    public function isPartiallyRefunded()
+    {
+        return $this->refund_amount > 0 && $this->refund_amount < $this->amount;
+    }
+
+    /**
+     * Check if payment can be refunded
+     */
+    public function canBeRefunded()
+    {
+        return $this->status === 'completed' && !$this->isRefunded();
+    }
+
+    /**
+     * Get remaining refundable amount
+     */
+    public function getRefundableAmountAttribute()
+    {
+        return $this->amount - ($this->refund_amount ?? 0);
+    }
+
+    /**
+     * Get formatted refund amount
+     */
+    public function getFormattedRefundAmountAttribute()
+    {
+        return '₱' . number_format((float) ($this->refund_amount ?? 0), 2);
+    }
+
+    /**
+     * Get the admin who processed the refund
+     */
+    public function refundedBy()
+    {
+        return $this->belongsTo(User::class, 'refunded_by');
+    }
+
+    /**
+     * Scope for refunded payments
+     */
+    public function scopeRefunded($query)
+    {
+        return $query->where('status', 'refunded');
+    }
+
+    /**
+     * Scope for refundable payments
+     */
+    public function scopeRefundable($query)
+    {
+        return $query->where('status', 'completed')->where('refund_amount', '<', DB::raw('amount'))->orWhereNull('refund_amount');
     }
 }

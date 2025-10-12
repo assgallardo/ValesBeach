@@ -137,6 +137,14 @@
                                     Rooms
                                 </a>
                             @endif
+
+                            <!-- Payments link - with route check -->
+                            @if(Route::has('admin.payments.index'))
+                                <a href="{{ route('admin.payments.index') }}" 
+                                   class="text-gray-200 hover:text-white transition-colors duration-200 font-medium">
+                                    Payments
+                                </a>
+                            @endif
                             
                             <!-- Calendar Function for Admin and Staff - NEW BUTTON DESIGN -->
                             @if(Route::has('admin.calendar'))
