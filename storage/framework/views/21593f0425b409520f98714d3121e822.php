@@ -1,6 +1,14 @@
 <?php $__env->startSection('content'); ?>
 <div class="container mx-auto px-4 lg:px-16 py-8">
-    <h1 class="text-3xl font-bold text-white mb-8">My Bookings</h1>
+    <!-- Header with View History Button -->
+    <div class="flex justify-between items-center mb-8">
+        <h1 class="text-3xl font-bold text-white">My Bookings</h1>
+        <a href="<?php echo e(route('guest.bookings.history')); ?>" 
+           class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+            <i class="fas fa-history mr-2"></i>
+            View History
+        </a>
+    </div>
 
     <?php if($bookings->isEmpty()): ?>
         <div class="bg-green-900/50 rounded-lg p-8 text-center">

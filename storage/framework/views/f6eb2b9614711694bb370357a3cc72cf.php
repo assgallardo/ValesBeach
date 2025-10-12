@@ -1,5 +1,3 @@
-
-
 <?php $__env->startSection('content'); ?>
 <div class="container mx-auto px-4 lg:px-16 py-8">
     <!-- Header -->
@@ -132,6 +130,13 @@
                     </button>
                     
                     <?php if($request->status === 'cancelled'): ?>
+                        <!-- Cancel option for cancelled requests (to show it was cancelled) -->
+                        <button onclick="cancelRequest(<?php echo e($request->id); ?>)" 
+                                class="bg-gray-600 text-white px-3 py-2 text-sm rounded-lg hover:bg-gray-700 transition-colors"
+                                title="Request already cancelled" disabled>
+                            <i class="fas fa-times mr-1"></i>
+                            Cancelled
+                        </button>
                         <!-- Delete option for cancelled requests -->
                         <button onclick="deleteRequest(<?php echo e($request->id); ?>)" 
                                 class="bg-red-700 text-white px-3 py-2 text-sm rounded-lg hover:bg-red-800 transition-colors"
@@ -139,8 +144,8 @@
                             <i class="fas fa-trash mr-1"></i>
                             Delete
                         </button>
-                    <?php elseif(in_array($request->status, ['pending', 'confirmed'])): ?>
-                        <!-- Cancel option for active requests -->
+                    <?php else: ?>
+                        <!-- Cancel option for all other requests -->
                         <button onclick="cancelRequest(<?php echo e($request->id); ?>)" 
                                 class="bg-red-600 text-white px-3 py-2 text-sm rounded-lg hover:bg-red-700 transition-colors">
                             <i class="fas fa-times mr-1"></i>
@@ -214,6 +219,37 @@
     <?php endif; ?>
 </div>
 
+<!-- Request Details Modal -->
+<div id="requestModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-gray-800 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold text-green-100">Service Request Details</h3>
+                    <button onclick="closeRequestModal()" 
+                            class="text-gray-400 hover:text-white hover:bg-gray-700 rounded-full p-2 transition-colors duration-200"
+                            title="Close">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+                
+                <div id="requestModalContent">
+                    <!-- Request details will be loaded here -->
+                </div>
+                
+                <!-- Additional Close Button at Bottom -->
+                <div class="mt-6 pt-4 border-t border-gray-700 flex justify-end">
+                    <button onclick="closeRequestModal()" 
+                            class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors duration-200">
+                        <i class="fas fa-times mr-2"></i>
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Confirmation Modal -->
 <div id="confirmModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
     <div class="flex items-center justify-center min-h-screen p-4">
@@ -244,6 +280,18 @@
 let deleteAction = null;
 
 function viewRequestDetails(requestId) {
+    // Show loading state
+    const modalContent = document.getElementById('requestModalContent');
+    modalContent.innerHTML = `
+        <div class="flex items-center justify-center py-8">
+            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-green-500"></div>
+            <span class="ml-3 text-green-100">Loading request details...</span>
+        </div>
+    `;
+    
+    // Show modal immediately with loading state
+    document.getElementById('requestModal').classList.remove('hidden');
+    
     fetch(`/guest/service-requests/${requestId}`, {
         headers: {
             'Accept': 'application/json',
@@ -253,13 +301,145 @@ function viewRequestDetails(requestId) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            alert(`Service: ${data.request.service_type}\nStatus: ${data.request.status}\nDate: ${data.request.created_at}`);
+            displayRequestDetails(data.request);
+        } else {
+            modalContent.innerHTML = `
+                <div class="text-center py-8">
+                    <i class="fas fa-exclamation-triangle text-4xl text-red-500 mb-4"></i>
+                    <p class="text-red-100 text-lg mb-4">Failed to load request details</p>
+                    <button onclick="closeRequestModal()" 
+                            class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700">
+                        Close
+                    </button>
+                </div>
+            `;
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('Failed to load request details');
+        modalContent.innerHTML = `
+            <div class="text-center py-8">
+                <i class="fas fa-exclamation-triangle text-4xl text-red-500 mb-4"></i>
+                <p class="text-red-100 text-lg mb-4">Failed to load request details</p>
+                <button onclick="closeRequestModal()" 
+                        class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700">
+                    Close
+                </button>
+            </div>
+        `;
     });
+}
+
+// Display request details in modal
+function displayRequestDetails(request) {
+    const modalContent = document.getElementById('requestModalContent');
+    
+    modalContent.innerHTML = `
+        <div class="space-y-4">
+            <div>
+                <label class="text-xs text-gray-400 uppercase tracking-wide">Service Type</label>
+                <p class="text-green-100 font-medium">${request.service_type || request.service_name || 'N/A'}</p>
+            </div>
+            
+            <div>
+                <label class="text-xs text-gray-400 uppercase tracking-wide">Status</label>
+                <p class="font-medium capitalize">
+                    <span class="px-3 py-1 text-sm rounded-full
+                        ${getStatusColor(request.status)}">
+                        ${request.status.replace('_', ' ')}
+                    </span>
+                </p>
+            </div>
+            
+            <div>
+                <label class="text-xs text-gray-400 uppercase tracking-wide">Description</label>
+                <p class="text-gray-300">${request.description || 'No description provided'}</p>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="text-xs text-gray-400 uppercase tracking-wide">Request ID</label>
+                    <p class="text-green-100 font-medium">#${request.id}</p>
+                </div>
+                
+                <div>
+                    <label class="text-xs text-gray-400 uppercase tracking-wide">Created Date</label>
+                    <p class="text-green-100 font-medium">${new Date(request.created_at).toLocaleDateString()}</p>
+                </div>
+            </div>
+            
+            ${request.scheduled_date ? `
+            <div>
+                <label class="text-xs text-gray-400 uppercase tracking-wide">Scheduled Date</label>
+                <p class="text-green-100 font-medium">${new Date(request.scheduled_date).toLocaleDateString()}</p>
+            </div>
+            ` : ''}
+            
+            ${request.guests_count ? `
+            <div>
+                <label class="text-xs text-gray-400 uppercase tracking-wide">Number of Guests</label>
+                <p class="text-green-100 font-medium">${request.guests_count}</p>
+            </div>
+            ` : ''}
+            
+            ${request.special_requests ? `
+            <div>
+                <label class="text-xs text-gray-400 uppercase tracking-wide">Special Requests</label>
+                <p class="text-gray-300">${request.special_requests}</p>
+            </div>
+            ` : ''}
+            
+            ${request.manager_notes ? `
+            <div>
+                <label class="text-xs text-gray-400 uppercase tracking-wide">Manager Notes</label>
+                <p class="text-gray-300">${request.manager_notes}</p>
+            </div>
+            ` : ''}
+            
+            ${request.cancelled_at ? `
+            <div>
+                <label class="text-xs text-gray-400 uppercase tracking-wide">Cancelled Date</label>
+                <p class="text-red-100 font-medium">${new Date(request.cancelled_at).toLocaleDateString()}</p>
+            </div>
+            ` : ''}
+            
+            ${request.completed_at ? `
+            <div>
+                <label class="text-xs text-gray-400 uppercase tracking-wide">Completed Date</label>
+                <p class="text-green-100 font-medium">${new Date(request.completed_at).toLocaleDateString()}</p>
+            </div>
+            ` : ''}
+        </div>
+    `;
+}
+
+// Close request modal
+function closeRequestModal() {
+    const modal = document.getElementById('requestModal');
+    modal.classList.add('hidden');
+    
+    // Clear the modal content
+    document.getElementById('requestModalContent').innerHTML = '';
+}
+
+// Get status color class
+function getStatusColor(status) {
+    switch (status) {
+        case 'pending':
+            return 'bg-yellow-600 text-yellow-100';
+        case 'confirmed':
+            return 'bg-blue-600 text-blue-100';
+        case 'assigned':
+            return 'bg-purple-600 text-purple-100';
+        case 'in_progress':
+            return 'bg-orange-600 text-orange-100';
+        case 'completed':
+            return 'bg-green-600 text-green-100';
+        case 'cancelled':
+            return 'bg-red-600 text-red-100';
+        default:
+            return 'bg-gray-600 text-gray-100';
+    }
 }
 
 function cancelRequest(requestId) {
@@ -275,7 +455,19 @@ function cancelRequest(requestId) {
         .then(data => {
             if (data.success) {
                 showNotification('Service request cancelled successfully', 'success');
-                setTimeout(() => location.reload(), 1000);
+                
+                // Remove the cancelled request from the UI immediately
+                const requestCard = document.querySelector(`[data-request-id="${requestId}"]`);
+                if (requestCard) {
+                    requestCard.style.opacity = '0';
+                    requestCard.style.transform = 'translateX(-100%)';
+                    requestCard.style.transition = 'all 0.3s ease-out';
+                    
+                    setTimeout(() => {
+                        requestCard.remove();
+                        updateStats(); // Update the stats counters
+                    }, 300);
+                }
             } else {
                 showNotification(data.message || 'Failed to cancel request', 'error');
             }
@@ -502,9 +694,23 @@ document.getElementById('confirmModal').addEventListener('click', function(e) {
     }
 });
 
-// ESC key to close modal
+// Close modal when clicking outside
+document.getElementById('requestModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeRequestModal();
+    }
+});
+
+document.getElementById('confirmModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeConfirmModal();
+    }
+});
+
+// ESC key to close modals
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
+        closeRequestModal();
         closeConfirmModal();
     }
 });

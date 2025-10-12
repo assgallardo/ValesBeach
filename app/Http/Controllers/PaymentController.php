@@ -103,8 +103,12 @@ class PaymentController extends Controller
      */
     public function history()
     {
-        $payments = Auth::user()->payments()
-            ->with(['booking', 'booking.room', 'serviceRequest'])
+        $payments = auth()->user()->payments()
+            ->with([
+                'booking.room',
+                'booking.invoice', // Make sure invoice is loaded
+                'serviceRequest'
+            ])
             ->orderBy('created_at', 'desc')
             ->paginate(10);
 

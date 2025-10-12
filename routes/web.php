@@ -419,3 +419,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('/service-requests/delete-cancelled', [GuestServiceController::class, 'deleteAllCancelled'])->name('service-requests.delete-cancelled');
     });
 });
+
+// Invoice routes
+Route::middleware(['auth'])->group(function () {
+    Route::get('/invoices', [InvoiceController::class, 'index'])->name('invoices.index');
+    Route::get('/invoices/{invoice}', [InvoiceController::class, 'show'])->name('invoices.show');
+    Route::get('/invoices/{invoice}/download', [InvoiceController::class, 'download'])->name('invoices.download');
+    
+    // Generate invoice for a specific booking (this matches your existing controller method)
+    Route::post('/bookings/{booking}/invoice/generate', [InvoiceController::class, 'generate'])->name('invoices.generate');
+});
