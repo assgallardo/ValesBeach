@@ -146,15 +146,14 @@ class ManagerServicesController extends Controller
     /**
      * Toggle service availability.
      */
-    public function toggleAvailability(Service $service)
+    public function toggleStatus(Service $service)
     {
         $service->update([
             'is_available' => !$service->is_available
         ]);
 
         $status = $service->is_available ? 'enabled' : 'disabled';
-        
-        return redirect()->back()
-                        ->with('success', "Service has been {$status} successfully!");
+
+        return redirect()->back()->with('success', "Service has been {$status} successfully!");
     }
 }

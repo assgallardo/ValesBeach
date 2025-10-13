@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Service;
 use App\Models\ServiceRequest;
 use App\Models\User;
+use App\Models\Booking; // Add this import
+use App\Models\Room;    // Add this import
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -15,35 +17,30 @@ class ReportsController extends Controller
     /**
      * Display service usage and performance reports dashboard
      */
-    public function index(Request $request)
+    public function index()
     {
-        $dateRange = $this->getDateRange($request);
-        $startDate = $dateRange['start'];
-        $endDate = $dateRange['end'];
+        // Fix the services query
+        $availableServices = Service::where('is_available', true)->count();
+        $totalServices = Service::count();
+        
+        // Other existing queries...
+        $monthlyBookings = Booking::selectRaw('YEAR(created_at) as year, MONTH(created_at) as month, COUNT(*) as count')
+            ->groupBy('year', 'month')
+            ->orderBy('year', 'desc')
+            ->orderBy('month', 'desc')
+            ->limit(12)
+            ->get();
 
-        // Get overview statistics
-        $stats = $this->getOverviewStats($startDate, $endDate);
-        
-        // Get service usage data
-        $serviceUsage = $this->getServiceUsageData($startDate, $endDate);
-        
-        // Get performance metrics
-        $performanceMetrics = $this->getPerformanceMetrics($startDate, $endDate);
-        
-        // Get staff performance data
-        $staffPerformance = $this->getStaffPerformanceData($startDate, $endDate);
-        
-        // Get daily request trends
-        $dailyTrends = $this->getDailyTrends($startDate, $endDate);
+        $popularRooms = Room::withCount('bookings')
+            ->orderBy('bookings_count', 'desc')
+            ->limit(10)
+            ->get();
 
-        return view('manager.reports.index', compact(
-            'stats',
-            'serviceUsage',
-            'performanceMetrics',
-            'staffPerformance',
-            'dailyTrends',
-            'startDate',
-            'endDate'
+        return view('manager.reports', compact(
+            'availableServices',
+            'totalServices',
+            'monthlyBookings',
+            'popularRooms'
         ));
     }
 
@@ -310,7 +307,7 @@ class ReportsController extends Controller
                 ->whereBetween('created_at', [$startDate, $endDate])->count(),
             'pending_requests' => ServiceRequest::where('status', 'pending')
                 ->whereBetween('created_at', [$startDate, $endDate])->count(),
-            'active_services' => Service::where('status', 'active')->count(),
+            'active_services' => Service::where('is_available', true)->count(),
             'avg_response_time' => ServiceRequest::whereBetween('created_at', [$startDate, $endDate])
                 ->whereNotNull('assigned_at')
                 ->selectRaw('AVG((julianday(assigned_at) - julianday(created_at)) * 24) as avg_hours')

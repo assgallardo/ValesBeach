@@ -259,6 +259,11 @@ Route::prefix('staff')->name('staff.')->middleware(['auth', 'user.status', 'role
 
 // Manager Routes - Accessible by manager and admin
 Route::prefix('manager')->name('manager.')->middleware(['auth', 'user.status', 'role:manager,admin'])->group(function () {
+    // Add this redirect route for backward compatibility
+    Route::get('/reports', function() {
+        return redirect()->route('manager.reports.index');
+    })->name('reports');
+    
     // Service Request routes - use the Manager namespace
     Route::get('/service-requests', [ManagerServiceRequestController::class, 'index'])->name('service-requests.index');
     Route::get('/service-requests/{serviceRequest}', [ManagerServiceRequestController::class, 'show'])->name('service-requests.show');
@@ -448,4 +453,26 @@ Route::middleware(['auth'])->group(function () {
     
     // Generate invoice for a specific booking (this matches your existing controller method)
     Route::post('/bookings/{booking}/invoice/generate', [InvoiceController::class, 'generate'])->name('invoices.generate');
+});
+
+// Add this to your admin routes section in web.php
+Route::prefix('admin')->name('admin.')->middleware(['auth', 'user.status', 'role:admin'])->group(function () {
+    // ... existing admin routes ...
+    
+    // Payment routes - use PaymentController instead of AdminPaymentController
+    Route::get('/payments', [PaymentController::class, 'index'])->name('payments.index');
+    Route::get('/payments/{payment}', [PaymentController::class, 'show'])->name('payments.show');
+    Route::patch('/payments/{payment}/status', [PaymentController::class, 'updateStatus'])->name('payments.updateStatus');
+    Route::post('/payments/{payment}/refund', [PaymentController::class, 'processRefund'])->name('payments.refund');
+    Route::get('/payments/{payment}/refund', [PaymentController::class, 'showRefundForm'])->name('payments.refund.form');
+    Route::get('/payments-export', [PaymentController::class, 'export'])->name('payments.export'); // Note: moved export to avoid route conflicts
+});
+
+// Guest payment routes
+Route::middleware(['auth'])->group(function () {
+    Route::get('/payments/create/{booking}', [PaymentController::class, 'create'])->name('payments.create');
+    Route::post('/payments/store/{booking}', [PaymentController::class, 'store'])->name('payments.store');
+    Route::get('/payments/confirmation/{payment}', [PaymentController::class, 'confirmation'])->name('payments.confirmation');
+    Route::get('/payments/history', [PaymentController::class, 'history'])->name('payments.history');
+    Route::get('/payments/{payment}', [PaymentController::class, 'show'])->name('payments.show');
 });

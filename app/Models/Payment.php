@@ -85,7 +85,7 @@ class Payment extends Model
      */
     public function getFormattedAmountAttribute()
     {
-        return '₱' . number_format((float) $this->amount, 2);
+        return '₱' . number_format($this->amount, 2);
     }
 
     /**
@@ -131,8 +131,7 @@ class Payment extends Model
             'bank_transfer' => 'Bank Transfer',
             'gcash' => 'GCash',
             'paymaya' => 'PayMaya',
-            'online' => 'Online Payment',
-            'service_request' => 'Service Request'
+            'online' => 'Online Payment'
         ];
 
         return $methods[$this->payment_method] ?? ucfirst($this->payment_method);
@@ -156,7 +155,13 @@ class Payment extends Model
      */
     public function getPaymentCategoryAttribute()
     {
-        return $this->payment_type === 'service' ? 'Services' : 'Accommodation';
+        if ($this->booking_id) {
+            return 'Room Booking';
+        } elseif ($this->service_request_id) {
+            return 'Service Request';
+        } else {
+            return 'Other';
+        }
     }
 
     /**
@@ -164,7 +169,7 @@ class Payment extends Model
      */
     public function isRefunded()
     {
-        return $this->status === 'refunded';
+        return $this->status === 'refunded' || $this->refund_amount > 0;
     }
 
     /**
@@ -180,13 +185,14 @@ class Payment extends Model
      */
     public function canBeRefunded()
     {
-        return $this->status === 'completed' && !$this->isRefunded();
+        return $this->status === 'completed' && 
+               ($this->refund_amount === null || $this->refund_amount < $this->amount);
     }
 
     /**
      * Get remaining refundable amount
      */
-    public function getRefundableAmountAttribute()
+    public function getRemainingRefundableAmount()
     {
         return $this->amount - ($this->refund_amount ?? 0);
     }
@@ -196,7 +202,7 @@ class Payment extends Model
      */
     public function getFormattedRefundAmountAttribute()
     {
-        return '₱' . number_format((float) ($this->refund_amount ?? 0), 2);
+        return $this->refund_amount ? '₱' . number_format($this->refund_amount, 2) : null;
     }
 
     /**

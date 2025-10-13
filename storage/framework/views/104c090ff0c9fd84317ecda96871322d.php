@@ -1,8 +1,6 @@
-@extends('layouts.admin')
+<?php $__env->startSection('title', 'Payment Management'); ?>
 
-@section('title', 'Payment Management')
-
-@section('content')
+<?php $__env->startSection('content'); ?>
 <div class="min-h-screen bg-gray-900 py-6">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <!-- Page Header -->
@@ -18,7 +16,7 @@
                     <i class="fas fa-filter mr-2"></i>
                     Filters
                 </button>
-                <a href="{{ route('admin.payments.export', request()->query()) }}" 
+                <a href="<?php echo e(route('admin.payments.export', request()->query())); ?>" 
                    class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors">
                     <i class="fas fa-download mr-2"></i>
                     Export Data
@@ -38,7 +36,7 @@
                     </div>
                     <div class="ml-4">
                         <p class="text-sm text-gray-400">Total Revenue</p>
-                        <p class="text-2xl font-bold text-green-50">₱{{ number_format($stats['total_payments'], 2) }}</p>
+                        <p class="text-2xl font-bold text-green-50">₱<?php echo e(number_format($stats['total_payments'], 2)); ?></p>
                         <p class="text-xs text-green-400">Completed payments</p>
                     </div>
                 </div>
@@ -54,8 +52,8 @@
                     </div>
                     <div class="ml-4">
                         <p class="text-sm text-gray-400">Pending Payments</p>
-                        <p class="text-2xl font-bold text-green-50">₱{{ number_format($stats['pending_payments'], 2) }}</p>
-                        <p class="text-xs text-yellow-400">{{ $stats['pending_count'] }} transactions</p>
+                        <p class="text-2xl font-bold text-green-50">₱<?php echo e(number_format($stats['pending_payments'], 2)); ?></p>
+                        <p class="text-xs text-yellow-400"><?php echo e($stats['pending_count']); ?> transactions</p>
                     </div>
                 </div>
             </div>
@@ -70,8 +68,8 @@
                     </div>
                     <div class="ml-4">
                         <p class="text-sm text-gray-400">Room Bookings</p>
-                        <p class="text-2xl font-bold text-green-50">₱{{ number_format($stats['booking_payments'], 2) }}</p>
-                        <p class="text-xs text-blue-400">{{ $stats['booking_count'] }} payments</p>
+                        <p class="text-2xl font-bold text-green-50">₱<?php echo e(number_format($stats['booking_payments'], 2)); ?></p>
+                        <p class="text-xs text-blue-400"><?php echo e($stats['booking_count']); ?> payments</p>
                     </div>
                 </div>
             </div>
@@ -86,8 +84,8 @@
                     </div>
                     <div class="ml-4">
                         <p class="text-sm text-gray-400">Services</p>
-                        <p class="text-2xl font-bold text-green-50">₱{{ number_format($stats['service_payments'], 2) }}</p>
-                        <p class="text-xs text-purple-400">{{ $stats['service_count'] }} payments</p>
+                        <p class="text-2xl font-bold text-green-50">₱<?php echo e(number_format($stats['service_payments'], 2)); ?></p>
+                        <p class="text-xs text-purple-400"><?php echo e($stats['service_count']); ?> payments</p>
                     </div>
                 </div>
             </div>
@@ -105,8 +103,8 @@
                     </div>
                     <div class="ml-4">
                         <p class="text-sm text-gray-400">Total Refunds</p>
-                        <p class="text-2xl font-bold text-green-50">₱{{ number_format($stats['total_refunds'], 2) }}</p>
-                        <p class="text-xs text-red-400">{{ $stats['refunded_count'] }} refunded</p>
+                        <p class="text-2xl font-bold text-green-50">₱<?php echo e(number_format($stats['total_refunds'], 2)); ?></p>
+                        <p class="text-xs text-red-400"><?php echo e($stats['refunded_count']); ?> refunded</p>
                     </div>
                 </div>
             </div>
@@ -121,7 +119,7 @@
                     </div>
                     <div class="ml-4">
                         <p class="text-sm text-gray-400">Refundable</p>
-                        <p class="text-2xl font-bold text-green-50">{{ $stats['refundable_payments'] }}</p>
+                        <p class="text-2xl font-bold text-green-50"><?php echo e($stats['refundable_payments']); ?></p>
                         <p class="text-xs text-indigo-400">Can be refunded</p>
                     </div>
                 </div>
@@ -137,7 +135,7 @@
                     </div>
                     <div class="ml-4">
                         <p class="text-sm text-gray-400">Failed</p>
-                        <p class="text-2xl font-bold text-green-50">₱{{ number_format($stats['failed_payments'], 2) }}</p>
+                        <p class="text-2xl font-bold text-green-50">₱<?php echo e(number_format($stats['failed_payments'], 2)); ?></p>
                         <p class="text-xs text-gray-400">Failed payments</p>
                     </div>
                 </div>
@@ -153,7 +151,7 @@
                     </div>
                     <div class="ml-4">
                         <p class="text-sm text-gray-400">Total Transactions</p>
-                        <p class="text-2xl font-bold text-green-50">{{ number_format($stats['total_count']) }}</p>
+                        <p class="text-2xl font-bold text-green-50"><?php echo e(number_format($stats['total_count'])); ?></p>
                         <p class="text-xs text-teal-400">All time</p>
                     </div>
                 </div>
@@ -162,16 +160,16 @@
 
         <!-- Filter Panel -->
         <div id="filterPanel" class="bg-gray-800 rounded-lg p-6 mb-8 border border-gray-700 hidden">
-            <form method="GET" action="{{ route('admin.payments.index') }}" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+            <form method="GET" action="<?php echo e(route('admin.payments.index')); ?>" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-300 mb-2">Status</label>
                     <select name="status" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-green-50 focus:outline-none focus:ring-2 focus:ring-green-500">
                         <option value="">All Status</option>
-                        <option value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}>Pending</option>
-                        <option value="processing" {{ request('status') === 'processing' ? 'selected' : '' }}>Processing</option>
-                        <option value="completed" {{ request('status') === 'completed' ? 'selected' : '' }}>Completed</option>
-                        <option value="failed" {{ request('status') === 'failed' ? 'selected' : '' }}>Failed</option>
-                        <option value="refunded" {{ request('status') === 'refunded' ? 'selected' : '' }}>Refunded</option>
+                        <option value="pending" <?php echo e(request('status') === 'pending' ? 'selected' : ''); ?>>Pending</option>
+                        <option value="processing" <?php echo e(request('status') === 'processing' ? 'selected' : ''); ?>>Processing</option>
+                        <option value="completed" <?php echo e(request('status') === 'completed' ? 'selected' : ''); ?>>Completed</option>
+                        <option value="failed" <?php echo e(request('status') === 'failed' ? 'selected' : ''); ?>>Failed</option>
+                        <option value="refunded" <?php echo e(request('status') === 'refunded' ? 'selected' : ''); ?>>Refunded</option>
                     </select>
                 </div>
 
@@ -179,12 +177,12 @@
                     <label class="block text-sm font-medium text-gray-300 mb-2">Payment Method</label>
                     <select name="payment_method" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-green-50 focus:outline-none focus:ring-2 focus:ring-green-500">
                         <option value="">All Methods</option>
-                        <option value="cash" {{ request('payment_method') === 'cash' ? 'selected' : '' }}>Cash</option>
-                        <option value="card" {{ request('payment_method') === 'card' ? 'selected' : '' }}>Credit/Debit Card</option>
-                        <option value="bank_transfer" {{ request('payment_method') === 'bank_transfer' ? 'selected' : '' }}>Bank Transfer</option>
-                        <option value="gcash" {{ request('payment_method') === 'gcash' ? 'selected' : '' }}>GCash</option>
-                        <option value="paymaya" {{ request('payment_method') === 'paymaya' ? 'selected' : '' }}>PayMaya</option>
-                        <option value="online" {{ request('payment_method') === 'online' ? 'selected' : '' }}>Online Payment</option>
+                        <option value="cash" <?php echo e(request('payment_method') === 'cash' ? 'selected' : ''); ?>>Cash</option>
+                        <option value="card" <?php echo e(request('payment_method') === 'card' ? 'selected' : ''); ?>>Credit/Debit Card</option>
+                        <option value="bank_transfer" <?php echo e(request('payment_method') === 'bank_transfer' ? 'selected' : ''); ?>>Bank Transfer</option>
+                        <option value="gcash" <?php echo e(request('payment_method') === 'gcash' ? 'selected' : ''); ?>>GCash</option>
+                        <option value="paymaya" <?php echo e(request('payment_method') === 'paymaya' ? 'selected' : ''); ?>>PayMaya</option>
+                        <option value="online" <?php echo e(request('payment_method') === 'online' ? 'selected' : ''); ?>>Online Payment</option>
                     </select>
                 </div>
 
@@ -192,20 +190,20 @@
                     <label class="block text-sm font-medium text-gray-300 mb-2">Payment Type</label>
                     <select name="payment_type" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-green-50 focus:outline-none focus:ring-2 focus:ring-green-500">
                         <option value="">All Types</option>
-                        <option value="booking" {{ request('payment_type') === 'booking' ? 'selected' : '' }}>Room Bookings</option>
-                        <option value="service" {{ request('payment_type') === 'service' ? 'selected' : '' }}>Services</option>
+                        <option value="booking" <?php echo e(request('payment_type') === 'booking' ? 'selected' : ''); ?>>Room Bookings</option>
+                        <option value="service" <?php echo e(request('payment_type') === 'service' ? 'selected' : ''); ?>>Services</option>
                     </select>
                 </div>
 
                 <div>
                     <label class="block text-sm font-medium text-gray-300 mb-2">Date From</label>
-                    <input type="date" name="date_from" value="{{ request('date_from') }}" 
+                    <input type="date" name="date_from" value="<?php echo e(request('date_from')); ?>" 
                            class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-green-50 focus:outline-none focus:ring-2 focus:ring-green-500">
                 </div>
 
                 <div>
                     <label class="block text-sm font-medium text-gray-300 mb-2">Date To</label>
-                    <input type="date" name="date_to" value="{{ request('date_to') }}" 
+                    <input type="date" name="date_to" value="<?php echo e(request('date_to')); ?>" 
                            class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-green-50 focus:outline-none focus:ring-2 focus:ring-green-500">
                 </div>
 
@@ -214,7 +212,7 @@
                         <button type="submit" class="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
                             Apply
                         </button>
-                        <a href="{{ route('admin.payments.index') }}" class="flex-1 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors text-center">
+                        <a href="<?php echo e(route('admin.payments.index')); ?>" class="flex-1 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors text-center">
                             Clear
                         </a>
                     </div>
@@ -223,13 +221,13 @@
 
             <!-- Search Bar -->
             <div class="mt-4">
-                <form method="GET" action="{{ route('admin.payments.index') }}">
-                    @foreach(request()->except('search') as $key => $value)
-                        <input type="hidden" name="{{ $key }}" value="{{ $value }}">
-                    @endforeach
+                <form method="GET" action="<?php echo e(route('admin.payments.index')); ?>">
+                    <?php $__currentLoopData = request()->except('search'); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $key => $value): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                        <input type="hidden" name="<?php echo e($key); ?>" value="<?php echo e($value); ?>">
+                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                     <div class="relative">
                         <input type="text" name="search" placeholder="Search by payment reference, guest name, or email..." 
-                               value="{{ request('search') }}"
+                               value="<?php echo e(request('search')); ?>"
                                class="w-full bg-gray-700 border border-gray-600 rounded-lg pl-10 pr-4 py-2 text-green-50 focus:outline-none focus:ring-2 focus:ring-green-500">
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <i class="fas fa-search text-gray-400"></i>
@@ -243,14 +241,14 @@
         <div class="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
             <div class="px-6 py-4 border-b border-gray-700 flex flex-col sm:flex-row sm:items-center sm:justify-between">
                 <h3 class="text-lg font-semibold text-green-50">Payment Transactions</h3>
-                @if($payments->count() > 0)
+                <?php if($payments->count() > 0): ?>
                     <p class="text-sm text-gray-400 mt-2 sm:mt-0">
-                        Showing {{ $payments->firstItem() }} to {{ $payments->lastItem() }} of {{ $payments->total() }} results
+                        Showing <?php echo e($payments->firstItem()); ?> to <?php echo e($payments->lastItem()); ?> of <?php echo e($payments->total()); ?> results
                     </p>
-                @endif
+                <?php endif; ?>
             </div>
 
-            @if($payments->count() > 0)
+            <?php if($payments->count() > 0): ?>
                 <div class="overflow-x-auto">
                     <table class="w-full">
                         <thead class="bg-gray-750">
@@ -266,7 +264,7 @@
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-700">
-                            @foreach($payments as $payment)
+                            <?php $__currentLoopData = $payments; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $payment): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                             <tr class="hover:bg-gray-750 transition-colors">
                                 <!-- Guest Info -->
                                 <td class="px-6 py-4">
@@ -275,31 +273,32 @@
                                             <i class="fas fa-user text-white text-sm"></i>
                                         </div>
                                         <div>
-                                            <div class="font-medium text-green-50">{{ $payment->user->name ?? 'N/A' }}</div>
-                                            <div class="text-sm text-gray-400">{{ $payment->user->email ?? 'N/A' }}</div>
-                                            @if($payment->user->phone)
-                                                <div class="text-xs text-gray-500">{{ $payment->user->phone }}</div>
-                                            @endif
+                                            <div class="font-medium text-green-50"><?php echo e($payment->user->name ?? 'N/A'); ?></div>
+                                            <div class="text-sm text-gray-400"><?php echo e($payment->user->email ?? 'N/A'); ?></div>
+                                            <?php if($payment->user->phone): ?>
+                                                <div class="text-xs text-gray-500"><?php echo e($payment->user->phone); ?></div>
+                                            <?php endif; ?>
                                         </div>
                                     </div>
                                 </td>
 
                                 <!-- Payment Details -->
                                 <td class="px-6 py-4">
-                                    <div class="font-medium text-blue-400">{{ $payment->payment_reference }}</div>
-                                    @if($payment->transaction_id)
-                                        <div class="text-sm text-gray-400">TXN: {{ $payment->transaction_id }}</div>
-                                    @endif
-                                    @if($payment->notes)
+                                    <div class="font-medium text-blue-400"><?php echo e($payment->payment_reference); ?></div>
+                                    <?php if($payment->transaction_id): ?>
+                                        <div class="text-sm text-gray-400">TXN: <?php echo e($payment->transaction_id); ?></div>
+                                    <?php endif; ?>
+                                    <?php if($payment->notes): ?>
                                         <div class="text-sm text-gray-500 mt-1">
-                                            <i class="fas fa-sticky-note mr-1"></i>{{ Str::limit($payment->notes, 30) }}
+                                            <i class="fas fa-sticky-note mr-1"></i><?php echo e(Str::limit($payment->notes, 30)); ?>
+
                                         </div>
-                                    @endif
+                                    <?php endif; ?>
                                 </td>
 
                                 <!-- Type & Service -->
                                 <td class="px-6 py-4">
-                                    @if($payment->booking)
+                                    <?php if($payment->booking): ?>
                                         <div class="flex items-center mb-2">
                                             <div class="w-6 h-6 bg-blue-600 rounded flex items-center justify-center mr-2">
                                                 <i class="fas fa-bed text-white text-xs"></i>
@@ -307,14 +306,15 @@
                                             <span class="text-xs bg-blue-600 text-white px-2 py-1 rounded">Room Booking</span>
                                         </div>
                                         <div class="text-sm">
-                                            <div class="font-medium text-green-50">{{ $payment->booking->room->name ?? 'N/A' }}</div>
-                                            <div class="text-gray-400">{{ $payment->booking->booking_reference }}</div>
+                                            <div class="font-medium text-green-50"><?php echo e($payment->booking->room->name ?? 'N/A'); ?></div>
+                                            <div class="text-gray-400"><?php echo e($payment->booking->booking_reference); ?></div>
                                             <div class="text-gray-500 text-xs">
-                                                {{ $payment->booking->check_in ? $payment->booking->check_in->format('M d') : 'N/A' }} - 
-                                                {{ $payment->booking->check_out ? $payment->booking->check_out->format('M d, Y') : 'N/A' }}
+                                                <?php echo e($payment->booking->check_in ? $payment->booking->check_in->format('M d') : 'N/A'); ?> - 
+                                                <?php echo e($payment->booking->check_out ? $payment->booking->check_out->format('M d, Y') : 'N/A'); ?>
+
                                             </div>
                                         </div>
-                                    @elseif($payment->serviceRequest)
+                                    <?php elseif($payment->serviceRequest): ?>
                                         <div class="flex items-center mb-2">
                                             <div class="w-6 h-6 bg-purple-600 rounded flex items-center justify-center mr-2">
                                                 <i class="fas fa-concierge-bell text-white text-xs"></i>
@@ -322,47 +322,51 @@
                                             <span class="text-xs bg-purple-600 text-white px-2 py-1 rounded">Service</span>
                                         </div>
                                         <div class="text-sm">
-                                            <div class="font-medium text-green-50">{{ $payment->serviceRequest->service->name ?? 'Service Request' }}</div>
-                                            <div class="text-gray-400">{{ $payment->serviceRequest->service->category ?? 'N/A' }}</div>
+                                            <div class="font-medium text-green-50"><?php echo e($payment->serviceRequest->service->name ?? 'Service Request'); ?></div>
+                                            <div class="text-gray-400"><?php echo e($payment->serviceRequest->service->category ?? 'N/A'); ?></div>
                                         </div>
-                                    @else
+                                    <?php else: ?>
                                         <div class="flex items-center">
                                             <div class="w-6 h-6 bg-gray-600 rounded flex items-center justify-center mr-2">
                                                 <i class="fas fa-question-circle text-white text-xs"></i>
                                             </div>
                                             <span class="text-xs bg-gray-600 text-white px-2 py-1 rounded">Other</span>
                                         </div>
-                                    @endif
+                                    <?php endif; ?>
                                 </td>
 
                                 <!-- Amount -->
                                 <td class="px-6 py-4">
-                                    <div class="font-bold text-green-400">{{ $payment->formatted_amount }}</div>
-                                    @if($payment->refund_amount > 0)
+                                    <div class="font-bold text-green-400"><?php echo e($payment->formatted_amount); ?></div>
+                                    <?php if($payment->refund_amount > 0): ?>
                                         <div class="text-sm text-red-400">
-                                            <i class="fas fa-minus-circle mr-1"></i>Refunded: {{ $payment->formatted_refund_amount }}
+                                            <i class="fas fa-minus-circle mr-1"></i>Refunded: <?php echo e($payment->formatted_refund_amount); ?>
+
                                         </div>
                                         <div class="text-sm text-gray-400">
-                                            Net: ₱{{ number_format($payment->amount - $payment->refund_amount, 2) }}
+                                            Net: ₱<?php echo e(number_format($payment->amount - $payment->refund_amount, 2)); ?>
+
                                         </div>
-                                    @endif
+                                    <?php endif; ?>
                                 </td>
 
                                 <!-- Method -->
                                 <td class="px-6 py-4">
                                     <span class="inline-block px-2 py-1 text-xs bg-gray-700 text-gray-300 rounded border border-gray-600">
-                                        {{ $payment->payment_method_display }}
+                                        <?php echo e($payment->payment_method_display); ?>
+
                                     </span>
-                                    @if($payment->payment_date)
+                                    <?php if($payment->payment_date): ?>
                                         <div class="text-sm text-gray-400 mt-1">
-                                            {{ $payment->payment_date->format('M d, H:i') }}
+                                            <?php echo e($payment->payment_date->format('M d, H:i')); ?>
+
                                         </div>
-                                    @endif
+                                    <?php endif; ?>
                                 </td>
 
                                 <!-- Status -->
                                 <td class="px-6 py-4">
-                                    @php
+                                    <?php
                                         $statusConfig = match($payment->status) {
                                             'completed' => ['bg' => 'bg-green-600', 'text' => 'text-white'],
                                             'pending' => ['bg' => 'bg-yellow-600', 'text' => 'text-white'],
@@ -371,59 +375,60 @@
                                             'refunded' => ['bg' => 'bg-gray-600', 'text' => 'text-white'],
                                             default => ['bg' => 'bg-gray-700', 'text' => 'text-gray-300']
                                         };
-                                    @endphp
-                                    <span class="inline-block px-2 py-1 text-xs {{ $statusConfig['bg'] }} {{ $statusConfig['text'] }} rounded">
-                                        {{ ucfirst($payment->status) }}
+                                    ?>
+                                    <span class="inline-block px-2 py-1 text-xs <?php echo e($statusConfig['bg']); ?> <?php echo e($statusConfig['text']); ?> rounded">
+                                        <?php echo e(ucfirst($payment->status)); ?>
+
                                     </span>
-                                    @if($payment->isPartiallyRefunded())
+                                    <?php if($payment->isPartiallyRefunded()): ?>
                                         <div class="mt-1">
                                             <span class="inline-block px-2 py-1 text-xs bg-yellow-600 text-white rounded">Partial Refund</span>
                                         </div>
-                                    @endif
+                                    <?php endif; ?>
                                 </td>
 
                                 <!-- Date -->
                                 <td class="px-6 py-4">
-                                    <div class="text-sm text-green-50">{{ $payment->created_at->format('M d, Y') }}</div>
-                                    <div class="text-xs text-gray-400">{{ $payment->created_at->format('H:i A') }}</div>
+                                    <div class="text-sm text-green-50"><?php echo e($payment->created_at->format('M d, Y')); ?></div>
+                                    <div class="text-xs text-gray-400"><?php echo e($payment->created_at->format('H:i A')); ?></div>
                                 </td>
 
                                 <!-- Actions -->
                                 <td class="px-6 py-4">
                                     <div class="flex flex-col space-y-1">
-                                        <a href="{{ route('admin.payments.show', $payment) }}" 
+                                        <a href="<?php echo e(route('admin.payments.show', $payment)); ?>" 
                                            class="inline-flex items-center px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors" 
                                            title="View Details">
                                             <i class="fas fa-eye mr-1"></i>View
                                         </a>
                                         
-                                        @if($payment->canBeRefunded())
-                                            <button onclick="showRefundModal({{ $payment->id }}, {{ $payment->getRemainingRefundableAmount() }})"
+                                        <?php if($payment->canBeRefunded()): ?>
+                                            <button onclick="showRefundModal(<?php echo e($payment->id); ?>, <?php echo e($payment->getRemainingRefundableAmount()); ?>)"
                                                     class="inline-flex items-center px-2 py-1 text-xs bg-yellow-600 text-white rounded hover:bg-yellow-700 transition-colors" 
                                                     title="Process Refund">
                                                 <i class="fas fa-undo mr-1"></i>Refund
                                             </button>
-                                        @endif
+                                        <?php endif; ?>
 
-                                        @if($payment->status === 'pending')
-                                            <button onclick="updatePaymentStatus({{ $payment->id }}, 'completed')"
+                                        <?php if($payment->status === 'pending'): ?>
+                                            <button onclick="updatePaymentStatus(<?php echo e($payment->id); ?>, 'completed')"
                                                     class="inline-flex items-center px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 transition-colors" 
                                                     title="Mark as Completed">
                                                 <i class="fas fa-check mr-1"></i>Complete
                                             </button>
-                                        @endif
+                                        <?php endif; ?>
 
-                                        @if($payment->booking)
-                                            <a href="{{ route('admin.bookings.show', $payment->booking) }}" 
+                                        <?php if($payment->booking): ?>
+                                            <a href="<?php echo e(route('admin.bookings.show', $payment->booking)); ?>" 
                                                class="inline-flex items-center px-2 py-1 text-xs bg-indigo-600 text-white rounded hover:bg-indigo-700 transition-colors" 
                                                title="View Booking">
                                                 <i class="fas fa-bed mr-1"></i>Booking
                                             </a>
-                                        @endif
+                                        <?php endif; ?>
                                     </div>
                                 </td>
                             </tr>
-                            @endforeach
+                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                         </tbody>
                     </table>
                 </div>
@@ -431,19 +436,20 @@
                 <!-- Pagination -->
                 <div class="px-6 py-4 border-t border-gray-700 flex flex-col sm:flex-row items-center justify-between">
                     <div class="text-sm text-gray-400 mb-4 sm:mb-0">
-                        Showing {{ $payments->firstItem() }} to {{ $payments->lastItem() }} of {{ $payments->total() }} payments
+                        Showing <?php echo e($payments->firstItem()); ?> to <?php echo e($payments->lastItem()); ?> of <?php echo e($payments->total()); ?> payments
                     </div>
                     <div class="flex-1 flex justify-end">
-                        {{ $payments->appends(request()->query())->links() }}
+                        <?php echo e($payments->appends(request()->query())->links()); ?>
+
                     </div>
                 </div>
-            @else
+            <?php else: ?>
                 <div class="px-6 py-12 text-center">
                     <i class="fas fa-receipt text-6xl text-gray-600 mb-4"></i>
                     <h3 class="text-xl font-semibold text-green-50 mb-2">No payments found</h3>
                     <p class="text-gray-400">Try adjusting your search filters or check back later.</p>
                 </div>
-            @endif
+            <?php endif; ?>
         </div>
     </div>
 </div>
@@ -460,7 +466,7 @@
             </div>
             
             <form id="refundForm" method="POST">
-                @csrf
+                <?php echo csrf_field(); ?>
                 <div class="space-y-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-300 mb-2">Refund Amount</label>
@@ -508,7 +514,7 @@ function updatePaymentStatus(paymentId, status) {
         const csrfToken = document.createElement('input');
         csrfToken.type = 'hidden';
         csrfToken.name = '_token';
-        csrfToken.value = '{{ csrf_token() }}';
+        csrfToken.value = '<?php echo e(csrf_token()); ?>';
         
         const methodField = document.createElement('input');
         methodField.type = 'hidden';
@@ -548,4 +554,6 @@ document.getElementById('refundModal').addEventListener('click', function(e) {
     }
 });
 </script>
-@endsection
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('layouts.admin', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\VALESBEACH_LATEST\ValesBeach\resources\views/admin/payments/index.blade.php ENDPATH**/ ?>

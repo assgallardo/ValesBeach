@@ -138,6 +138,14 @@
                                     Rooms
                                 </a>
                             <?php endif; ?>
+
+                            <!-- Payments link - with route check -->
+                            <?php if(Route::has('admin.payments.index')): ?>
+                                <a href="<?php echo e(route('admin.payments.index')); ?>" 
+                                   class="text-gray-200 hover:text-white transition-colors duration-200 font-medium">
+                                    Payments
+                                </a>
+                            <?php endif; ?>
                             
                             <!-- Calendar Function for Admin and Staff - NEW BUTTON DESIGN -->
                             <?php if(Route::has('admin.calendar')): ?>

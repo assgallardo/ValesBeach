@@ -158,11 +158,8 @@
                             <form action="{{ route('manager.services.toggle-status', $service) }}" method="POST" class="flex-1">
                                 @csrf
                                 @method('PATCH')
-                                <button type="submit" 
-                                        class="w-full py-2 px-3 rounded text-sm transition-colors
-                                        @if($service->is_available) bg-yellow-600 hover:bg-yellow-700 text-white
-                                        @else bg-green-600 hover:bg-green-700 text-white
-                                        @endif">
+                                <button type="submit" class="w-full py-2 px-3 rounded text-sm transition-colors
+                                    {{ $service->is_available ? 'bg-yellow-600 hover:bg-yellow-700 text-white' : 'bg-green-600 hover:bg-green-700 text-white' }}">
                                     <i class="fas fa-toggle-{{ $service->is_available ? 'off' : 'on' }} mr-1"></i>
                                     {{ $service->is_available ? 'Disable' : 'Enable' }}
                                 </button>

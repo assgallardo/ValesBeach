@@ -148,7 +148,7 @@
                         <p class="text-green-100 text-sm lg:text-base mb-8 flex-grow">
                             View detailed reports and performance analytics.
                         </p>
-                        <a href="{{ route('manager.reports') }}" 
+                        <a href="{{ route('manager.reports.index') }}" 
                            class="w-full py-3 bg-green-50 text-black font-medium text-lg rounded-lg hover:bg-white transition-colors duration-200 text-center">
                             View Reports
                         </a>

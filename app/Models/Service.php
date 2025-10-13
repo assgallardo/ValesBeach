@@ -20,9 +20,8 @@ class Service extends Model
         'price',
         'duration',
         'category',
-        'status', // Add this if you added the column
         'image',
-        'availability',
+        'is_available', // Use this, not 'availability'
         'max_guests'
     ];
 
@@ -35,7 +34,7 @@ class Service extends Model
         'price' => 'decimal:2',
         'duration' => 'integer',
         'max_guests' => 'integer',
-        'availability' => 'boolean'
+        'is_available' => 'boolean', // Use this
     ];
 
     /**
