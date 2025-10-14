@@ -337,14 +337,72 @@
 
                                 <!-- Amount -->
                                 <td class="px-6 py-4">
-                                    <div class="font-bold text-green-400"><?php echo e($payment->formatted_amount); ?></div>
-                                    <?php if($payment->refund_amount > 0): ?>
-                                        <div class="text-sm text-red-400">
-                                            <i class="fas fa-minus-circle mr-1"></i>Refunded: <?php echo e($payment->formatted_refund_amount); ?>
+                                    <div class="font-bold text-green-400">
+                                        ₱<?php echo e(number_format($payment->calculated_amount, 2)); ?>
+
+                                    </div>
+                                    
+                                    <!-- Show breakdown for bookings -->
+                                    <?php if($payment->booking): ?>
+                                        <div class="text-xs text-gray-400 mt-1">
+                                            <?php if($payment->booking->room): ?>
+                                                <?php
+                                                    $checkIn = \Carbon\Carbon::parse($payment->booking->check_in_date);
+                                                    $checkOut = \Carbon\Carbon::parse($payment->booking->check_out_date);
+                                                    $nights = $checkIn->diffInDays($checkOut);
+                                                    $roomCost = $payment->booking->room->price * $nights;
+                                                ?>
+                                                Room: ₱<?php echo e(number_format($payment->booking->room->price, 2)); ?> × <?php echo e($nights); ?> nights
+                                                = ₱<?php echo e(number_format($roomCost, 2)); ?>
+
+                                            <?php endif; ?>
+                                        </div>
+                                        <?php if($payment->booking->additional_fees > 0): ?>
+                                            <div class="text-xs text-blue-400">
+                                                + ₱<?php echo e(number_format($payment->booking->additional_fees, 2)); ?> fees
+                                            </div>
+                                        <?php endif; ?>
+                                        <?php if($payment->booking->discount_amount > 0): ?>
+                                            <div class="text-xs text-yellow-400">
+                                                - ₱<?php echo e(number_format($payment->booking->discount_amount, 2)); ?> discount
+                                            </div>
+                                        <?php endif; ?>
+                                    <?php endif; ?>
+                                    
+                                    <!-- Show breakdown for services -->
+                                    <?php if($payment->serviceRequest && $payment->serviceRequest->service): ?>
+                                        <?php
+                                            $service = $payment->serviceRequest->service;
+                                            $quantity = $payment->serviceRequest->quantity ?? 1;
+                                            $serviceTotal = $service->price * $quantity;
+                                        ?>
+                                        <div class="text-xs text-gray-400 mt-1">
+                                            Service: <?php echo e($service->name); ?>
 
                                         </div>
-                                        <div class="text-sm text-gray-400">
-                                            Net: ₱<?php echo e(number_format($payment->amount - $payment->refund_amount, 2)); ?>
+                                        <div class="text-xs text-blue-400">
+                                            ₱<?php echo e(number_format($service->price, 2)); ?>
+
+                                            <?php if($quantity > 1): ?>
+                                                × <?php echo e($quantity); ?> = ₱<?php echo e(number_format($serviceTotal, 2)); ?>
+
+                                            <?php endif; ?>
+                                        </div>
+                                        <?php if($payment->serviceRequest->service->duration): ?>
+                                            <div class="text-xs text-gray-500">
+                                                Duration: <?php echo e($payment->serviceRequest->service->duration); ?> min
+                                            </div>
+                                        <?php endif; ?>
+                                    <?php endif; ?>
+                                    
+                                    <!-- Show refund information -->
+                                    <?php if($payment->refund_amount > 0): ?>
+                                        <div class="text-sm text-red-400 mt-1">
+                                            <i class="fas fa-minus-circle mr-1"></i>Refunded: ₱<?php echo e(number_format($payment->refund_amount, 2)); ?>
+
+                                        </div>
+                                        <div class="text-sm font-medium text-green-400">
+                                            Net: ₱<?php echo e(number_format($payment->calculated_amount - ($payment->refund_amount ?? 0), 2)); ?>
 
                                         </div>
                                     <?php endif; ?>
@@ -396,12 +454,14 @@
                                 <!-- Actions -->
                                 <td class="px-6 py-4">
                                     <div class="flex flex-col space-y-1">
+                                        <!-- View Details - Works for both bookings and services -->
                                         <a href="<?php echo e(route('admin.payments.show', $payment)); ?>" 
                                            class="inline-flex items-center px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors" 
-                                           title="View Details">
+                                           title="View Payment Details">
                                             <i class="fas fa-eye mr-1"></i>View
                                         </a>
                                         
+                                        <!-- Refund Action - Works for both bookings and services -->
                                         <?php if($payment->canBeRefunded()): ?>
                                             <button onclick="showRefundModal(<?php echo e($payment->id); ?>, <?php echo e($payment->getRemainingRefundableAmount()); ?>)"
                                                     class="inline-flex items-center px-2 py-1 text-xs bg-yellow-600 text-white rounded hover:bg-yellow-700 transition-colors" 
@@ -410,6 +470,7 @@
                                             </button>
                                         <?php endif; ?>
 
+                                        <!-- Mark as Complete - Works for both bookings and services -->
                                         <?php if($payment->status === 'pending'): ?>
                                             <button onclick="updatePaymentStatus(<?php echo e($payment->id); ?>, 'completed')"
                                                     class="inline-flex items-center px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 transition-colors" 
@@ -418,12 +479,33 @@
                                             </button>
                                         <?php endif; ?>
 
+                                        <!-- View Related Record - Booking or Service -->
                                         <?php if($payment->booking): ?>
                                             <a href="<?php echo e(route('admin.bookings.show', $payment->booking)); ?>" 
                                                class="inline-flex items-center px-2 py-1 text-xs bg-indigo-600 text-white rounded hover:bg-indigo-700 transition-colors" 
-                                               title="View Booking">
+                                               title="View Booking Details">
                                                 <i class="fas fa-bed mr-1"></i>Booking
                                             </a>
+                                        <?php elseif($payment->serviceRequest): ?>
+                                            <a href="<?php echo e(route('admin.service-requests.show', $payment->serviceRequest)); ?>" 
+                                               class="inline-flex items-center px-2 py-1 text-xs bg-purple-600 text-white rounded hover:bg-purple-700 transition-colors" 
+                                               title="View Service Request Details">
+                                                <i class="fas fa-concierge-bell mr-1"></i>Service
+                                            </a>
+                                        <?php endif; ?>
+
+                                        <!-- Additional Actions for Processing Status -->
+                                        <?php if($payment->status === 'processing'): ?>
+                                            <button onclick="updatePaymentStatus(<?php echo e($payment->id); ?>, 'completed')"
+                                                    class="inline-flex items-center px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 transition-colors" 
+                                                    title="Complete Payment">
+                                                <i class="fas fa-check-circle mr-1"></i>Complete
+                                            </button>
+                                            <button onclick="updatePaymentStatus(<?php echo e($payment->id); ?>, 'failed')"
+                                                    class="inline-flex items-center px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700 transition-colors" 
+                                                    title="Mark as Failed">
+                                                <i class="fas fa-times-circle mr-1"></i>Failed
+                                            </button>
                                         <?php endif; ?>
                                     </div>
                                 </td>

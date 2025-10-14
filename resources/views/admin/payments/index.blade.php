@@ -337,13 +337,66 @@
 
                                 <!-- Amount -->
                                 <td class="px-6 py-4">
-                                    <div class="font-bold text-green-400">{{ $payment->formatted_amount }}</div>
-                                    @if($payment->refund_amount > 0)
-                                        <div class="text-sm text-red-400">
-                                            <i class="fas fa-minus-circle mr-1"></i>Refunded: {{ $payment->formatted_refund_amount }}
+                                    <div class="font-bold text-green-400">
+                                        ₱{{ number_format($payment->calculated_amount, 2) }}
+                                    </div>
+                                    
+                                    <!-- Show breakdown for bookings -->
+                                    @if($payment->booking)
+                                        <div class="text-xs text-gray-400 mt-1">
+                                            @if($payment->booking->room)
+                                                @php
+                                                    $checkIn = \Carbon\Carbon::parse($payment->booking->check_in_date);
+                                                    $checkOut = \Carbon\Carbon::parse($payment->booking->check_out_date);
+                                                    $nights = $checkIn->diffInDays($checkOut);
+                                                    $roomCost = $payment->booking->room->price * $nights;
+                                                @endphp
+                                                Room: ₱{{ number_format($payment->booking->room->price, 2) }} × {{ $nights }} nights
+                                                = ₱{{ number_format($roomCost, 2) }}
+                                            @endif
                                         </div>
-                                        <div class="text-sm text-gray-400">
-                                            Net: ₱{{ number_format($payment->amount - $payment->refund_amount, 2) }}
+                                        @if($payment->booking->additional_fees > 0)
+                                            <div class="text-xs text-blue-400">
+                                                + ₱{{ number_format($payment->booking->additional_fees, 2) }} fees
+                                            </div>
+                                        @endif
+                                        @if($payment->booking->discount_amount > 0)
+                                            <div class="text-xs text-yellow-400">
+                                                - ₱{{ number_format($payment->booking->discount_amount, 2) }} discount
+                                            </div>
+                                        @endif
+                                    @endif
+                                    
+                                    <!-- Show breakdown for services -->
+                                    @if($payment->serviceRequest && $payment->serviceRequest->service)
+                                        @php
+                                            $service = $payment->serviceRequest->service;
+                                            $quantity = $payment->serviceRequest->quantity ?? 1;
+                                            $serviceTotal = $service->price * $quantity;
+                                        @endphp
+                                        <div class="text-xs text-gray-400 mt-1">
+                                            Service: {{ $service->name }}
+                                        </div>
+                                        <div class="text-xs text-blue-400">
+                                            ₱{{ number_format($service->price, 2) }}
+                                            @if($quantity > 1)
+                                                × {{ $quantity }} = ₱{{ number_format($serviceTotal, 2) }}
+                                            @endif
+                                        </div>
+                                        @if($payment->serviceRequest->service->duration)
+                                            <div class="text-xs text-gray-500">
+                                                Duration: {{ $payment->serviceRequest->service->duration }} min
+                                            </div>
+                                        @endif
+                                    @endif
+                                    
+                                    <!-- Show refund information -->
+                                    @if($payment->refund_amount > 0)
+                                        <div class="text-sm text-red-400 mt-1">
+                                            <i class="fas fa-minus-circle mr-1"></i>Refunded: ₱{{ number_format($payment->refund_amount, 2) }}
+                                        </div>
+                                        <div class="text-sm font-medium text-green-400">
+                                            Net: ₱{{ number_format($payment->calculated_amount - ($payment->refund_amount ?? 0), 2) }}
                                         </div>
                                     @endif
                                 </td>
@@ -391,12 +444,14 @@
                                 <!-- Actions -->
                                 <td class="px-6 py-4">
                                     <div class="flex flex-col space-y-1">
+                                        <!-- View Details - Works for both bookings and services -->
                                         <a href="{{ route('admin.payments.show', $payment) }}" 
                                            class="inline-flex items-center px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors" 
-                                           title="View Details">
+                                           title="View Payment Details">
                                             <i class="fas fa-eye mr-1"></i>View
                                         </a>
                                         
+                                        <!-- Refund Action - Works for both bookings and services -->
                                         @if($payment->canBeRefunded())
                                             <button onclick="showRefundModal({{ $payment->id }}, {{ $payment->getRemainingRefundableAmount() }})"
                                                     class="inline-flex items-center px-2 py-1 text-xs bg-yellow-600 text-white rounded hover:bg-yellow-700 transition-colors" 
@@ -405,6 +460,7 @@
                                             </button>
                                         @endif
 
+                                        <!-- Mark as Complete - Works for both bookings and services -->
                                         @if($payment->status === 'pending')
                                             <button onclick="updatePaymentStatus({{ $payment->id }}, 'completed')"
                                                     class="inline-flex items-center px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 transition-colors" 
@@ -413,12 +469,33 @@
                                             </button>
                                         @endif
 
+                                        <!-- View Related Record - Booking or Service -->
                                         @if($payment->booking)
                                             <a href="{{ route('admin.bookings.show', $payment->booking) }}" 
                                                class="inline-flex items-center px-2 py-1 text-xs bg-indigo-600 text-white rounded hover:bg-indigo-700 transition-colors" 
-                                               title="View Booking">
+                                               title="View Booking Details">
                                                 <i class="fas fa-bed mr-1"></i>Booking
                                             </a>
+                                        @elseif($payment->serviceRequest)
+                                            <a href="{{ route('admin.service-requests.show', $payment->serviceRequest) }}" 
+                                               class="inline-flex items-center px-2 py-1 text-xs bg-purple-600 text-white rounded hover:bg-purple-700 transition-colors" 
+                                               title="View Service Request Details">
+                                                <i class="fas fa-concierge-bell mr-1"></i>Service
+                                            </a>
+                                        @endif
+
+                                        <!-- Additional Actions for Processing Status -->
+                                        @if($payment->status === 'processing')
+                                            <button onclick="updatePaymentStatus({{ $payment->id }}, 'completed')"
+                                                    class="inline-flex items-center px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 transition-colors" 
+                                                    title="Complete Payment">
+                                                <i class="fas fa-check-circle mr-1"></i>Complete
+                                            </button>
+                                            <button onclick="updatePaymentStatus({{ $payment->id }}, 'failed')"
+                                                    class="inline-flex items-center px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700 transition-colors" 
+                                                    title="Mark as Failed">
+                                                <i class="fas fa-times-circle mr-1"></i>Failed
+                                            </button>
                                         @endif
                                     </div>
                                 </td>

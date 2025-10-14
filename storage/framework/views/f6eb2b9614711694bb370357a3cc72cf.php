@@ -77,13 +77,50 @@
             <!-- Request Header -->
             <div class="flex items-start justify-between mb-4">
                 <div class="flex-1">
-                    <h3 class="text-xl font-semibold text-green-100 mb-2">
-                        <?php echo e($request->service_name ?? $request->service_type ?? 'Service Request'); ?>
+                    <div class="flex items-center justify-between mb-2">
+                        <h3 class="text-xl font-semibold text-green-100">
+                            <?php echo e($request->service->name ?? $request->service_name ?? $request->service_type ?? 'Service Request'); ?>
 
-                        <?php if($request->status === 'cancelled'): ?>
-                        <span class="text-red-400 text-sm ml-2">[CANCELLED]</span>
-                        <?php endif; ?>
-                    </h3>
+                            <?php if($request->status === 'cancelled'): ?>
+                            <span class="text-red-400 text-sm ml-2">[CANCELLED]</span>
+                            <?php endif; ?>
+                        </h3>
+                        
+                        <!-- SERVICE PRICE DISPLAY - THIS IS THE KEY ADDITION -->
+                        <div class="text-right">
+                            <?php if($request->service && $request->service->price): ?>
+                                <div class="text-2xl font-bold text-green-400">
+                                    ₱<?php echo e(number_format($request->service->price, 2)); ?>
+
+                            </div>
+                            <?php if($request->quantity && $request->quantity > 1): ?>
+                                <div class="text-sm text-gray-400">
+                                    ₱<?php echo e(number_format($request->service->price, 2)); ?> × <?php echo e($request->quantity); ?>
+
+                                </div>
+                                <div class="text-lg font-semibold text-green-300">
+                                    Total: ₱<?php echo e(number_format($request->service->price * $request->quantity, 2)); ?>
+
+                                </div>
+                            <?php endif; ?>
+                            <?php elseif($request->total_amount): ?>
+                                <div class="text-2xl font-bold text-green-400">
+                                    ₱<?php echo e(number_format($request->total_amount, 2)); ?>
+
+                            </div>
+                            <?php else: ?>
+                                <div class="text-lg text-gray-400">
+                                    Price not available
+                                </div>
+                            <?php endif; ?>
+                            
+                            <?php if($request->service && $request->service->duration): ?>
+                                <div class="text-xs text-gray-500 mt-1">
+                                    Duration: <?php echo e($request->service->duration); ?> min
+                            </div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
                     
                     <!-- Status Badge -->
                     <div class="flex items-center space-x-3 mb-3">
@@ -118,11 +155,19 @@
                             Request #<?php echo e($request->id); ?>
 
                         </span>
+                        
+                        <!-- Service Category Badge -->
+                        <?php if($request->service && $request->service->category): ?>
+                            <span class="px-2 py-1 text-xs bg-gray-700 text-gray-300 rounded border border-gray-600">
+                                <?php echo e($request->service->category); ?>
+
+                            </span>
+                        <?php endif; ?>
                     </div>
                 </div>
                 
                 <!-- Request Actions -->
-                <div class="flex gap-2">
+                <div class="flex gap-2 ml-4">
                     <button onclick="viewRequestDetails(<?php echo e($request->id); ?>)" 
                             class="bg-blue-600 text-white px-3 py-2 text-sm rounded-lg hover:bg-blue-700 transition-colors">
                         <i class="fas fa-eye mr-1"></i>
@@ -156,7 +201,7 @@
             </div>
 
             <!-- Request Content -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <!-- Description -->
                 <div class="space-y-1">
                     <label class="text-xs text-gray-400 uppercase tracking-wide">Description</label>
@@ -185,7 +230,64 @@
 
                     </p>
                 </div>
+                
+                <!-- Service Details -->
+                <div class="space-y-1">
+                    <label class="text-xs text-gray-400 uppercase tracking-wide">Service Details</label>
+                    <div class="text-sm">
+                        <?php if($request->service): ?>
+                            <div class="text-green-100 font-medium"><?php echo e($request->service->name); ?></div>
+                            <?php if($request->service->category): ?>
+                                <div class="text-gray-400"><?php echo e($request->service->category); ?></div>
+                            <?php endif; ?>
+                            <?php if($request->quantity && $request->quantity > 1): ?>
+                                <div class="text-gray-400">Quantity: <?php echo e($request->quantity); ?></div>
+                            <?php endif; ?>
+                        <?php else: ?>
+                            <div class="text-gray-400">Service details not available</div>
+                        <?php endif; ?>
+                    </div>
+                </div>
             </div>
+
+            <!-- PRICING SUMMARY ROW - NEW ADDITION -->
+            <?php if($request->service || $request->total_amount): ?>
+            <div class="mt-4 pt-3 border-t border-gray-700">
+                <div class="flex justify-between items-center">
+                    <div class="text-sm text-gray-400">
+                        <?php if($request->service): ?>
+                            Service: <?php echo e($request->service->name); ?>
+
+                            <?php if($request->quantity && $request->quantity > 1): ?>
+                                (<?php echo e($request->quantity); ?>x)
+                            <?php endif; ?>
+                        <?php else: ?>
+                            Service Request
+                        <?php endif; ?>
+                    </div>
+                    <div class="text-right">
+                        <?php if($request->service && $request->service->price): ?>
+                            <?php if($request->quantity && $request->quantity > 1): ?>
+                                <div class="text-lg font-bold text-green-400">
+                                    Total: ₱<?php echo e(number_format($request->service->price * $request->quantity, 2)); ?>
+
+                            </div>
+                            <?php else: ?>
+                                <div class="text-lg font-bold text-green-400">
+                                    ₱<?php echo e(number_format($request->service->price, 2)); ?>
+
+                            </div>
+                            <?php endif; ?>
+                        <?php elseif($request->total_amount): ?>
+                            <div class="text-lg font-bold text-green-400">
+                                ₱<?php echo e(number_format($request->total_amount, 2)); ?>
+
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </div>
+            <?php endif; ?>
 
             <?php if($request->special_requests): ?>
             <div class="mt-4 pt-3 border-t border-gray-700">
@@ -351,11 +453,32 @@ function displayRequestDetails(request) {
                 </p>
             </div>
             
+            ${request.service ? `
+            <div class="bg-gray-700 p-4 rounded-lg">
+                <label class="text-xs text-gray-400 uppercase tracking-wide mb-2 block">Service Details & Pricing</label>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <p class="text-green-100 font-medium">${request.service.name}</p>
+                        ${request.service.category ? `<p class="text-gray-400 text-sm">${request.service.category}</p>` : ''}
+                        ${request.service.duration ? `<p class="text-gray-400 text-sm">Duration: ${request.service.duration} minutes</p>` : ''}}
+                    </div>
+                    <div class="text-right">
+                        <p class="text-2xl font-bold text-green-400">₱${parseFloat(request.service.price).toLocaleString('en-US', {minimumFractionDigits: 2})}</p>
+                        ${request.quantity && request.quantity > 1 ? `
+                            <p class="text-sm text-gray-400">Quantity: ${request.quantity}</p>
+                            <p class="text-lg font-semibold text-green-300">Total: ₱${(parseFloat(request.service.price) * request.quantity).toLocaleString('en-US', {minimumFractionDigits: 2})}</p>
+                        ` : ''}
+                    </div>
+                </div>
+            </div>
+            ` : ''}
+            
             <div>
                 <label class="text-xs text-gray-400 uppercase tracking-wide">Description</label>
                 <p class="text-gray-300">${request.description || 'No description provided'}</p>
             </div>
             
+            <!-- Rest of your existing modal content -->
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <label class="text-xs text-gray-400 uppercase tracking-wide">Request ID</label>

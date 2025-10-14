@@ -476,3 +476,52 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/payments/history', [PaymentController::class, 'history'])->name('payments.history');
     Route::get('/payments/{payment}', [PaymentController::class, 'show'])->name('payments.show');
 });
+
+// Admin and Manager shared routes
+Route::middleware(['auth', 'user.status', 'role:admin,manager'])->group(function () {
+    // Payment management routes (accessible by both admin and manager)
+    Route::prefix('admin')->name('admin.')->group(function () {
+        Route::get('/payments', [PaymentController::class, 'index'])->name('payments.index');
+        Route::get('/payments/{payment}', [PaymentController::class, 'show'])->name('payments.show');
+        Route::patch('/payments/{payment}/status', [PaymentController::class, 'updateStatus'])->name('payments.updateStatus');
+        Route::post('/payments/{payment}/refund', [PaymentController::class, 'processRefund'])->name('payments.refund');
+        Route::get('/payments/{payment}/refund', [PaymentController::class, 'showRefundForm'])->name('payments.refund.form');
+        Route::get('/payments-export', [PaymentController::class, 'export'])->name('payments.export');
+    });
+});
+
+// Admin-only routes (if any specific admin-only payment functions)
+Route::prefix('admin')->name('admin.')->middleware(['auth', 'user.status', 'role:admin'])->group(function () {
+    // Add any admin-only payment routes here if needed
+});
+
+// Manager routes - add payment management access
+Route::prefix('manager')->name('manager.')->middleware(['auth', 'user.status', 'role:manager,admin'])->group(function () {
+    // Existing manager routes...
+    
+    // Payment management routes for managers
+    Route::get('/payments', [PaymentController::class, 'index'])->name('payments.index');
+    Route::get('/payments/{payment}', [PaymentController::class, 'show'])->name('payments.show');
+    Route::patch('/payments/{payment}/status', [PaymentController::class, 'updateStatus'])->name('payments.updateStatus');
+    Route::post('/payments/{payment}/refund', [PaymentController::class, 'processRefund'])->name('payments.refund');
+    Route::get('/payments/{payment}/refund', [PaymentController::class, 'showRefundForm'])->name('payments.refund.form');
+    Route::get('/payments-export', [PaymentController::class, 'export'])->name('payments.export');
+});
+
+// Admin routes for service requests
+Route::middleware(['auth', 'user.status', 'role:admin'])->group(function () {
+    Route::get('/admin/service-requests/{serviceRequest}', [AdminServiceRequestController::class, 'show'])
+         ->name('admin.service-requests.show');
+});
+
+// Manager routes for service requests
+Route::middleware(['auth', 'user.status', 'role:manager,admin'])->group(function () {
+    Route::prefix('manager')->name('manager.')->group(function () {
+        Route::get('/service-requests/{serviceRequest}', [\App\Http\Controllers\Manager\ServiceRequestController::class, 'show'])
+             ->name('service-requests.show');
+        Route::patch('/payments/{payment}/status', [\App\Http\Controllers\Manager\PaymentController::class, 'updateStatus'])
+             ->name('payments.updateStatus');
+        Route::post('/payments/{payment}/refund', [\App\Http\Controllers\Manager\PaymentController::class, 'processRefund'])
+             ->name('payments.refund');
+    });
+});

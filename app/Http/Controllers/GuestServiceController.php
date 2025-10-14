@@ -241,14 +241,15 @@ class GuestServiceController extends Controller
         try {
             $user = Auth::user();
             
-            // Get service requests for the current user
-            $serviceRequests = ServiceRequest::where(function($query) use ($user) {
-                $query->where('guest_id', $user->id)
-                      ->orWhere('user_id', $user->id)
-                      ->orWhere('guest_email', $user->email);
-            })
-            ->orderBy('created_at', 'desc')
-            ->paginate(10);
+            // Load service requests WITH the service relationship (this is key for pricing)
+            $serviceRequests = ServiceRequest::with(['service']) // Add this relationship
+                ->where(function($query) use ($user) {
+                    $query->where('guest_id', $user->id)
+                          ->orWhere('user_id', $user->id)
+                          ->orWhere('guest_email', $user->email);
+                })
+                ->orderBy('created_at', 'desc')
+                ->paginate(10);
 
             // Calculate stats
             $allRequests = ServiceRequest::where(function($query) use ($user) {

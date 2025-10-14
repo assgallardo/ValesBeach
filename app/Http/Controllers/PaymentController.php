@@ -40,49 +40,37 @@ class PaymentController extends Controller
      */
     public function store(Request $request, Booking $booking)
     {
-        // Ensure user can access this booking
-        if (Auth::user()->role !== 'admin' && $booking->user_id !== Auth::id()) {
-            abort(403, 'Unauthorized access to this booking.');
-        }
-
         $request->validate([
-            'amount' => 'required|numeric|min:1|max:' . $booking->remaining_balance,
             'payment_method' => 'required|in:cash,card,bank_transfer,gcash,paymaya,online',
-            'notes' => 'nullable|string'
+            'notes' => 'nullable|string|max:500',
         ]);
 
         DB::beginTransaction();
-
         try {
+            // Calculate the exact amount based on booking details
+            $amount = $this->calculateBookingAmount($booking);
+            
             // Create payment record
             $payment = Payment::create([
+                'user_id' => auth()->id(),
                 'booking_id' => $booking->id,
-                'user_id' => Auth::id(),
-                'amount' => $request->amount,
+                'payment_reference' => $this->generatePaymentReference(),
+                'amount' => $amount,
                 'payment_method' => $request->payment_method,
                 'status' => $request->payment_method === 'cash' ? 'completed' : 'pending',
                 'payment_date' => $request->payment_method === 'cash' ? now() : null,
-                'notes' => $request->notes
+                'notes' => $request->notes,
+                'transaction_id' => $request->transaction_id ?? null,
             ]);
 
-            // If this completes the payment, update booking status
-            if ($booking->isPaid()) {
-                $booking->update(['status' => 'confirmed']);
-                
-                // Mark invoice as paid if exists
-                if ($booking->invoice) {
-                    $booking->invoice->markAsPaid();
-                }
-            }
+            // Update booking total if needed
+            $booking->update(['total_amount' => $amount]);
 
             DB::commit();
-
-            return redirect()->route('payments.confirmation', $payment)
-                ->with('success', 'Payment processed successfully!');
-
+            return redirect()->route('payments.confirmation', $payment);
         } catch (\Exception $e) {
             DB::rollback();
-            return back()->withErrors(['error' => 'Payment processing failed. Please try again.']);
+            return back()->with('error', 'Payment processing failed. Please try again.');
         }
     }
 
@@ -121,12 +109,26 @@ class PaymentController extends Controller
      */
     public function show(Payment $payment)
     {
-        // Ensure user can access this payment
-        if (Auth::user()->role !== 'admin' && $payment->user_id !== Auth::id()) {
-            abort(403, 'Unauthorized access to this payment.');
+        // Load all necessary relationships
+        $payment->load([
+            'user',
+            'booking.room',
+            'serviceRequest.service',
+            'refundedBy'
+        ]);
+        
+        $user = Auth::user();
+        if (!in_array($user->role, ['admin', 'manager'])) {
+            abort(403, 'Unauthorized access.');
         }
 
-        return view('payments.show', compact('payment'));
+        $routePrefix = request()->route()->getPrefix();
+        
+        if ($routePrefix === 'manager') {
+            return view('manager.payments.show', compact('payment'));
+        } else {
+            return view('admin.payments.show', compact('payment'));
+        }
     }
 
     /**
@@ -249,57 +251,65 @@ class PaymentController extends Controller
      */
     public function processRefund(Request $request, Payment $payment)
     {
-        if (Auth::user()->role !== 'admin') {
-            abort(403, 'Only administrators can process refunds.');
+        $user = Auth::user();
+        if (!in_array($user->role, ['admin', 'manager'])) {
+            abort(403, 'Unauthorized access.');
         }
 
         $request->validate([
-            'refund_amount' => 'required|numeric|min:0.01|max:' . $payment->refundable_amount,
+            'refund_amount' => 'required|numeric|min:0.01|max:' . $payment->getRemainingRefundableAmount(),
             'refund_reason' => 'required|string|max:500',
-            'refund_type' => 'required|in:full,partial'
         ]);
 
-        if (!$payment->canBeRefunded()) {
-            return back()->withErrors(['error' => 'This payment cannot be refunded.']);
-        }
-
         DB::beginTransaction();
-
         try {
-            $isFullRefund = $request->refund_type === 'full' || $request->refund_amount == $payment->amount;
-            
-            // Update payment with refund details
+            $refundAmount = $request->refund_amount;
+            $totalRefunded = ($payment->refund_amount ?? 0) + $refundAmount;
+
+            // Update payment with refund information
             $payment->update([
-                'status' => $isFullRefund ? 'refunded' : 'partially_refunded',
-                'refund_amount' => ($payment->refund_amount ?? 0) + $request->refund_amount,
+                'refund_amount' => $totalRefunded,
                 'refund_reason' => $request->refund_reason,
                 'refunded_at' => now(),
-                'refunded_by' => Auth::id(),
-                'notes' => ($payment->notes ?? '') . "\n\nRefund processed: ₱" . number_format($request->refund_amount, 2) . 
-                          " on " . now()->format('Y-m-d H:i:s') . "\nReason: " . $request->refund_reason
+                'refunded_by' => auth()->id(),
+                'status' => $totalRefunded >= $payment->calculated_amount ? 'refunded' : $payment->status,
             ]);
 
-            // Update booking status if needed
-            if ($payment->booking) {
-                $booking = $payment->booking;
-                if ($isFullRefund || !$booking->isPaid()) {
-                    $booking->update(['status' => 'cancelled']);
+            // Handle service-specific refund logic
+            if ($payment->serviceRequest) {
+                // Update service request status if fully refunded
+                if ($totalRefunded >= $payment->calculated_amount) {
+                    $payment->serviceRequest->update([
+                        'status' => 'cancelled',
+                        'cancelled_at' => now(),
+                        'cancellation_reason' => 'Fully refunded: ' . $request->refund_reason
+                    ]);
                 }
             }
 
-            // Update service request status if needed
-            if ($payment->serviceRequest && $isFullRefund) {
-                $payment->serviceRequest->update(['status' => 'cancelled']);
+            // Handle booking-specific refund logic
+            if ($payment->booking) {
+                // Update booking status if fully refunded
+                if ($totalRefunded >= $payment->calculated_amount) {
+                    $payment->booking->update([
+                        'status' => 'cancelled',
+                        'cancelled_at' => now(),
+                        'cancellation_reason' => 'Fully refunded: ' . $request->refund_reason
+                    ]);
+                }
             }
 
             DB::commit();
-
-            $message = $isFullRefund ? 'Full refund processed successfully.' : 'Partial refund processed successfully.';
-            return redirect()->route('admin.payments.show', $payment)->with('success', $message);
-
+            
+            // Determine redirect route based on user role
+            $routePrefix = auth()->user()->role === 'admin' ? 'admin' : 'manager';
+            
+            return redirect()->route($routePrefix . '.payments.index')
+                            ->with('success', 'Refund processed successfully. Amount: ₱' . number_format($refundAmount, 2));
+                            
         } catch (\Exception $e) {
             DB::rollback();
-            return back()->withErrors(['error' => 'Refund processing failed: ' . $e->getMessage()]);
+            return redirect()->back()->with('error', 'Failed to process refund. Please try again.');
         }
     }
 
@@ -363,13 +373,20 @@ class PaymentController extends Controller
      */
     public function adminShow(Payment $payment)
     {
-        if (!in_array(Auth::user()->role, ['admin', 'manager'])) {
-            abort(403, 'Only administrators and managers can access this page.');
+        $user = Auth::user();
+        if (!in_array($user->role, ['admin', 'manager'])) {
+            abort(403, 'Unauthorized access.');
         }
 
         $payment->load(['booking', 'user', 'booking.room', 'serviceRequest', 'refundedBy']);
 
-        return view('admin.payments.show', compact('payment'));
+        $routePrefix = request()->route()->getPrefix();
+    
+        if ($routePrefix === 'manager') {
+            return view('manager.payments.show', compact('payment'));
+        } else {
+            return view('admin.payments.show', compact('payment'));
+        }
     }
 
     /**
@@ -377,12 +394,13 @@ class PaymentController extends Controller
      */
     public function updateStatus(Request $request, Payment $payment)
     {
-        if (!in_array(Auth::user()->role, ['admin', 'manager'])) {
-            abort(403, 'Only administrators and managers can update payment status.');
+        $user = Auth::user();
+        if (!in_array($user->role, ['admin', 'manager'])) {
+            abort(403, 'Unauthorized access.');
         }
 
         $request->validate([
-            'status' => 'required|in:pending,processing,completed,failed',
+            'status' => 'required|in:pending,processing,completed,failed,refunded',
             'transaction_id' => 'nullable|string',
             'notes' => 'nullable|string'
         ]);
@@ -404,11 +422,15 @@ class PaymentController extends Controller
 
     public function index(Request $request)
     {
-        // Check if user has admin access for this route
-        if (request()->route()->getPrefix() === 'admin' && !in_array(Auth::user()->role, ['admin', 'manager'])) {
+        // Check if user has admin or manager access
+        $user = Auth::user();
+        if (!in_array($user->role, ['admin', 'manager'])) {
             abort(403, 'Only administrators and managers can access this page.');
         }
 
+        // Get the current route prefix to determine which view to return
+        $routePrefix = request()->route()->getPrefix();
+        
         // Get filter parameters
         $status = $request->get('status');
         $paymentMethod = $request->get('payment_method');
@@ -418,7 +440,11 @@ class PaymentController extends Controller
         $search = $request->get('search');
 
         // Build query with relationships
-        $query = Payment::with(['booking.room', 'serviceRequest.service', 'user', 'refundedBy']);
+        $query = Payment::with([
+            'booking.room', 
+            'serviceRequest.service', 
+            'user'
+        ]);
 
         // Apply filters
         if ($status) {
@@ -483,6 +509,114 @@ class PaymentController extends Controller
             'service_count' => Payment::whereNotNull('service_request_id')->count(),
         ];
 
-        return view('admin.payments.index', compact('payments', 'stats'));
+        // Return appropriate view based on route prefix
+        if ($routePrefix === 'manager') {
+            return view('manager.payments.index', compact('payments', 'stats'));
+        } else {
+            return view('admin.payments.index', compact('payments', 'stats'));
+        }
+    }
+
+    /**
+     * Generate a unique payment reference
+     */
+    private function generatePaymentReference()
+    {
+        return 'PAY-' . strtoupper(uniqid());
+    }
+
+    /**
+     * Calculate the amount for a booking based on its details
+     */
+    private function calculateBookingAmount(Booking $booking)
+    {
+        $baseAmount = 0;
+        
+        // Calculate room cost
+        if ($booking->room) {
+            $checkIn = \Carbon\Carbon::parse($booking->check_in_date);
+            $checkOut = \Carbon\Carbon::parse($booking->check_out_date);
+            $nights = $checkIn->diffInDays($checkOut);
+            $baseAmount += $booking->room->price * $nights;
+        }
+        
+        // Add service costs if any
+        if ($booking->services && $booking->services->count() > 0) {
+            foreach ($booking->services as $service) {
+                $baseAmount += $service->price * ($service->pivot->quantity ?? 1);
+            }
+        }
+        
+        // Add any additional fees
+        $baseAmount += $booking->additional_fees ?? 0;
+        
+        // Apply discounts if any
+        $baseAmount -= $booking->discount_amount ?? 0;
+        
+        return max(0, $baseAmount); // Ensure amount is not negative
+    }
+
+    /**
+     * Process payment for a service request
+     */
+    public function storeServicePayment(Request $request, ServiceRequest $serviceRequest)
+    {
+        $request->validate([
+            'payment_method' => 'required|in:cash,card,bank_transfer,gcash,paymaya,online',
+            'notes' => 'nullable|string|max:500',
+        ]);
+
+        DB::beginTransaction();
+        try {
+            // Calculate exact service amount
+            $amount = $this->calculateServiceAmount($serviceRequest);
+            
+            $payment = Payment::create([
+                'user_id' => auth()->id(),
+                'service_request_id' => $serviceRequest->id,
+                'payment_reference' => $this->generatePaymentReference(),
+                'amount' => $amount,
+                'payment_method' => $request->payment_method,
+                'status' => $request->payment_method === 'cash' ? 'completed' : 'pending',
+                'payment_date' => $request->payment_method === 'cash' ? now() : null,
+                'notes' => $request->notes,
+            ]);
+
+            // Update service request total
+            $serviceRequest->update(['total_amount' => $amount]);
+
+            DB::commit();
+            return redirect()->route('payments.confirmation', $payment);
+        } catch (\Exception $e) {
+            DB::rollback();
+            return back()->with('error', 'Service payment processing failed. Please try again.');
+        }
+    }
+
+    /**
+     * Calculate the amount for a service request based on its details
+     */
+    private function calculateServiceAmount(ServiceRequest $serviceRequest)
+    {
+        $amount = 0;
+        
+        if ($serviceRequest->service) {
+            // Base service price
+            $amount += $serviceRequest->service->price;
+            
+            // Multiply by quantity if applicable
+            $amount *= $serviceRequest->quantity ?? 1;
+            
+            // Add duration-based pricing if applicable
+            if ($serviceRequest->service->duration && $serviceRequest->duration) {
+                $hourlyRate = $serviceRequest->service->price; // Assuming price is per hour
+                $amount = $hourlyRate * $serviceRequest->duration;
+            }
+            
+            // Add any additional service fees
+            $amount += $serviceRequest->additional_fees ?? 0;
+        }
+        
+        return max(0, $amount);
     }
 }

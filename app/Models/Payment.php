@@ -85,7 +85,7 @@ class Payment extends Model
      */
     public function getFormattedAmountAttribute()
     {
-        return '₱' . number_format($this->amount, 2);
+        return '₱' . number_format($this->calculated_amount, 2);
     }
 
     /**
@@ -125,16 +125,15 @@ class Payment extends Model
      */
     public function getPaymentMethodDisplayAttribute()
     {
-        $methods = [
+        return match($this->payment_method) {
             'cash' => 'Cash',
             'card' => 'Credit/Debit Card',
             'bank_transfer' => 'Bank Transfer',
             'gcash' => 'GCash',
             'paymaya' => 'PayMaya',
-            'online' => 'Online Payment'
-        ];
-
-        return $methods[$this->payment_method] ?? ucfirst($this->payment_method);
+            'online' => 'Online Payment',
+            default => ucfirst(str_replace('_', ' ', $this->payment_method))
+        };
     }
 
     /**
@@ -160,7 +159,7 @@ class Payment extends Model
         } elseif ($this->service_request_id) {
             return 'Service Request';
         } else {
-            return 'Other';
+            return 'Other Payment';
         }
     }
 
@@ -181,12 +180,20 @@ class Payment extends Model
     }
 
     /**
+     * Calculate net amount after refunds
+     */
+    public function getNetAmountAttribute()
+    {
+        return $this->amount - ($this->refund_amount ?? 0);
+    }
+
+    /**
      * Check if payment can be refunded
      */
     public function canBeRefunded()
     {
         return $this->status === 'completed' && 
-               ($this->refund_amount === null || $this->refund_amount < $this->amount);
+               ($this->refund_amount === null || $this->refund_amount < $this->calculated_amount);
     }
 
     /**
@@ -194,7 +201,7 @@ class Payment extends Model
      */
     public function getRemainingRefundableAmount()
     {
-        return $this->amount - ($this->refund_amount ?? 0);
+        return $this->calculated_amount - ($this->refund_amount ?? 0);
     }
 
     /**
@@ -227,5 +234,50 @@ class Payment extends Model
     public function scopeRefundable($query)
     {
         return $query->where('status', 'completed')->where('refund_amount', '<', DB::raw('amount'))->orWhereNull('refund_amount');
+    }
+
+    /**
+     * Get detailed description for the payment
+     */
+    public function getDetailedDescriptionAttribute()
+    {
+        if ($this->booking) {
+            $checkIn = \Carbon\Carbon::parse($this->booking->check_in_date);
+            $checkOut = \Carbon\Carbon::parse($this->booking->check_out_date);
+            $nights = $checkIn->diffInDays($checkOut);
+            
+            return "Room: {$this->booking->room->name} ({$nights} nights)";
+        } elseif ($this->serviceRequest && $this->serviceRequest->service) {
+            $service = $this->serviceRequest->service;
+            $quantity = $this->serviceRequest->quantity ?? 1;
+            
+            return "{$service->name} (Qty: {$quantity})";
+        }
+        
+        return 'Payment';
+    }
+
+    /**
+     * Get the calculated amount based on service/booking
+     */
+    public function getCalculatedAmountAttribute()
+    {
+        if ($this->serviceRequest && $this->serviceRequest->service) {
+            $service = $this->serviceRequest->service;
+            $quantity = $this->serviceRequest->quantity ?? 1;
+            return $service->price * $quantity;
+        } elseif ($this->booking && $this->booking->room) {
+            // Calculate booking amount
+            $amount = 0;
+            $checkIn = \Carbon\Carbon::parse($this->booking->check_in_date);
+            $checkOut = \Carbon\Carbon::parse($this->booking->check_out_date);
+            $nights = $checkIn->diffInDays($checkOut);
+            $amount += $this->booking->room->price * $nights;
+            $amount += $this->booking->additional_fees ?? 0;
+            $amount -= $this->booking->discount_amount ?? 0;
+            return max(0, $amount);
+        }
+        
+        return $this->amount;
     }
 }
