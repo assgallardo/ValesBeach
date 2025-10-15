@@ -137,8 +137,25 @@ class PaymentController extends Controller
         ]);
 
         // Update booking status if payment is completed
-        if ($request->status === 'completed' && $payment->booking && $payment->booking->isPaid()) {
-            $payment->booking->update(['status' => 'confirmed']);
+        if ($request->status === 'completed' && $payment->booking) {
+            // Check if booking is now fully paid
+            if ($payment->booking->isPaid()) {
+                // If booking is checked out, mark as completed
+                if ($payment->booking->status === 'checked_out') {
+                    $payment->booking->update(['status' => 'completed']);
+                } 
+                // If booking is still pending or in other states, confirm it
+                elseif (in_array($payment->booking->status, ['pending', 'processing'])) {
+                    $payment->booking->update(['status' => 'confirmed']);
+                }
+            }
+        }
+        
+        // Update service request status if payment is completed
+        if ($request->status === 'completed' && $payment->serviceRequest) {
+            if (in_array($payment->serviceRequest->status, ['pending', 'confirmed'])) {
+                $payment->serviceRequest->update(['status' => 'in_progress']);
+            }
         }
 
         return back()->with('success', 'Payment status updated successfully.');

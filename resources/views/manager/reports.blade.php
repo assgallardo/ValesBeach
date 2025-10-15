@@ -1,4 +1,4 @@
-@extends('layouts.admin')
+@extends('layouts.manager')
 
 @section('content')
     <main class="relative z-10 py-8 lg:py-16">
@@ -32,11 +32,11 @@
                                 <h4 class="text-green-200 font-medium">
                                     {{ \Carbon\Carbon::create($month->year, $month->month)->format('F Y') }}
                                 </h4>
-                                <p class="text-green-300 text-sm">{{ $month->total_bookings }} bookings</p>
+                                <p class="text-green-300 text-sm">{{ $month->count }} bookings</p>
                             </div>
                             <div class="text-right">
-                                <p class="text-green-50 font-bold">₱{{ number_format($month->total_revenue ?? 0, 2) }}</p>
-                                <p class="text-green-300 text-sm">Revenue</p>
+                                <p class="text-green-50 font-bold">{{ $month->count }}</p>
+                                <p class="text-green-300 text-sm">Total</p>
                             </div>
                         </div>
                         @endforeach
@@ -58,7 +58,7 @@
                                 <p class="text-green-300 text-sm">{{ $room->type ?? 'Standard' }}</p>
                             </div>
                             <div class="text-right">
-                                <p class="text-green-50 font-bold">{{ $room->booking_count ?? 0 }}</p>
+                                <p class="text-green-50 font-bold">{{ $room->bookings_count ?? 0 }}</p>
                                 <p class="text-green-300 text-sm">Bookings</p>
                             </div>
                         </div>

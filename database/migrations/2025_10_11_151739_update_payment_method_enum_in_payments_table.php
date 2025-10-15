@@ -12,7 +12,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        DB::statement("ALTER TABLE payments MODIFY COLUMN payment_method ENUM('cash', 'card', 'bank_transfer', 'gcash', 'paymaya', 'online', 'service_request') NOT NULL");
+        // For SQLite, ENUM is implemented as TEXT with CHECK constraint or at application level
+        // Since we're using SQLite, we don't need to modify the column structure
+        // The validation will be handled at the application level
     }
 
     /**
@@ -20,6 +22,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        DB::statement("ALTER TABLE payments MODIFY COLUMN payment_method ENUM('cash', 'card', 'bank_transfer', 'gcash', 'paymaya', 'online') NOT NULL");
+        // No schema changes needed for SQLite
     }
 };

@@ -45,7 +45,7 @@ class ManagerController extends Controller
      */
     public function guests()
     {
-        $guests = \App\Models\User::where('role', 'user')->paginate(15);
+        $guests = \App\Models\User::where('role', 'guest')->paginate(15);
         return view('manager.guests.index', compact('guests'));
     }
 
@@ -474,5 +474,30 @@ class ManagerController extends Controller
     public function services()
     {
         return view('manager.services');
+    }
+
+    /**
+     * Calendar management page
+     */
+    public function calendar()
+    {
+        // Get all bookings for calendar display
+        $bookings = Booking::with(['user', 'room'])
+            ->where('status', '!=', 'cancelled')
+            ->orderBy('check_in_date')
+            ->get();
+
+        // Get all rooms for the calendar
+        $rooms = Room::orderBy('name')->get();
+
+        // Calculate occupancy statistics
+        $totalRooms = $rooms->count();
+        $occupiedRooms = $bookings->where('status', 'confirmed')
+            ->where('check_in_date', '<=', now())
+            ->where('check_out_date', '>=', now())
+            ->count();
+        $occupancyRate = $totalRooms > 0 ? ($occupiedRooms / $totalRooms) * 100 : 0;
+
+        return view('manager.calendar', compact('bookings', 'rooms', 'totalRooms', 'occupiedRooms', 'occupancyRate'));
     }
 }

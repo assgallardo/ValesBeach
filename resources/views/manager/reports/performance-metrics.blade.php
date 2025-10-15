@@ -1,6 +1,6 @@
-@extends('layouts.app')
+@extends('layouts.manager')
 
-@section('title', 'Performance Metrics Report')
+@section('title', 'Performance Metrics')
 
 @section('content')
 <div class="container-fluid py-4">

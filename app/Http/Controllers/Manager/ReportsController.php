@@ -17,30 +17,80 @@ class ReportsController extends Controller
     /**
      * Display service usage and performance reports dashboard
      */
-    public function index()
+    public function index(Request $request)
     {
-        // Fix the services query
-        $availableServices = Service::where('is_available', true)->count();
-        $totalServices = Service::count();
+        // Get date range
+        $dateRange = $this->getDateRange($request);
+        $startDate = $dateRange['start'];
+        $endDate = $dateRange['end'];
         
-        // Other existing queries...
-        $monthlyBookings = Booking::selectRaw('YEAR(created_at) as year, MONTH(created_at) as month, COUNT(*) as count')
-            ->groupBy('year', 'month')
-            ->orderBy('year', 'desc')
-            ->orderBy('month', 'desc')
-            ->limit(12)
+        // Calculate statistics for the date range
+        $stats = [
+            'total_requests' => ServiceRequest::whereBetween('created_at', [$startDate, $endDate])->count(),
+            'completed_requests' => ServiceRequest::where('status', 'completed')->whereBetween('created_at', [$startDate, $endDate])->count(),
+            'pending_requests' => ServiceRequest::where('status', 'pending')->whereBetween('created_at', [$startDate, $endDate])->count(),
+            'in_progress_requests' => ServiceRequest::where('status', 'in_progress')->whereBetween('created_at', [$startDate, $endDate])->count(),
+            'cancelled_requests' => ServiceRequest::where('status', 'cancelled')->whereBetween('created_at', [$startDate, $endDate])->count(),
+            'avg_response_time' => ServiceRequest::whereBetween('created_at', [$startDate, $endDate])
+                ->whereNotNull('assigned_at')
+                ->selectRaw('AVG((julianday(assigned_at) - julianday(created_at)) * 24) as avg_hours')
+                ->first()->avg_hours ?? 0,
+        ];
+
+        // Service usage data for charts
+        $serviceUsage = Service::withCount([
+            'serviceRequests as request_count' => function ($query) use ($startDate, $endDate) {
+                $query->whereBetween('created_at', [$startDate, $endDate]);
+            }
+        ])
+        ->get()
+        ->filter(function ($service) {
+            return $service->request_count > 0;
+        })
+        ->sortByDesc('request_count')
+        ->take(10)
+        ->values();
+
+        // Performance metrics by status
+        $performanceMetrics = ServiceRequest::whereBetween('created_at', [$startDate, $endDate])
+            ->selectRaw('status, COUNT(*) as count')
+            ->groupBy('status')
             ->get();
 
-        $popularRooms = Room::withCount('bookings')
-            ->orderBy('bookings_count', 'desc')
-            ->limit(10)
-            ->get();
+        // Staff performance data
+        $staffPerformance = User::where('role', 'staff')
+            ->withCount([
+                'assignedServiceRequests as assigned_count' => function ($query) use ($startDate, $endDate) {
+                    $query->whereBetween('created_at', [$startDate, $endDate]);
+                }
+            ])
+            ->get()
+            ->filter(function ($staff) {
+                return $staff->assigned_count > 0;
+            })
+            ->sortByDesc('assigned_count')
+            ->values();
 
-        return view('manager.reports', compact(
-            'availableServices',
-            'totalServices',
-            'monthlyBookings',
-            'popularRooms'
+        // Daily trends for the date range
+        $dailyTrends = collect();
+        $currentDate = $startDate->copy();
+        while ($currentDate <= $endDate) {
+            $requestCount = ServiceRequest::whereDate('created_at', $currentDate)->count();
+            $dailyTrends->push([
+                'date' => $currentDate->format('M d'),
+                'request_count' => $requestCount
+            ]);
+            $currentDate->addDay();
+        }
+
+        return view('manager.reports.index', compact(
+            'stats',
+            'startDate',
+            'endDate',
+            'serviceUsage',
+            'performanceMetrics',
+            'staffPerformance',
+            'dailyTrends'
         ));
     }
 

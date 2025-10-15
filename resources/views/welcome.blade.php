@@ -38,6 +38,11 @@
                                    class="text-white hover:text-green-200 transition-colors duration-200">
                                     Admin Dashboard
                                 </a>
+                            @elseif(auth()->user()->role === 'manager')
+                                <a href="{{ route('manager.dashboard') }}" 
+                                   class="text-white hover:text-green-200 transition-colors duration-200">
+                                    Manager Dashboard
+                                </a>
                             @elseif(auth()->user()->role === 'guest')
                                 <a href="{{ route('guest.dashboard') }}" 
                                    class="text-white hover:text-green-200 transition-colors duration-200">
@@ -104,7 +109,12 @@
                                        class="px-8 py-4 bg-green-900 text-white rounded-lg hover:bg-green-800 transition-colors duration-200 text-lg font-medium">
                                         Go to Dashboard
                                     </a>
-                                @else
+                                @elseif(auth()->user()->role === 'manager')
+                                    <a href="{{ route('manager.dashboard') }}" 
+                                       class="px-8 py-4 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200 text-lg font-medium">
+                                        Manager Dashboard
+                                    </a>
+                                @elseif(auth()->user()->role === 'admin')
                                     <a href="{{ route('admin.dashboard') }}" 
                                        class="px-8 py-4 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200 text-lg font-medium">
                                         Admin Dashboard

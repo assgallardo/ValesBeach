@@ -182,8 +182,8 @@ Route::middleware('guest')->group(function () {
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 Route::get('/logout', [AuthController::class, 'logout'])->name('logout.get');
 
-// Admin Routes - Accessible by admin, manager, and staff (except user management)
-Route::prefix('admin')->name('admin.')->middleware(['auth', 'user.status', 'role:admin,manager,staff'])->group(function () {
+// Admin Routes - Accessible by admin and staff (managers have their own dashboard)
+Route::prefix('admin')->name('admin.')->middleware(['auth', 'user.status', 'role:admin,staff'])->group(function () {
     // Dashboard
     Route::get('/dashboard', function () {
         return view('admin.dashboard');
@@ -317,6 +317,9 @@ Route::prefix('manager')->name('manager.')->middleware(['auth', 'user.status', '
     Route::get('/guests', [App\Http\Controllers\ManagerController::class, 'guests'])->name('guests');
 
     Route::get('/maintenance', [App\Http\Controllers\ManagerController::class, 'maintenance'])->name('maintenance');
+    
+    // Calendar management
+    Route::get('/calendar', [App\Http\Controllers\ManagerController::class, 'calendar'])->name('calendar');
     
     // Toggle service status
     Route::patch('/services/{service}/toggle-status', [App\Http\Controllers\Manager\ServiceController::class, 'toggleStatus'])->name('services.toggle-status');
@@ -508,9 +511,9 @@ Route::prefix('manager')->name('manager.')->middleware(['auth', 'user.status', '
     Route::get('/payments-export', [PaymentController::class, 'export'])->name('payments.export');
 });
 
-// Admin routes for service requests
+// Admin routes for service requests (using Manager controller for now)
 Route::middleware(['auth', 'user.status', 'role:admin'])->group(function () {
-    Route::get('/admin/service-requests/{serviceRequest}', [AdminServiceRequestController::class, 'show'])
+    Route::get('/admin/service-requests/{serviceRequest}', [\App\Http\Controllers\Manager\ServiceRequestController::class, 'show'])
          ->name('admin.service-requests.show');
 });
 

@@ -64,10 +64,16 @@ class GuestServiceController extends Controller
     {
         \Log::info('Service request form submission:', $request->all());
 
+        // Combine date and time if they are separate
+        if ($request->has('requested_date') && $request->has('requested_time')) {
+            $scheduledDateTime = $request->requested_date . ' ' . $request->requested_time;
+            $request->merge(['scheduled_date' => $scheduledDateTime]);
+        }
+
         $validated = $request->validate([
             'service_id' => 'required|exists:services,id',
             'service_type' => 'required|string|max:255',
-            'description' => 'required|string|max:1000',
+            'description' => 'nullable|string|max:1000',
             'scheduled_date' => 'required|date|after:now',
             'guests_count' => 'required|integer|min:1|max:20',
             'special_requests' => 'nullable|string|max:1000',
@@ -93,20 +99,34 @@ class GuestServiceController extends Controller
             }
 
             if (in_array('description', $tableColumns)) {
-                $serviceRequestData['description'] = $validated['description'];
+                $serviceRequestData['description'] = $validated['description'] ?? "Service booking for {$validated['service_type']}";
             }
 
             if (in_array('status', $tableColumns)) {
                 $serviceRequestData['status'] = 'pending';
             }
 
-            // Try different user ID column names
+            if (in_array('priority', $tableColumns)) {
+                $serviceRequestData['priority'] = 'normal';
+            }
+
+            if (in_array('requested_at', $tableColumns)) {
+                $serviceRequestData['requested_at'] = now();
+            }
+
+            // Set user ID in all available columns (both guest_id and user_id might exist)
+            $userId = Auth::id();
+            
+            if (in_array('user_id', $tableColumns)) {
+                $serviceRequestData['user_id'] = $userId;
+            }
+            
             if (in_array('guest_id', $tableColumns)) {
-                $serviceRequestData['guest_id'] = Auth::id();
-            } elseif (in_array('user_id', $tableColumns)) {
-                $serviceRequestData['user_id'] = Auth::id();
-            } elseif (in_array('customer_id', $tableColumns)) {
-                $serviceRequestData['customer_id'] = Auth::id();
+                $serviceRequestData['guest_id'] = $userId;
+            }
+            
+            if (in_array('customer_id', $tableColumns)) {
+                $serviceRequestData['customer_id'] = $userId;
             }
 
             // Add other fields only if columns exist
@@ -115,7 +135,6 @@ class GuestServiceController extends Controller
                 'guest_email' => Auth::user()->email,
                 'room_id' => Auth::user()->room_id ?? null,
                 'deadline' => $validated['scheduled_date'],
-                'priority' => 'medium',
             ];
 
             // Try different column name variations
@@ -167,6 +186,11 @@ class GuestServiceController extends Controller
                 }
             }
 
+            // Add room_number if column exists and user doesn't have room_id
+            if (in_array('room_number', $tableColumns) && !isset($serviceRequestData['room_number'])) {
+                $serviceRequestData['room_number'] = Auth::user()->room_number ?? 'TBD';
+            }
+
             \Log::info('Creating service request with data:', $serviceRequestData);
             \Log::info('Available table columns:', $tableColumns);
 
@@ -188,7 +212,7 @@ class GuestServiceController extends Controller
             try {
                 Payment::create([
                     'service_request_id' => $serviceRequest->id,
-                    'user_id' => $serviceRequest->guest_id, // Use guest_id from service request
+                    'user_id' => $serviceRequest->user_id ?? $serviceRequest->guest_id, // Use user_id first, fallback to guest_id
                     'amount' => $serviceAmount,
                     'payment_method' => 'service_request', // Special method for service requests
                     'status' => 'completed', // Service requests are considered "paid" when submitted
@@ -321,7 +345,7 @@ class GuestServiceController extends Controller
         $completedRequests = $serviceRequests->where('status', 'completed')->count();
         $totalRequests = $serviceRequests->count();
         
-        return view('guest.services.requests.history', compact(
+        return view('guest.services.history', compact(
             'serviceRequests',
             'pendingRequests', 
             'inProgressRequests', 
@@ -351,7 +375,8 @@ class GuestServiceController extends Controller
             ]);
         }
 
-        return view('guest.services.show-request', compact('serviceRequest'));
+        // Redirect to history page for now since show-request view doesn't exist
+        return redirect()->route('guest.services.history')->with('info', 'Viewing request #' . $serviceRequest->id);
     }
 
     /**

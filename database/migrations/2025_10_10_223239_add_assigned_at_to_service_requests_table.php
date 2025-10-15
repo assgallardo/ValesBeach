@@ -12,7 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('service_requests', function (Blueprint $table) {
-            $table->datetime('assigned_at')->nullable()->after('assigned_to');
+            if (!Schema::hasColumn('service_requests', 'assigned_at')) {
+                $table->datetime('assigned_at')->nullable()->after('assigned_to');
+            }
         });
     }
 

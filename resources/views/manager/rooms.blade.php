@@ -1,4 +1,4 @@
-@extends('layouts.admin')
+@extends('layouts.manager')
 
 @section('content')
     <main class="relative z-10 py-8 lg:py-16">

@@ -50,6 +50,9 @@ class ServiceRequest extends Model
         'assigned_at' => 'datetime',
         'completed_at' => 'datetime',
         'cancelled_at' => 'datetime',
+        'requested_at' => 'datetime',
+        'scheduled_at' => 'datetime',
+        'scheduled_date' => 'datetime',
         'estimated_duration' => 'integer',
         'guests_count' => 'integer'
     ];
@@ -113,7 +116,7 @@ class ServiceRequest extends Model
      */
     public function service()
     {
-        return $this->belongsTo(Service::class, 'service_type', 'name');
+        return $this->belongsTo(Service::class, 'service_id');
     }
 
     /**
@@ -144,6 +147,14 @@ class ServiceRequest extends Model
      * Relationship: Service request is assigned to a staff member
      */
     public function assignedTo()
+    {
+        return $this->belongsTo(User::class, 'assigned_to');
+    }
+
+    /**
+     * Alias for assignedTo relationship (for consistency with controllers)
+     */
+    public function assignedStaff()
     {
         return $this->belongsTo(User::class, 'assigned_to');
     }

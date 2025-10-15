@@ -89,7 +89,7 @@
                 <!-- Hidden Fields for Controller -->
                 <input type="hidden" name="service_id" value="{{ $service->id }}">
                 <input type="hidden" name="service_type" value="{{ $service->name }}">
-                <input type="hidden" name="description" value="Guest booking for {{ $service->name }} - Service request">
+                <input type="hidden" name="description" id="description" value="Guest booking for {{ $service->name }} - Service request">
 
                 <!-- Date and Time -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">

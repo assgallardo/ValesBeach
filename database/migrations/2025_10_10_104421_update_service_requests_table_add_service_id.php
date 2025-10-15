@@ -14,19 +14,19 @@ return new class extends Migration
         Schema::table('service_requests', function (Blueprint $table) {
             // Add columns that your form expects but might be missing
             if (!Schema::hasColumn('service_requests', 'service_id')) {
-                $table->foreignId('service_id')->after('id')->constrained('services')->onDelete('cascade');
+                $table->foreignId('service_id')->nullable()->after('id')->constrained('services')->onDelete('cascade');
             }
             
             if (!Schema::hasColumn('service_requests', 'guest_id')) {
-                $table->foreignId('guest_id')->after('service_id')->constrained('users')->onDelete('cascade');
+                $table->foreignId('guest_id')->nullable()->after('service_id')->constrained('users')->onDelete('cascade');
             }
             
             if (!Schema::hasColumn('service_requests', 'service_type')) {
-                $table->string('service_type')->after('guest_id');
+                $table->string('service_type')->nullable()->after('guest_id');
             }
             
             if (!Schema::hasColumn('service_requests', 'scheduled_date')) {
-                $table->datetime('scheduled_date')->after('description');
+                $table->datetime('scheduled_date')->nullable()->after('description');
             }
             
             if (!Schema::hasColumn('service_requests', 'guests_count')) {
@@ -34,11 +34,11 @@ return new class extends Migration
             }
             
             if (!Schema::hasColumn('service_requests', 'guest_name')) {
-                $table->string('guest_name')->after('guest_id');
+                $table->string('guest_name')->nullable()->after('guest_id');
             }
             
             if (!Schema::hasColumn('service_requests', 'guest_email')) {
-                $table->string('guest_email')->after('guest_name');
+                $table->string('guest_email')->nullable()->after('guest_name');
             }
             
             if (!Schema::hasColumn('service_requests', 'deadline')) {

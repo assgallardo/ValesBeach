@@ -32,10 +32,10 @@
                                 Dashboard
                             </a>
                             
-                            <!-- Rooms link -->
-                            <a href="{{ route('manager.rooms') }}" 
-                               class="text-gray-200 hover:text-white transition-colors duration-200 font-medium {{ request()->routeIs('manager.rooms') ? 'text-white' : '' }}">
-                                Rooms
+                            <!-- Service Requests link -->
+                            <a href="{{ route('manager.service-requests.index') }}" 
+                               class="text-gray-200 hover:text-white transition-colors duration-200 font-medium {{ request()->routeIs('manager.service-requests.*') ? 'text-white' : '' }}">
+                                Service Requests
                             </a>
                             
                             <!-- Reports link -->
