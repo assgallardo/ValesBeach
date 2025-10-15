@@ -1,8 +1,6 @@
-@extends('layouts.admin')
+<?php $__env->startSection('title', 'Service Usage Report'); ?>
 
-@section('title', 'Service Usage Report')
-
-@section('content')
+<?php $__env->startSection('content'); ?>
 <div class="min-h-screen bg-gray-900 py-6">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <!-- Header -->
@@ -12,7 +10,7 @@
                     <nav class="flex mb-2" aria-label="Breadcrumb">
                         <ol class="inline-flex items-center space-x-1 md:space-x-3">
                             <li class="inline-flex items-center">
-                                <a href="{{ route('manager.reports.index', request()->query()) }}" 
+                                <a href="<?php echo e(route('manager.reports.index', request()->query())); ?>" 
                                    class="inline-flex items-center text-sm font-medium text-gray-400 hover:text-green-400">
                                     <i class="fas fa-chart-line mr-2"></i>
                                     Reports Dashboard
@@ -30,11 +28,11 @@
                     <p class="text-gray-400 mt-2">Detailed service utilization analysis</p>
                 </div>
                 <div class="flex space-x-3">
-                    <a href="{{ route('manager.reports.index', request()->query()) }}" 
+                    <a href="<?php echo e(route('manager.reports.index', request()->query())); ?>" 
                        class="inline-flex items-center px-4 py-2 bg-gray-700 text-gray-300 rounded-lg font-medium hover:bg-gray-600 transition-colors">
                         <i class="fas fa-arrow-left mr-2"></i>Back to Dashboard
                     </a>
-                    <a href="{{ route('manager.reports.export', ['type' => 'service-usage'] + request()->query()) }}" 
+                    <a href="<?php echo e(route('manager.reports.export', ['type' => 'service-usage'] + request()->query())); ?>" 
                        class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors">
                         <i class="fas fa-download mr-2"></i>Export CSV
                     </a>
@@ -48,7 +46,7 @@
                 <div class="flex items-center">
                     <i class="fas fa-info-circle text-blue-400 mr-3 text-lg"></i>
                     <span class="text-blue-100">
-                        Showing data from <strong>{{ $startDate->format('M d, Y') }}</strong> to <strong>{{ $endDate->format('M d, Y') }}</strong>
+                        Showing data from <strong><?php echo e($startDate->format('M d, Y')); ?></strong> to <strong><?php echo e($endDate->format('M d, Y')); ?></strong>
                     </span>
                 </div>
             </div>
@@ -61,45 +59,45 @@
             </div>
             <div class="p-6">
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-                    @foreach($categoryBreakdown as $category)
+                    <?php $__currentLoopData = $categoryBreakdown; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $category): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                     <div class="bg-gray-750 rounded-lg p-6 text-center border border-gray-600">
                         <div class="mb-4">
-                            @switch($category->category)
-                                @case('spa')
+                            <?php switch($category->category):
+                                case ('spa'): ?>
                                     <div class="w-16 h-16 bg-purple-600 rounded-full flex items-center justify-center mx-auto">
                                         <i class="fas fa-spa text-2xl text-white"></i>
                                     </div>
-                                    @break
-                                @case('dining')
+                                    <?php break; ?>
+                                <?php case ('dining'): ?>
                                     <div class="w-16 h-16 bg-green-600 rounded-full flex items-center justify-center mx-auto">
                                         <i class="fas fa-utensils text-2xl text-white"></i>
                                     </div>
-                                    @break
-                                @case('activities')
+                                    <?php break; ?>
+                                <?php case ('activities'): ?>
                                     <div class="w-16 h-16 bg-yellow-600 rounded-full flex items-center justify-center mx-auto">
                                         <i class="fas fa-volleyball-ball text-2xl text-white"></i>
                                     </div>
-                                    @break
-                                @case('transportation')
+                                    <?php break; ?>
+                                <?php case ('transportation'): ?>
                                     <div class="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto">
                                         <i class="fas fa-car text-2xl text-white"></i>
                                     </div>
-                                    @break
-                                @case('room_service')
+                                    <?php break; ?>
+                                <?php case ('room_service'): ?>
                                     <div class="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center mx-auto">
                                         <i class="fas fa-concierge-bell text-2xl text-white"></i>
                                     </div>
-                                    @break
-                                @default
+                                    <?php break; ?>
+                                <?php default: ?>
                                     <div class="w-16 h-16 bg-gray-600 rounded-full flex items-center justify-center mx-auto">
                                         <i class="fas fa-cog text-2xl text-white"></i>
                                     </div>
-                            @endswitch
+                            <?php endswitch; ?>
                         </div>
-                        <h4 class="text-3xl font-bold text-green-50 mb-2">{{ number_format($category->total_requests) }}</h4>
-                        <p class="text-gray-400 text-sm uppercase tracking-wider font-medium">{{ ucfirst(str_replace('_', ' ', $category->category)) }}</p>
+                        <h4 class="text-3xl font-bold text-green-50 mb-2"><?php echo e(number_format($category->total_requests)); ?></h4>
+                        <p class="text-gray-400 text-sm uppercase tracking-wider font-medium"><?php echo e(ucfirst(str_replace('_', ' ', $category->category))); ?></p>
                     </div>
-                    @endforeach
+                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                 </div>
             </div>
         </div>
@@ -125,69 +123,74 @@
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-700">
-                            @forelse($serviceUsageDetails as $service)
+                            <?php $__empty_1 = true; $__currentLoopData = $serviceUsageDetails; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $service): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                             <tr class="hover:bg-gray-750 transition-colors">
                                 <td class="px-6 py-4">
                                     <div class="flex items-center">
                                         <div class="mr-4">
-                                            @switch($service->category)
-                                                @case('spa')
+                                            <?php switch($service->category):
+                                                case ('spa'): ?>
                                                     <i class="fas fa-spa text-purple-400"></i>
-                                                    @break
-                                                @case('dining')
+                                                    <?php break; ?>
+                                                <?php case ('dining'): ?>
                                                     <i class="fas fa-utensils text-green-400"></i>
-                                                    @break
-                                                @case('activities')
+                                                    <?php break; ?>
+                                                <?php case ('activities'): ?>
                                                     <i class="fas fa-volleyball-ball text-yellow-400"></i>
-                                                    @break
-                                                @case('transportation')
+                                                    <?php break; ?>
+                                                <?php case ('transportation'): ?>
                                                     <i class="fas fa-car text-blue-400"></i>
-                                                    @break
-                                                @case('room_service')
+                                                    <?php break; ?>
+                                                <?php case ('room_service'): ?>
                                                     <i class="fas fa-concierge-bell text-red-400"></i>
-                                                    @break
-                                                @default
+                                                    <?php break; ?>
+                                                <?php default: ?>
                                                     <i class="fas fa-cog text-gray-400"></i>
-                                            @endswitch
+                                            <?php endswitch; ?>
                                         </div>
                                         <div>
-                                            <h6 class="text-green-100 font-semibold">{{ $service->name }}</h6>
-                                            @if($service->description)
-                                                <small class="text-gray-400">{{ Str::limit($service->description, 50) }}</small>
-                                            @endif
+                                            <h6 class="text-green-100 font-semibold"><?php echo e($service->name); ?></h6>
+                                            <?php if($service->description): ?>
+                                                <small class="text-gray-400"><?php echo e(Str::limit($service->description, 50)); ?></small>
+                                            <?php endif; ?>
                                         </div>
                                     </div>
                                 </td>
                                 <td class="px-6 py-4">
                                     <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-700 text-gray-300">
-                                        {{ ucfirst(str_replace('_', ' ', $service->category)) }}
+                                        <?php echo e(ucfirst(str_replace('_', ' ', $service->category))); ?>
+
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 text-center">
                                     <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-600/20 text-blue-400">
-                                        {{ number_format($service->total_requests) }}
+                                        <?php echo e(number_format($service->total_requests)); ?>
+
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 text-center">
                                     <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-600/20 text-green-400">
-                                        {{ number_format($service->completed_requests) }}
+                                        <?php echo e(number_format($service->completed_requests)); ?>
+
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 text-center">
                                     <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-600/20 text-yellow-400">
-                                        {{ number_format($service->pending_requests) }}
+                                        <?php echo e(number_format($service->pending_requests)); ?>
+
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 text-center">
                                     <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-600/20 text-red-400">
-                                        {{ number_format($service->cancelled_requests) }}
+                                        <?php echo e(number_format($service->cancelled_requests)); ?>
+
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 text-center">
                                     <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium 
-                                        {{ $service->completion_rate >= 80 ? 'bg-green-600/20 text-green-400' : 
-                                           ($service->completion_rate >= 60 ? 'bg-yellow-600/20 text-yellow-400' : 'bg-red-600/20 text-red-400') }}">
-                                        {{ $service->completion_rate }}%
+                                        <?php echo e($service->completion_rate >= 80 ? 'bg-green-600/20 text-green-400' : 
+                                           ($service->completion_rate >= 60 ? 'bg-yellow-600/20 text-yellow-400' : 'bg-red-600/20 text-red-400')); ?>">
+                                        <?php echo e($service->completion_rate); ?>%
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 text-center">
@@ -195,17 +198,17 @@
                                         <div class="flex items-center">
                                             <div class="flex-1 bg-gray-700 rounded-full h-4 mr-2">
                                                 <div class="h-4 rounded-full flex items-center justify-center text-xs font-medium text-white
-                                                    {{ $service->completion_rate >= 80 ? 'bg-green-500' : 
-                                                       ($service->completion_rate >= 60 ? 'bg-yellow-500' : 'bg-red-500') }}" 
-                                                     style="width: {{ $service->completion_rate }}%;">
+                                                    <?php echo e($service->completion_rate >= 80 ? 'bg-green-500' : 
+                                                       ($service->completion_rate >= 60 ? 'bg-yellow-500' : 'bg-red-500')); ?>" 
+                                                     style="width: <?php echo e($service->completion_rate); ?>%;">
                                                 </div>
                                             </div>
-                                            <span class="text-xs text-gray-400">{{ $service->completion_rate }}%</span>
+                                            <span class="text-xs text-gray-400"><?php echo e($service->completion_rate); ?>%</span>
                                         </div>
                                     </div>
                                 </td>
                             </tr>
-                            @empty
+                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                             <tr>
                                 <td colspan="8" class="px-6 py-12 text-center">
                                     <i class="fas fa-chart-bar text-4xl text-gray-600 mb-4"></i>
@@ -213,7 +216,7 @@
                                     <p class="text-gray-500">No service requests were made during the selected period.</p>
                                 </td>
                             </tr>
-                            @endforelse
+                            <?php endif; ?>
                         </tbody>
                     </table>
                 </div>
@@ -221,7 +224,7 @@
         </div>
 
         <!-- Service Performance Insights -->
-        @if($serviceUsageDetails->count() > 0)
+        <?php if($serviceUsageDetails->count() > 0): ?>
         <div class="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
             <div class="bg-gray-750 px-6 py-4 border-b border-gray-700">
                 <h3 class="text-lg font-semibold text-green-100">Performance Insights</h3>
@@ -234,9 +237,9 @@
                             <i class="fas fa-trophy text-2xl text-white"></i>
                         </div>
                         <h6 class="text-green-100 font-semibold mb-3">Top Performer</h6>
-                        @php $topService = $serviceUsageDetails->sortByDesc('completion_rate')->first(); @endphp
-                        <p class="text-green-50 font-medium mb-1">{{ $topService->name }}</p>
-                        <small class="text-green-400">{{ $topService->completion_rate }}% completion rate</small>
+                        <?php $topService = $serviceUsageDetails->sortByDesc('completion_rate')->first(); ?>
+                        <p class="text-green-50 font-medium mb-1"><?php echo e($topService->name); ?></p>
+                        <small class="text-green-400"><?php echo e($topService->completion_rate); ?>% completion rate</small>
                     </div>
 
                     <!-- Most Popular -->
@@ -245,9 +248,9 @@
                             <i class="fas fa-star text-2xl text-white"></i>
                         </div>
                         <h6 class="text-blue-100 font-semibold mb-3">Most Popular</h6>
-                        @php $popularService = $serviceUsageDetails->sortByDesc('total_requests')->first(); @endphp
-                        <p class="text-blue-50 font-medium mb-1">{{ $popularService->name }}</p>
-                        <small class="text-blue-400">{{ $popularService->total_requests }} requests</small>
+                        <?php $popularService = $serviceUsageDetails->sortByDesc('total_requests')->first(); ?>
+                        <p class="text-blue-50 font-medium mb-1"><?php echo e($popularService->name); ?></p>
+                        <small class="text-blue-400"><?php echo e($popularService->total_requests); ?> requests</small>
                     </div>
 
                     <!-- Needs Attention -->
@@ -256,18 +259,18 @@
                             <i class="fas fa-exclamation-triangle text-2xl text-white"></i>
                         </div>
                         <h6 class="text-yellow-100 font-semibold mb-3">Needs Attention</h6>
-                        @php $needsAttention = $serviceUsageDetails->sortBy('completion_rate')->first(); @endphp
-                        <p class="text-yellow-50 font-medium mb-1">{{ $needsAttention->name }}</p>
-                        <small class="text-yellow-400">{{ $needsAttention->completion_rate }}% completion rate</small>
+                        <?php $needsAttention = $serviceUsageDetails->sortBy('completion_rate')->first(); ?>
+                        <p class="text-yellow-50 font-medium mb-1"><?php echo e($needsAttention->name); ?></p>
+                        <small class="text-yellow-400"><?php echo e($needsAttention->completion_rate); ?>% completion rate</small>
                     </div>
                 </div>
             </div>
         </div>
-        @endif
+        <?php endif; ?>
     </div>
 </div>
 
-@push('scripts')
+<?php $__env->startPush('scripts'); ?>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
 <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
@@ -293,9 +296,9 @@ $(document).ready(function() {
     });
 });
 </script>
-@endpush
+<?php $__env->stopPush(); ?>
 
-@push('styles')
+<?php $__env->startPush('styles'); ?>
 <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css">
 <style>
 .dataTables_wrapper {
@@ -332,5 +335,7 @@ $(document).ready(function() {
     border-color: #10b981 !important;
 }
 </style>
-@endpush
-@endsection
+<?php $__env->stopPush(); ?>
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('layouts.admin', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\VALESBEACH_LATEST\ValesBeach\resources\views/manager/reports/service-usage.blade.php ENDPATH**/ ?>

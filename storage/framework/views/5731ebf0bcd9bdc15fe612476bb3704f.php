@@ -1,9 +1,6 @@
+<?php $__env->startSection('title', 'Performance Metrics'); ?>
 
-@extends('layouts.admin')
-
-@section('title', 'Performance Metrics')
-
-@section('content')
+<?php $__env->startSection('content'); ?>
 <div class="min-h-screen bg-gray-900 py-6">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <!-- Header -->
@@ -13,7 +10,7 @@
                     <nav class="flex mb-2" aria-label="Breadcrumb">
                         <ol class="inline-flex items-center space-x-1 md:space-x-3">
                             <li class="inline-flex items-center">
-                                <a href="{{ route('manager.reports.index', request()->query()) }}" 
+                                <a href="<?php echo e(route('manager.reports.index', request()->query())); ?>" 
                                    class="inline-flex items-center text-sm font-medium text-gray-400 hover:text-green-400">
                                     <i class="fas fa-chart-line mr-2"></i>
                                     Reports Dashboard
@@ -31,11 +28,11 @@
                     <p class="text-gray-400 mt-2">Response times and efficiency analysis</p>
                 </div>
                 <div class="flex space-x-3">
-                    <a href="{{ route('manager.reports.index', request()->query()) }}" 
+                    <a href="<?php echo e(route('manager.reports.index', request()->query())); ?>" 
                        class="inline-flex items-center px-4 py-2 bg-gray-700 text-gray-300 rounded-lg font-medium hover:bg-gray-600 transition-colors">
                         <i class="fas fa-arrow-left mr-2"></i>Back to Dashboard
                     </a>
-                    <a href="{{ route('manager.reports.export', ['type' => 'performance-metrics'] + request()->query()) }}" 
+                    <a href="<?php echo e(route('manager.reports.export', ['type' => 'performance-metrics'] + request()->query())); ?>" 
                        class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors">
                         <i class="fas fa-download mr-2"></i>Export CSV
                     </a>
@@ -49,7 +46,7 @@
                 <div class="flex items-center">
                     <i class="fas fa-info-circle text-blue-400 mr-3 text-lg"></i>
                     <span class="text-blue-100">
-                        Showing data from <strong>{{ $startDate->format('M d, Y') }}</strong> to <strong>{{ $endDate->format('M d, Y') }}</strong>
+                        Showing data from <strong><?php echo e($startDate->format('M d, Y')); ?></strong> to <strong><?php echo e($endDate->format('M d, Y')); ?></strong>
                     </span>
                 </div>
             </div>
@@ -62,7 +59,7 @@
                     <div class="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
                         <i class="fas fa-clock text-2xl text-white"></i>
                     </div>
-                    <h3 class="text-3xl font-bold text-green-50 mb-2">{{ round($avgResponseTime, 1) }}h</h3>
+                    <h3 class="text-3xl font-bold text-green-50 mb-2"><?php echo e(round($avgResponseTime, 1)); ?>h</h3>
                     <p class="text-gray-400 text-sm uppercase tracking-wider font-medium mb-1">Average Response Time</p>
                     <small class="text-gray-500">Time to assign request</small>
                 </div>
@@ -72,7 +69,7 @@
                     <div class="w-16 h-16 bg-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
                         <i class="fas fa-stopwatch text-2xl text-white"></i>
                     </div>
-                    <h3 class="text-3xl font-bold text-green-50 mb-2">{{ round($avgCompletionTime, 1) }}h</h3>
+                    <h3 class="text-3xl font-bold text-green-50 mb-2"><?php echo e(round($avgCompletionTime, 1)); ?>h</h3>
                     <p class="text-gray-400 text-sm uppercase tracking-wider font-medium mb-1">Average Completion Time</p>
                     <small class="text-gray-500">Time from assignment to completion</small>
                 </div>
@@ -82,11 +79,11 @@
                     <div class="w-16 h-16 bg-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4">
                         <i class="fas fa-tachometer-alt text-2xl text-white"></i>
                     </div>
-                    @php 
+                    <?php 
                         $totalTime = $avgResponseTime + $avgCompletionTime;
                         $efficiency = $totalTime > 0 ? min(100, max(0, 100 - ($totalTime * 2))) : 0;
-                    @endphp
-                    <h3 class="text-3xl font-bold text-green-50 mb-2">{{ round($efficiency, 1) }}%</h3>
+                    ?>
+                    <h3 class="text-3xl font-bold text-green-50 mb-2"><?php echo e(round($efficiency, 1)); ?>%</h3>
                     <p class="text-gray-400 text-sm uppercase tracking-wider font-medium mb-1">Service Efficiency</p>
                     <small class="text-gray-500">Based on response + completion time</small>
                 </div>
@@ -96,14 +93,14 @@
                     <div class="w-16 h-16 bg-yellow-600 rounded-full flex items-center justify-center mx-auto mb-4">
                         <i class="fas fa-chart-line text-2xl text-white"></i>
                     </div>
-                    @php 
+                    <?php 
                         $completedCount = $statusMetrics->where('status', 'completed')->first()->count ?? 0;
                         $totalCount = $statusMetrics->sum('count');
                         $completionRate = $totalCount > 0 ? ($completedCount / $totalCount) * 100 : 0;
-                    @endphp
-                    <h3 class="text-3xl font-bold text-green-50 mb-2">{{ round($completionRate, 1) }}%</h3>
+                    ?>
+                    <h3 class="text-3xl font-bold text-green-50 mb-2"><?php echo e(round($completionRate, 1)); ?>%</h3>
                     <p class="text-gray-400 text-sm uppercase tracking-wider font-medium mb-1">Overall Completion Rate</p>
-                    <small class="text-gray-500">{{ $completedCount }} of {{ $totalCount }} requests</small>
+                    <small class="text-gray-500"><?php echo e($completedCount); ?> of <?php echo e($totalCount); ?> requests</small>
                 </div>
             </div>
         </div>
@@ -127,42 +124,43 @@
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-700">
-                                @foreach($statusMetrics as $status)
+                                <?php $__currentLoopData = $statusMetrics; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $status): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                 <tr class="hover:bg-gray-750 transition-colors">
                                     <td class="px-6 py-4">
                                         <div class="flex items-center">
-                                            @switch($status->status)
-                                                @case('completed')
+                                            <?php switch($status->status):
+                                                case ('completed'): ?>
                                                     <i class="fas fa-check-circle text-green-400 mr-2"></i>
-                                                    @break
-                                                @case('pending')
+                                                    <?php break; ?>
+                                                <?php case ('pending'): ?>
                                                     <i class="fas fa-clock text-yellow-400 mr-2"></i>
-                                                    @break
-                                                @case('in_progress')
+                                                    <?php break; ?>
+                                                <?php case ('in_progress'): ?>
                                                     <i class="fas fa-spinner text-blue-400 mr-2"></i>
-                                                    @break
-                                                @case('cancelled')
+                                                    <?php break; ?>
+                                                <?php case ('cancelled'): ?>
                                                     <i class="fas fa-times-circle text-red-400 mr-2"></i>
-                                                    @break
-                                                @default
+                                                    <?php break; ?>
+                                                <?php default: ?>
                                                     <i class="fas fa-circle text-gray-400 mr-2"></i>
-                                            @endswitch
-                                            <span class="text-green-100 capitalize">{{ str_replace('_', ' ', $status->status) }}</span>
+                                            <?php endswitch; ?>
+                                            <span class="text-green-100 capitalize"><?php echo e(str_replace('_', ' ', $status->status)); ?></span>
                                         </div>
                                     </td>
                                     <td class="px-6 py-4 text-center">
                                         <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-600/20 text-blue-400">
-                                            {{ number_format($status->count) }}
+                                            <?php echo e(number_format($status->count)); ?>
+
                                         </span>
                                     </td>
                                     <td class="px-6 py-4 text-center text-gray-300">
-                                        {{ round(($status->count / $statusMetrics->sum('count')) * 100, 1) }}%
+                                        <?php echo e(round(($status->count / $statusMetrics->sum('count')) * 100, 1)); ?>%
                                     </td>
                                     <td class="px-6 py-4 text-center text-gray-300">
-                                        {{ round($status->avg_duration ?? 0, 1) }}h
+                                        <?php echo e(round($status->avg_duration ?? 0, 1)); ?>h
                                     </td>
                                 </tr>
-                                @endforeach
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                             </tbody>
                         </table>
                     </div>
@@ -195,7 +193,7 @@
         </div>
 
         <!-- Monthly Trends (if applicable) -->
-        @if(!empty($monthlyTrends) && count($monthlyTrends) > 0)
+        <?php if(!empty($monthlyTrends) && count($monthlyTrends) > 0): ?>
         <div class="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden mb-8">
             <div class="bg-gray-750 px-6 py-4 border-b border-gray-700">
                 <h3 class="text-lg font-semibold text-green-100">Monthly Performance Trends</h3>
@@ -206,7 +204,7 @@
                 </div>
             </div>
         </div>
-        @endif
+        <?php endif; ?>
 
         <!-- Performance Insights -->
         <div class="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
@@ -219,23 +217,23 @@
                     <div class="bg-gray-750 rounded-lg p-4 border border-gray-600">
                         <div class="flex items-start">
                             <div class="mr-4">
-                                @if($avgResponseTime < 2)
+                                <?php if($avgResponseTime < 2): ?>
                                     <i class="fas fa-check-circle text-green-400 text-2xl"></i>
-                                @elseif($avgResponseTime < 6)
+                                <?php elseif($avgResponseTime < 6): ?>
                                     <i class="fas fa-exclamation-triangle text-yellow-400 text-2xl"></i>
-                                @else
+                                <?php else: ?>
                                     <i class="fas fa-times-circle text-red-400 text-2xl"></i>
-                                @endif
+                                <?php endif; ?>
                             </div>
                             <div>
                                 <h6 class="text-green-100 font-semibold mb-2">Response Time Analysis</h6>
-                                @if($avgResponseTime < 2)
+                                <?php if($avgResponseTime < 2): ?>
                                     <p class="text-green-400 text-sm">Excellent response time! Requests are being assigned quickly.</p>
-                                @elseif($avgResponseTime < 6)
+                                <?php elseif($avgResponseTime < 6): ?>
                                     <p class="text-yellow-400 text-sm">Response time is acceptable but could be improved. Consider optimizing staff allocation.</p>
-                                @else
+                                <?php else: ?>
                                     <p class="text-red-400 text-sm">Response time needs improvement. Review staffing levels and assignment processes.</p>
-                                @endif
+                                <?php endif; ?>
                             </div>
                         </div>
                     </div>
@@ -244,23 +242,23 @@
                     <div class="bg-gray-750 rounded-lg p-4 border border-gray-600">
                         <div class="flex items-start">
                             <div class="mr-4">
-                                @if($completionRate > 85)
+                                <?php if($completionRate > 85): ?>
                                     <i class="fas fa-trophy text-green-400 text-2xl"></i>
-                                @elseif($completionRate > 70)
+                                <?php elseif($completionRate > 70): ?>
                                     <i class="fas fa-star text-yellow-400 text-2xl"></i>
-                                @else
+                                <?php else: ?>
                                     <i class="fas fa-flag text-red-400 text-2xl"></i>
-                                @endif
+                                <?php endif; ?>
                             </div>
                             <div>
                                 <h6 class="text-green-100 font-semibold mb-2">Completion Rate Analysis</h6>
-                                @if($completionRate > 85)
+                                <?php if($completionRate > 85): ?>
                                     <p class="text-green-400 text-sm">Outstanding completion rate! Service delivery is highly effective.</p>
-                                @elseif($completionRate > 70)
+                                <?php elseif($completionRate > 70): ?>
                                     <p class="text-yellow-400 text-sm">Good completion rate. Monitor cancelled requests to identify improvement areas.</p>
-                                @else
+                                <?php else: ?>
                                     <p class="text-red-400 text-sm">Completion rate needs attention. Review service processes and staff training.</p>
-                                @endif
+                                <?php endif; ?>
                             </div>
                         </div>
                     </div>
@@ -273,15 +271,15 @@
                             </div>
                             <div>
                                 <h6 class="text-green-100 font-semibold mb-2">Peak Hours Optimization</h6>
-                                @if($peakHours->count() > 0)
-                                    @php $peakHour = $peakHours->first(); @endphp
+                                <?php if($peakHours->count() > 0): ?>
+                                    <?php $peakHour = $peakHours->first(); ?>
                                     <p class="text-blue-400 text-sm">
-                                        Peak activity at {{ $peakHour->hour }}:00 with {{ $peakHour->request_count }} requests. 
+                                        Peak activity at <?php echo e($peakHour->hour); ?>:00 with <?php echo e($peakHour->request_count); ?> requests. 
                                         Consider additional staffing during peak hours.
                                     </p>
-                                @else
+                                <?php else: ?>
                                     <p class="text-gray-400 text-sm">No peak hour data available for the selected period.</p>
-                                @endif
+                                <?php endif; ?>
                             </div>
                         </div>
                     </div>
@@ -290,23 +288,23 @@
                     <div class="bg-gray-750 rounded-lg p-4 border border-gray-600">
                         <div class="flex items-start">
                             <div class="mr-4">
-                                @if($efficiency > 80)
+                                <?php if($efficiency > 80): ?>
                                     <i class="fas fa-rocket text-green-400 text-2xl"></i>
-                                @elseif($efficiency > 60)
+                                <?php elseif($efficiency > 60): ?>
                                     <i class="fas fa-cogs text-yellow-400 text-2xl"></i>
-                                @else
+                                <?php else: ?>
                                     <i class="fas fa-wrench text-red-400 text-2xl"></i>
-                                @endif
+                                <?php endif; ?>
                             </div>
                             <div>
                                 <h6 class="text-green-100 font-semibold mb-2">Service Efficiency</h6>
-                                @if($efficiency > 80)
+                                <?php if($efficiency > 80): ?>
                                     <p class="text-green-400 text-sm">Highly efficient service delivery. Maintain current processes and standards.</p>
-                                @elseif($efficiency > 60)
+                                <?php elseif($efficiency > 60): ?>
                                     <p class="text-yellow-400 text-sm">Moderate efficiency. Focus on reducing response and completion times.</p>
-                                @else
+                                <?php else: ?>
                                     <p class="text-red-400 text-sm">Efficiency needs improvement. Review entire service delivery workflow.</p>
-                                @endif
+                                <?php endif; ?>
                             </div>
                         </div>
                     </div>
@@ -316,7 +314,7 @@
     </div>
 </div>
 
-@push('scripts')
+<?php $__env->startPush('scripts'); ?>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 // Chart.js defaults for dark theme
@@ -329,9 +327,9 @@ const statusCtx = document.getElementById('statusChart').getContext('2d');
 new Chart(statusCtx, {
     type: 'doughnut',
     data: {
-        labels: {!! json_encode($statusMetrics->pluck('status')->map(function($status) { return ucfirst(str_replace('_', ' ', $status)); })) !!},
+        labels: <?php echo json_encode($statusMetrics->pluck('status')->map(function($status) { return ucfirst(str_replace('_', ' ', $status)); })); ?>,
         datasets: [{
-            data: {!! json_encode($statusMetrics->pluck('count')) !!},
+            data: <?php echo json_encode($statusMetrics->pluck('count')); ?>,
             backgroundColor: [
                 'rgba(34, 197, 94, 0.8)',   // completed - green
                 'rgba(245, 158, 11, 0.8)',  // pending - yellow
@@ -374,10 +372,10 @@ const peakHoursCtx = document.getElementById('peakHoursChart').getContext('2d');
 new Chart(peakHoursCtx, {
     type: 'bar',
     data: {
-        labels: {!! json_encode($peakHours->pluck('hour')->map(function($hour) { return $hour . ':00'; })) !!},
+        labels: <?php echo json_encode($peakHours->pluck('hour')->map(function($hour) { return $hour . ':00'; })); ?>,
         datasets: [{
             label: 'Requests',
-            data: {!! json_encode($peakHours->pluck('request_count')) !!},
+            data: <?php echo json_encode($peakHours->pluck('request_count')); ?>,
             backgroundColor: 'rgba(59, 130, 246, 0.8)',
             borderColor: 'rgba(59, 130, 246, 1)',
             borderWidth: 1,
@@ -435,16 +433,16 @@ new Chart(peakHoursCtx, {
     }
 });
 
-@if(!empty($monthlyTrends) && count($monthlyTrends) > 0)
+<?php if(!empty($monthlyTrends) && count($monthlyTrends) > 0): ?>
 // Monthly Trends Chart
 const monthlyTrendsCtx = document.getElementById('monthlyTrendsChart').getContext('2d');
 new Chart(monthlyTrendsCtx, {
     type: 'line',
     data: {
-        labels: {!! json_encode($monthlyTrends->map(function($trend) { return date('M Y', mktime(0, 0, 0, $trend->month, 1, $trend->year)); })) !!},
+        labels: <?php echo json_encode($monthlyTrends->map(function($trend) { return date('M Y', mktime(0, 0, 0, $trend->month, 1, $trend->year)); })); ?>,
         datasets: [{
             label: 'Total Requests',
-            data: {!! json_encode($monthlyTrends->pluck('total_requests')) !!},
+            data: <?php echo json_encode($monthlyTrends->pluck('total_requests')); ?>,
             fill: false,
             borderColor: 'rgba(59, 130, 246, 1)',
             backgroundColor: 'rgba(59, 130, 246, 0.1)',
@@ -453,7 +451,7 @@ new Chart(monthlyTrendsCtx, {
             pointHoverRadius: 8
         }, {
             label: 'Completed Requests',
-            data: {!! json_encode($monthlyTrends->pluck('completed_requests')) !!},
+            data: <?php echo json_encode($monthlyTrends->pluck('completed_requests')); ?>,
             fill: false,
             borderColor: 'rgba(34, 197, 94, 1)',
             backgroundColor: 'rgba(34, 197, 94, 0.1)',
@@ -506,7 +504,9 @@ new Chart(monthlyTrendsCtx, {
         }
     }
 });
-@endif
+<?php endif; ?>
 </script>
-@endpush
-@endsection
+<?php $__env->stopPush(); ?>
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('layouts.admin', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\VALESBEACH_LATEST\ValesBeach\resources\views/manager/reports/performance-metrics.blade.php ENDPATH**/ ?>

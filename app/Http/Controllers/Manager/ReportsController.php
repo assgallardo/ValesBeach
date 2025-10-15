@@ -33,7 +33,7 @@ class ReportsController extends Controller
             'cancelled_requests' => ServiceRequest::where('status', 'cancelled')->whereBetween('created_at', [$startDate, $endDate])->count(),
             'avg_response_time' => ServiceRequest::whereBetween('created_at', [$startDate, $endDate])
                 ->whereNotNull('assigned_at')
-                ->selectRaw('AVG((julianday(assigned_at) - julianday(created_at)) * 24) as avg_hours')
+                ->selectRaw('AVG(TIMESTAMPDIFF(HOUR, created_at, assigned_at)) as avg_hours')
                 ->first()->avg_hours ?? 0,
         ];
 
@@ -133,14 +133,13 @@ class ReportsController extends Controller
             return $service;
         });
 
-        // Get category breakdown
-        $categoryBreakdown = Service::select('category')
-            ->withCount([
-                'serviceRequests as total_requests' => function ($query) use ($startDate, $endDate) {
-                    $query->whereBetween('created_at', [$startDate, $endDate]);
-                }
-            ])
-            ->groupBy('category')
+        // FIXED: Get category breakdown using proper aggregation
+        $categoryBreakdown = DB::table('services')
+            ->join('service_requests', 'services.id', '=', 'service_requests.service_id')
+            ->whereBetween('service_requests.created_at', [$startDate, $endDate])
+            ->select('services.category')
+            ->selectRaw('COUNT(*) as total_requests')
+            ->groupBy('services.category')
             ->get();
 
         return view('manager.reports.service-usage', compact(
@@ -160,40 +159,48 @@ class ReportsController extends Controller
         $startDate = $dateRange['start'];
         $endDate = $dateRange['end'];
 
-        // Average response time (time from creation to assignment)
+        // Average response time (time from creation to assignment) - FIXED FOR MYSQL
         $avgResponseTime = ServiceRequest::whereBetween('created_at', [$startDate, $endDate])
             ->whereNotNull('assigned_at')
-            ->selectRaw('AVG((julianday(assigned_at) - julianday(created_at)) * 24) as avg_hours')
+            ->selectRaw('AVG(TIMESTAMPDIFF(HOUR, created_at, assigned_at)) as avg_hours')
             ->first()->avg_hours ?? 0;
 
-        // Average completion time (time from assignment to completion)
+        // Average completion time (time from assignment to completion) - FIXED FOR MYSQL
         $avgCompletionTime = ServiceRequest::whereBetween('created_at', [$startDate, $endDate])
             ->whereNotNull('completed_at')
             ->whereNotNull('assigned_at')
-            ->selectRaw('AVG((julianday(completed_at) - julianday(assigned_at)) * 24) as avg_hours')
+            ->selectRaw('AVG(TIMESTAMPDIFF(HOUR, assigned_at, completed_at)) as avg_hours')
             ->first()->avg_hours ?? 0;
 
-        // Service level metrics by status
+        // Service level metrics by status - FIXED FOR MYSQL
         $statusMetrics = ServiceRequest::whereBetween('created_at', [$startDate, $endDate])
-            ->selectRaw('status, COUNT(*) as count, AVG((julianday(COALESCE(completed_at, datetime("now"))) - julianday(created_at)) * 24) as avg_duration')
+            ->selectRaw('
+                status, 
+                COUNT(*) as count, 
+                AVG(TIMESTAMPDIFF(HOUR, created_at, COALESCE(completed_at, NOW()))) as avg_duration
+            ')
             ->groupBy('status')
             ->get();
 
-        // Peak hours analysis
+        // Peak hours analysis - FIXED FOR MYSQL
         $peakHours = ServiceRequest::whereBetween('created_at', [$startDate, $endDate])
-            ->selectRaw('strftime("%H", created_at) as hour, COUNT(*) as request_count')
-            ->groupByRaw('strftime("%H", created_at)')
+            ->selectRaw('HOUR(created_at) as hour, COUNT(*) as request_count')
+            ->groupByRaw('HOUR(created_at)')
             ->orderBy('request_count', 'desc')
             ->get();
 
-        // Monthly trends if date range is large enough
-        $monthlyTrends = [];
+        // Monthly trends if date range is large enough - FIXED FOR MYSQL
+        $monthlyTrends = collect();
         if ($startDate->diffInMonths($endDate) >= 1) {
             $monthlyTrends = ServiceRequest::whereBetween('created_at', [$startDate, $endDate])
-                ->selectRaw('strftime("%Y", created_at) as year, strftime("%m", created_at) as month, COUNT(*) as total_requests,
-                            SUM(CASE WHEN status = "completed" THEN 1 ELSE 0 END) as completed_requests')
-                ->groupByRaw('strftime("%Y", created_at), strftime("%m", created_at)')
-                ->orderByRaw('strftime("%Y", created_at) ASC, strftime("%m", created_at) ASC')
+                ->selectRaw('
+                    YEAR(created_at) as year, 
+                    MONTH(created_at) as month, 
+                    COUNT(*) as total_requests,
+                    SUM(CASE WHEN status = "completed" THEN 1 ELSE 0 END) as completed_requests
+                ')
+                ->groupByRaw('YEAR(created_at), MONTH(created_at)')
+                ->orderByRaw('YEAR(created_at) ASC, MONTH(created_at) ASC')
                 ->get();
         }
 
@@ -238,11 +245,11 @@ class ReportsController extends Controller
                     ? round(($staff->completed_tasks / $staff->total_assigned) * 100, 1)
                     : 0;
                 
-                // Calculate average completion time for this staff member
+                // Calculate average completion time for this staff member - FIXED FOR MYSQL
                 $avgTime = ServiceRequest::where('assigned_to', $staff->id)
                     ->whereNotNull('completed_at')
                     ->whereNotNull('assigned_at')
-                    ->selectRaw('AVG((julianday(completed_at) - julianday(assigned_at)) * 24) as avg_hours')
+                    ->selectRaw('AVG(TIMESTAMPDIFF(HOUR, assigned_at, completed_at)) as avg_hours')
                     ->first()->avg_hours ?? 0;
                 
                 $staff->avg_completion_time = round($avgTime, 1);
@@ -347,76 +354,6 @@ class ReportsController extends Controller
     }
 
     /**
-     * Get overview statistics
-     */
-    private function getOverviewStats($startDate, $endDate)
-    {
-        return [
-            'total_requests' => ServiceRequest::whereBetween('created_at', [$startDate, $endDate])->count(),
-            'completed_requests' => ServiceRequest::where('status', 'completed')
-                ->whereBetween('created_at', [$startDate, $endDate])->count(),
-            'pending_requests' => ServiceRequest::where('status', 'pending')
-                ->whereBetween('created_at', [$startDate, $endDate])->count(),
-            'active_services' => Service::where('is_available', true)->count(),
-            'avg_response_time' => ServiceRequest::whereBetween('created_at', [$startDate, $endDate])
-                ->whereNotNull('assigned_at')
-                ->selectRaw('AVG((julianday(assigned_at) - julianday(created_at)) * 24) as avg_hours')
-                ->first()->avg_hours ?? 0,
-        ];
-    }
-
-    /**
-     * Get service usage data
-     */
-    private function getServiceUsageData($startDate, $endDate)
-    {
-        return Service::withCount([
-            'serviceRequests as request_count' => function ($query) use ($startDate, $endDate) {
-                $query->whereBetween('created_at', [$startDate, $endDate]);
-            }
-        ])->orderBy('request_count', 'desc')->take(10)->get();
-    }
-
-    /**
-     * Get performance metrics
-     */
-    private function getPerformanceMetrics($startDate, $endDate)
-    {
-        return ServiceRequest::whereBetween('created_at', [$startDate, $endDate])
-            ->selectRaw('status, COUNT(*) as count')
-            ->groupBy('status')
-            ->get();
-    }
-
-    /**
-     * Get staff performance data  
-     */
-    private function getStaffPerformanceData($startDate, $endDate)
-    {
-        return User::where('role', 'staff')
-            ->withCount([
-                'assignedServiceRequests as assigned_count' => function ($query) use ($startDate, $endDate) {
-                    $query->whereBetween('assigned_at', [$startDate, $endDate]);
-                }
-            ])
-            ->orderBy('assigned_count', 'desc')
-            ->take(10)
-            ->get();
-    }
-
-    /**
-     * Get daily trends
-     */
-    private function getDailyTrends($startDate, $endDate)
-    {
-        return ServiceRequest::whereBetween('created_at', [$startDate, $endDate])
-            ->selectRaw('DATE(created_at) as date, COUNT(*) as request_count')
-            ->groupBy('date')
-            ->orderBy('date', 'asc')
-            ->get();
-    }
-
-    /**
      * Export service usage data
      */
     private function exportServiceUsage($handle, $startDate, $endDate)
@@ -456,7 +393,7 @@ class ReportsController extends Controller
     }
 
     /**
-     * Export staff performance data
+     * Export staff performance data - FIXED FOR MYSQL
      */
     private function exportStaffPerformance($handle, $startDate, $endDate)
     {
@@ -476,11 +413,12 @@ class ReportsController extends Controller
             
             $completionRate = $assigned > 0 ? round(($completed / $assigned) * 100, 1) : 0;
             
+            // FIXED: Replace julianday with TIMESTAMPDIFF for MySQL
             $avgTime = ServiceRequest::where('assigned_to', $member->id)
                 ->whereNotNull('completed_at')
                 ->whereNotNull('assigned_at')
                 ->whereBetween('assigned_at', [$startDate, $endDate])
-                ->selectRaw('AVG((julianday(completed_at) - julianday(assigned_at)) * 24) as avg_hours')
+                ->selectRaw('AVG(TIMESTAMPDIFF(HOUR, assigned_at, completed_at)) as avg_hours')
                 ->first()->avg_hours ?? 0;
             
             fputcsv($handle, [
@@ -501,11 +439,41 @@ class ReportsController extends Controller
     {
         fputcsv($handle, ['Metric', 'Value']);
         
-        $stats = $this->getOverviewStats($startDate, $endDate);
+        $stats = $this->getStats($startDate, $endDate);
         
         foreach ($stats as $key => $value) {
             $label = ucwords(str_replace('_', ' ', $key));
             fputcsv($handle, [$label, $value]);
         }
+    }
+
+    /**
+     * Get statistics for the given date range
+     */
+    protected function getStats($startDate, $endDate)
+    {
+        $totalRequests = ServiceRequest::whereBetween('created_at', [$startDate, $endDate])->count();
+        
+        $completedRequests = ServiceRequest::whereBetween('created_at', [$startDate, $endDate])
+            ->where('status', 'completed')
+            ->count();
+        
+        $pendingRequests = ServiceRequest::whereBetween('created_at', [$startDate, $endDate])
+            ->where('status', 'pending')
+            ->count();
+        
+        // Fixed MySQL query for average response time
+        $avgResponseTime = DB::table('service_requests')
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->whereNotNull('assigned_at')
+            ->selectRaw('AVG(TIMESTAMPDIFF(HOUR, created_at, assigned_at)) as avg_hours')
+            ->value('avg_hours') ?: 0;
+        
+        return [
+            'total_requests' => $totalRequests,
+            'completed_requests' => $completedRequests,
+            'pending_requests' => $pendingRequests,
+            'avg_response_time' => round($avgResponseTime, 1)
+        ];
     }
 }

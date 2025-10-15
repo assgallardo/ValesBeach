@@ -528,3 +528,32 @@ Route::middleware(['auth', 'user.status', 'role:manager,admin'])->group(function
              ->name('payments.refund');
     });
 });
+
+// Reservation details for admin/manager/staff
+Route::prefix('manager')->name('manager.')->middleware(['auth', 'user.status', 'role:admin,manager,staff'])->group(function () {
+    // ...other manager routes...
+
+    // Reservation details for admin/manager/staff
+    Route::get('/reservations/{id}', [App\Http\Controllers\ManagerController::class, 'showReservation'])->name('reservations.show');
+    
+    // Show create room form
+    Route::get('/rooms/create', [App\Http\Controllers\ManagerController::class, 'createRoom'])->name('rooms.create');
+    // Store new room (optional, for form submission)
+    Route::post('/rooms', [App\Http\Controllers\ManagerController::class, 'storeRoom'])->name('rooms.store');
+    
+    // Show all rooms
+    Route::get('/rooms', [App\Http\Controllers\ManagerController::class, 'rooms'])->name('rooms');
+    // Show create room form
+    Route::get('/rooms/create', [App\Http\Controllers\ManagerController::class, 'createRoom'])->name('rooms.create');
+    // Store new room
+    Route::post('/rooms', [App\Http\Controllers\ManagerController::class, 'storeRoom'])->name('rooms.store');
+    // Show single room details
+    Route::get('/rooms/{room}', [App\Http\Controllers\ManagerController::class, 'showRoom'])->name('rooms.show');
+    // Edit room (THIS IS THE MISSING ROUTE)
+    Route::get('/rooms/{room}/edit', [App\Http\Controllers\ManagerController::class, 'editRoom'])->name('rooms.edit');
+    // Update room
+    Route::put('/rooms/{room}', [App\Http\Controllers\ManagerController::class, 'updateRoom'])->name('rooms.update');
+});
+
+// Quick Book Room (show booking form for a specific room)
+Route::get('/bookings/quick-book/{room}', [App\Http\Controllers\ManagerController::class, 'quickBookRoom'])->name('bookings.quick-book');

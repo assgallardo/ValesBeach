@@ -244,9 +244,9 @@ class ManagerController extends Controller
      */
     public function createBooking()
     {
-        $rooms = Room::where('status', 'available')->get();
-        $guests = User::where('role', 'guest')->get();
-        return view('manager.bookings.create', compact('rooms', 'guests'));
+        $users = \App\Models\User::all();
+        $rooms = \App\Models\Room::all();
+        return view('manager.bookings.create', compact('users', 'rooms'));
     }
 
     /**
@@ -303,6 +303,15 @@ class ManagerController extends Controller
     {
         $booking = Booking::with(['user', 'room'])->findOrFail($id);
         return view('manager.bookings.show', compact('booking'));
+    }
+
+    /**
+     * Show reservation details
+     */
+    public function showReservation($id)
+    {
+        $booking = Booking::with(['user', 'room'])->findOrFail($id);
+        return view('manager.reservations.show', compact('booking'));
     }
 
     /**
@@ -479,25 +488,101 @@ class ManagerController extends Controller
     /**
      * Calendar management page
      */
-    public function calendar()
+    public function calendar(Request $request)
     {
-        // Get all bookings for calendar display
+        $checkinColumn = $this->getCheckinColumn() ?: 'check_in_date';
+        $checkoutColumn = $this->getCheckoutColumn() ?: 'check_out_date';
+
+        // Get month/year from request or default to current
+        $year = $request->input('year', now()->year);
+        $month = $request->input('month', now()->month);
+
+        // Start and end of the calendar month
+        $startDate = \Carbon\Carbon::create($year, $month, 1)->startOfMonth();
+        $endDate = $startDate->copy()->endOfMonth();
+
         $bookings = Booking::with(['user', 'room'])
             ->where('status', '!=', 'cancelled')
-            ->orderBy('check_in_date')
+            ->whereDate($checkinColumn, '<=', $endDate)
+            ->whereDate($checkoutColumn, '>=', $startDate)
             ->get();
 
-        // Get all rooms for the calendar
         $rooms = Room::orderBy('name')->get();
 
-        // Calculate occupancy statistics
         $totalRooms = $rooms->count();
         $occupiedRooms = $bookings->where('status', 'confirmed')
-            ->where('check_in_date', '<=', now())
-            ->where('check_out_date', '>=', now())
+            ->where($checkinColumn, '<=', now())
+            ->where($checkoutColumn, '>=', now())
             ->count();
         $occupancyRate = $totalRooms > 0 ? ($occupiedRooms / $totalRooms) * 100 : 0;
 
-        return view('manager.calendar', compact('bookings', 'rooms', 'totalRooms', 'occupiedRooms', 'occupancyRate'));
+        // Prepare bookings data for JS (for calendar rendering)
+        $bookingsData = $bookings->map(function($booking) use ($checkinColumn, $checkoutColumn) {
+            return [
+                'check_in_date' => $booking->$checkinColumn,
+                'check_out_date' => $booking->$checkoutColumn,
+                'guest_name' => $booking->user->name ?? 'Guest',
+                'room_name' => $booking->room->name ?? 'N/A',
+                'status' => $booking->status
+            ];
+        });
+
+        return view('manager.calendar', compact(
+            'bookings',
+            'rooms',
+            'totalRooms',
+            'occupiedRooms',
+            'occupancyRate',
+            'checkinColumn',
+            'checkoutColumn',
+            'bookingsData',
+            'startDate',
+            'endDate'
+        ));
+    }
+
+    /**
+     * Show create room form
+     */
+    public function createRoom()
+    {
+        // Return a view for creating a room
+        return view('manager.rooms.create');
+    }
+
+    /**
+     * Store a new room
+     */
+    public function storeRoom(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'type' => 'required|exists:room_types,id',
+            'price' => 'required|numeric|min:0',
+            'status' => 'required|in:available,occupied,maintenance',
+            'description' => 'nullable|string',
+            'image' => 'nullable|image|max:2048',
+        ]);
+
+        $roomData = $request->only('name', 'type', 'price', 'status', 'description');
+
+        // Handle image upload
+        if ($request->hasFile('image')) {
+            $path = $request->file('image')->store('room_images', 'public');
+            $roomData['image'] = $path;
+        }
+
+        Room::create($roomData);
+
+        return redirect()->route('manager.rooms')->with('success', 'Room created successfully!');
+    }
+
+    /**
+     * Show room details
+     */
+    public function showRoom($id)
+    {
+        $room = Room::with('images')->findOrFail($id);
+        return view('manager.rooms.show', compact('room'));
     }
 }

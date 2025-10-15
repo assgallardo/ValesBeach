@@ -137,6 +137,65 @@
         </form>
     </div>
 
+<!-- Statistics -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div class="bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg p-6 text-white">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-blue-100 text-sm">Total Reservations</p>
+                    <p class="text-2xl font-bold"><?php echo e($bookings->total()); ?></p>
+                </div>
+                <div class="bg-blue-500 bg-opacity-50 rounded-full p-3">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-gradient-to-r from-green-600 to-green-700 rounded-lg p-6 text-white">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-green-100 text-sm">Active Bookings</p>
+                    <p class="text-2xl font-bold"><?php echo e($bookings->where('status', 'confirmed')->count() + $bookings->where('status', 'checked_in')->count()); ?></p>
+                </div>
+                <div class="bg-green-500 bg-opacity-50 rounded-full p-3">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-gradient-to-r from-purple-600 to-purple-700 rounded-lg p-6 text-white">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-purple-100 text-sm">Completed</p>
+                    <p class="text-2xl font-bold"><?php echo e($bookings->where('status', 'completed')->count()); ?></p>
+                </div>
+                <div class="bg-purple-500 bg-opacity-50 rounded-full p-3">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-gradient-to-r from-red-600 to-red-700 rounded-lg p-6 text-white">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-red-100 text-sm">Cancelled</p>
+                    <p class="text-2xl font-bold"><?php echo e($bookings->where('status', 'cancelled')->count()); ?></p>
+                </div>
+                <div class="bg-red-500 bg-opacity-50 rounded-full p-3">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Bookings Table -->
     <div class="bg-gray-800 rounded-lg shadow-xl overflow-hidden">
         <div class="overflow-x-auto">
@@ -709,4 +768,4 @@ function showNotification(message, type = 'success') {
 </script>
 <?php $__env->stopPush(); ?>
 
-<?php echo $__env->make('layouts.admin', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\VALESBEACH_LATEST\ValesBeach\resources\views/manager/bookings/index.blade.php ENDPATH**/ ?>
+<?php echo $__env->make('layouts.manager', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\VALESBEACH_LATEST\ValesBeach\resources\views/manager/bookings/index.blade.php ENDPATH**/ ?>

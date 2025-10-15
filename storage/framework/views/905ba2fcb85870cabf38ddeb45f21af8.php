@@ -1,8 +1,6 @@
-@extends('layouts.admin')
+<?php $__env->startSection('title', 'Service Reports Dashboard'); ?>
 
-@section('title', 'Service Reports Dashboard')
-
-@section('content')
+<?php $__env->startSection('content'); ?>
 <div class="min-h-screen bg-gray-900 py-6">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <!-- Header -->
@@ -29,15 +27,15 @@
                         </button>
                         <div id="exportDropdown" class="absolute right-0 mt-2 w-56 bg-gray-800 border border-gray-700 rounded-lg shadow-lg z-10 hidden">
                             <div class="py-1">
-                                <a href="{{ route('manager.reports.export', ['type' => 'overview'] + request()->query()) }}" 
+                                <a href="<?php echo e(route('manager.reports.export', ['type' => 'overview'] + request()->query())); ?>" 
                                    class="flex items-center px-4 py-2 text-gray-300 hover:bg-gray-700 hover:text-green-400 transition-colors">
                                     <i class="fas fa-file-alt mr-3"></i>Overview Report
                                 </a>
-                                <a href="{{ route('manager.reports.export', ['type' => 'service-usage'] + request()->query()) }}" 
+                                <a href="<?php echo e(route('manager.reports.export', ['type' => 'service-usage'] + request()->query())); ?>" 
                                    class="flex items-center px-4 py-2 text-gray-300 hover:bg-gray-700 hover:text-green-400 transition-colors">
                                     <i class="fas fa-chart-bar mr-3"></i>Service Usage
                                 </a>
-                                <a href="{{ route('manager.reports.export', ['type' => 'staff-performance'] + request()->query()) }}" 
+                                <a href="<?php echo e(route('manager.reports.export', ['type' => 'staff-performance'] + request()->query())); ?>" 
                                    class="flex items-center px-4 py-2 text-gray-300 hover:bg-gray-700 hover:text-green-400 transition-colors">
                                     <i class="fas fa-users mr-3"></i>Staff Performance
                                 </a>
@@ -54,7 +52,7 @@
                 <div class="flex items-center">
                     <i class="fas fa-info-circle text-blue-400 mr-3 text-lg"></i>
                     <span class="text-blue-100">
-                        Showing data from <strong>{{ $startDate->format('M d, Y') }}</strong> to <strong>{{ $endDate->format('M d, Y') }}</strong>
+                        Showing data from <strong><?php echo e($startDate->format('M d, Y')); ?></strong> to <strong><?php echo e($endDate->format('M d, Y')); ?></strong>
                     </span>
                 </div>
             </div>
@@ -67,7 +65,7 @@
                     <div class="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
                         <i class="fas fa-clipboard-list text-2xl text-white"></i>
                     </div>
-                    <h2 class="text-3xl font-bold text-green-50 mb-2">{{ number_format($stats['total_requests']) }}</h2>
+                    <h2 class="text-3xl font-bold text-green-50 mb-2"><?php echo e(number_format($stats['total_requests'])); ?></h2>
                     <p class="text-gray-400 text-sm uppercase tracking-wider font-medium">Total Requests</p>
                 </div>
             </div>
@@ -77,13 +75,13 @@
                     <div class="w-16 h-16 bg-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
                         <i class="fas fa-check-circle text-2xl text-white"></i>
                     </div>
-                    <h2 class="text-3xl font-bold text-green-50 mb-2">{{ number_format($stats['completed_requests']) }}</h2>
+                    <h2 class="text-3xl font-bold text-green-50 mb-2"><?php echo e(number_format($stats['completed_requests'])); ?></h2>
                     <p class="text-gray-400 text-sm uppercase tracking-wider font-medium mb-2">Completed</p>
-                    @if($stats['total_requests'] > 0)
+                    <?php if($stats['total_requests'] > 0): ?>
                         <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-600/20 text-green-400">
-                            {{ round(($stats['completed_requests'] / $stats['total_requests']) * 100, 1) }}%
+                            <?php echo e(round(($stats['completed_requests'] / $stats['total_requests']) * 100, 1)); ?>%
                         </span>
-                    @endif
+                    <?php endif; ?>
                 </div>
             </div>
 
@@ -92,13 +90,13 @@
                     <div class="w-16 h-16 bg-yellow-600 rounded-full flex items-center justify-center mx-auto mb-4">
                         <i class="fas fa-clock text-2xl text-white"></i>
                     </div>
-                    <h2 class="text-3xl font-bold text-green-50 mb-2">{{ number_format($stats['pending_requests']) }}</h2>
+                    <h2 class="text-3xl font-bold text-green-50 mb-2"><?php echo e(number_format($stats['pending_requests'])); ?></h2>
                     <p class="text-gray-400 text-sm uppercase tracking-wider font-medium mb-2">Pending</p>
-                    @if($stats['total_requests'] > 0)
+                    <?php if($stats['total_requests'] > 0): ?>
                         <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-600/20 text-yellow-400">
-                            {{ round(($stats['pending_requests'] / $stats['total_requests']) * 100, 1) }}%
+                            <?php echo e(round(($stats['pending_requests'] / $stats['total_requests']) * 100, 1)); ?>%
                         </span>
-                    @endif
+                    <?php endif; ?>
                 </div>
             </div>
 
@@ -107,7 +105,7 @@
                     <div class="w-16 h-16 bg-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
                         <i class="fas fa-tachometer-alt text-2xl text-white"></i>
                     </div>
-                    <h2 class="text-3xl font-bold text-green-50 mb-2">{{ round($stats['avg_response_time'], 1) }}h</h2>
+                    <h2 class="text-3xl font-bold text-green-50 mb-2"><?php echo e(round($stats['avg_response_time'], 1)); ?>h</h2>
                     <p class="text-gray-400 text-sm uppercase tracking-wider font-medium">Avg Response Time</p>
                 </div>
             </div>
@@ -168,7 +166,7 @@
                     <i class="fas fa-users text-indigo-400 mr-3"></i>
                     Staff Performance Overview
                 </h3>
-                <a href="{{ route('manager.reports.staff-performance', request()->query()) }}" 
+                <a href="<?php echo e(route('manager.reports.staff-performance', request()->query())); ?>" 
                    class="inline-flex items-center px-3 py-1 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition-colors">
                     View Details 
                     <i class="fas fa-arrow-right ml-2"></i>
@@ -191,43 +189,45 @@
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-700">
-                            @forelse($staffPerformance as $staff)
+                            <?php $__empty_1 = true; $__currentLoopData = $staffPerformance; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $staff): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                             <tr class="hover:bg-gray-750 transition-colors">
                                 <td class="px-6 py-4">
                                     <div class="flex items-center">
                                         <div class="w-10 h-10 bg-gray-700 rounded-full flex items-center justify-center mr-4">
                                             <i class="fas fa-user text-gray-400"></i>
                                         </div>
-                                        <span class="text-green-100 font-medium">{{ $staff->name }}</span>
+                                        <span class="text-green-100 font-medium"><?php echo e($staff->name); ?></span>
                                     </div>
                                 </td>
                                 <td class="px-6 py-4 text-center">
                                     <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-600/20 text-blue-400">
-                                        {{ $staff->assigned_count }}
+                                        <?php echo e($staff->assigned_count); ?>
+
                                     </span>
                                 </td>
                                 <td class="px-6 py-4">
                                     <div class="flex items-center">
                                         <div class="flex-1 bg-gray-700 rounded-full h-6 mr-4">
                                             <div class="bg-green-500 h-6 rounded-full flex items-center justify-center text-xs font-medium text-white" 
-                                                 style="width: {{ min($staff->assigned_count * 10, 100) }}%;">
-                                                @if($staff->assigned_count > 0)
-                                                    {{ $staff->assigned_count }} task{{ $staff->assigned_count != 1 ? 's' : '' }}
-                                                @endif
+                                                 style="width: <?php echo e(min($staff->assigned_count * 10, 100)); ?>%;">
+                                                <?php if($staff->assigned_count > 0): ?>
+                                                    <?php echo e($staff->assigned_count); ?> task<?php echo e($staff->assigned_count != 1 ? 's' : ''); ?>
+
+                                                <?php endif; ?>
                                             </div>
                                         </div>
-                                        <span class="text-gray-400 text-sm min-w-12">{{ min($staff->assigned_count * 10, 100) }}%</span>
+                                        <span class="text-gray-400 text-sm min-w-12"><?php echo e(min($staff->assigned_count * 10, 100)); ?>%</span>
                                     </div>
                                 </td>
                             </tr>
-                            @empty
+                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                             <tr>
                                 <td colspan="3" class="px-6 py-12 text-center">
                                     <i class="fas fa-users text-4xl text-gray-600 mb-4"></i>
                                     <p class="text-gray-500">No staff performance data available</p>
                                 </td>
                             </tr>
-                            @endforelse
+                            <?php endif; ?>
                         </tbody>
                     </table>
                 </div>
@@ -244,7 +244,7 @@
             </div>
             <div class="p-6">
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <a href="{{ route('manager.reports.service-usage', request()->query()) }}" 
+                    <a href="<?php echo e(route('manager.reports.service-usage', request()->query())); ?>" 
                        class="group block bg-gray-750 rounded-lg border border-gray-600 p-6 hover:bg-gray-700 hover:border-gray-500 transition-all duration-200">
                         <div class="flex items-center">
                             <div class="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center mr-4 group-hover:bg-blue-500 transition-colors">
@@ -257,7 +257,7 @@
                         </div>
                     </a>
 
-                    <a href="{{ route('manager.reports.performance-metrics', request()->query()) }}" 
+                    <a href="<?php echo e(route('manager.reports.performance-metrics', request()->query())); ?>" 
                        class="group block bg-gray-750 rounded-lg border border-gray-600 p-6 hover:bg-gray-700 hover:border-gray-500 transition-all duration-200">
                         <div class="flex items-center">
                             <div class="w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center mr-4 group-hover:bg-green-500 transition-colors">
@@ -270,7 +270,7 @@
                         </div>
                     </a>
 
-                    <a href="{{ route('manager.reports.staff-performance', request()->query()) }}" 
+                    <a href="<?php echo e(route('manager.reports.staff-performance', request()->query())); ?>" 
                        class="group block bg-gray-750 rounded-lg border border-gray-600 p-6 hover:bg-gray-700 hover:border-gray-500 transition-all duration-200">
                         <div class="flex items-center">
                             <div class="w-12 h-12 bg-purple-600 rounded-lg flex items-center justify-center mr-4 group-hover:bg-purple-500 transition-colors">
@@ -301,31 +301,31 @@
                 </div>
             </div>
             
-            <form method="GET" action="{{ route('manager.reports.index') }}">
+            <form method="GET" action="<?php echo e(route('manager.reports.index')); ?>">
                 <div class="p-6 space-y-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-400 mb-2">Quick Select</label>
                         <select name="period" onchange="toggleCustomDates(this.value)" 
                                 class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2 text-gray-300 focus:outline-none focus:border-green-500">
-                            <option value="today" {{ request('period') == 'today' ? 'selected' : '' }}>Today</option>
-                            <option value="yesterday" {{ request('period') == 'yesterday' ? 'selected' : '' }}>Yesterday</option>
-                            <option value="last_7_days" {{ request('period') == 'last_7_days' ? 'selected' : '' }}>Last 7 Days</option>
-                            <option value="last_30_days" {{ request('period', 'last_30_days') == 'last_30_days' ? 'selected' : '' }}>Last 30 Days</option>
-                            <option value="this_month" {{ request('period') == 'this_month' ? 'selected' : '' }}>This Month</option>
-                            <option value="last_month" {{ request('period') == 'last_month' ? 'selected' : '' }}>Last Month</option>
-                            <option value="custom" {{ request('period') == 'custom' ? 'selected' : '' }}>Custom Range</option>
+                            <option value="today" <?php echo e(request('period') == 'today' ? 'selected' : ''); ?>>Today</option>
+                            <option value="yesterday" <?php echo e(request('period') == 'yesterday' ? 'selected' : ''); ?>>Yesterday</option>
+                            <option value="last_7_days" <?php echo e(request('period') == 'last_7_days' ? 'selected' : ''); ?>>Last 7 Days</option>
+                            <option value="last_30_days" <?php echo e(request('period', 'last_30_days') == 'last_30_days' ? 'selected' : ''); ?>>Last 30 Days</option>
+                            <option value="this_month" <?php echo e(request('period') == 'this_month' ? 'selected' : ''); ?>>This Month</option>
+                            <option value="last_month" <?php echo e(request('period') == 'last_month' ? 'selected' : ''); ?>>Last Month</option>
+                            <option value="custom" <?php echo e(request('period') == 'custom' ? 'selected' : ''); ?>>Custom Range</option>
                         </select>
                     </div>
                     
-                    <div id="customDates" class="space-y-4" style="display: {{ request('period') == 'custom' ? 'block' : 'none' }};">
+                    <div id="customDates" class="space-y-4" style="display: <?php echo e(request('period') == 'custom' ? 'block' : 'none'); ?>;">
                         <div>
                             <label class="block text-sm font-medium text-gray-400 mb-2">Start Date</label>
-                            <input type="date" name="start_date" value="{{ request('start_date') }}"
+                            <input type="date" name="start_date" value="<?php echo e(request('start_date')); ?>"
                                    class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2 text-gray-300 focus:outline-none focus:border-green-500">
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-400 mb-2">End Date</label>
-                            <input type="date" name="end_date" value="{{ request('end_date') }}"
+                            <input type="date" name="end_date" value="<?php echo e(request('end_date')); ?>"
                                    class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2 text-gray-300 focus:outline-none focus:border-green-500">
                         </div>
                     </div>
@@ -346,7 +346,7 @@
     </div>
 </div>
 
-@push('scripts')
+<?php $__env->startPush('scripts'); ?>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 // Chart.js defaults for dark theme
@@ -359,10 +359,10 @@ const serviceUsageCtx = document.getElementById('serviceUsageChart').getContext(
 new Chart(serviceUsageCtx, {
     type: 'bar',
     data: {
-        labels: {!! json_encode($serviceUsage->pluck('name')->take(10)) !!},
+        labels: <?php echo json_encode($serviceUsage->pluck('name')->take(10)); ?>,
         datasets: [{
             label: 'Requests',
-            data: {!! json_encode($serviceUsage->pluck('request_count')->take(10)) !!},
+            data: <?php echo json_encode($serviceUsage->pluck('request_count')->take(10)); ?>,
             backgroundColor: 'rgba(59, 130, 246, 0.8)',
             borderColor: 'rgba(59, 130, 246, 1)',
             borderWidth: 1,
@@ -415,9 +415,9 @@ const statusCtx = document.getElementById('statusChart').getContext('2d');
 new Chart(statusCtx, {
     type: 'doughnut',
     data: {
-        labels: {!! json_encode($performanceMetrics->pluck('status')) !!},
+        labels: <?php echo json_encode($performanceMetrics->pluck('status')); ?>,
         datasets: [{
-            data: {!! json_encode($performanceMetrics->pluck('count')) !!},
+            data: <?php echo json_encode($performanceMetrics->pluck('count')); ?>,
             backgroundColor: [
                 'rgba(239, 68, 68, 0.8)',
                 'rgba(59, 130, 246, 0.8)',
@@ -480,10 +480,10 @@ const dailyTrendsCtx = document.getElementById('dailyTrendsChart').getContext('2
 new Chart(dailyTrendsCtx, {
     type: 'line',
     data: {
-        labels: {!! json_encode($dailyTrends->pluck('date')) !!},
+        labels: <?php echo json_encode($dailyTrends->pluck('date')); ?>,
         datasets: [{
             label: 'Daily Requests',
-            data: {!! json_encode($dailyTrends->pluck('request_count')) !!},
+            data: <?php echo json_encode($dailyTrends->pluck('request_count')); ?>,
             fill: true,
             backgroundColor: 'rgba(34, 197, 94, 0.1)',
             borderColor: 'rgba(34, 197, 94, 1)',
@@ -577,5 +577,7 @@ document.getElementById('dateRangeModal').addEventListener('click', function(e) 
     }
 });
 </script>
-@endpush
-@endsection
+<?php $__env->stopPush(); ?>
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('layouts.admin', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\VALESBEACH_LATEST\ValesBeach\resources\views/manager/reports/index.blade.php ENDPATH**/ ?>

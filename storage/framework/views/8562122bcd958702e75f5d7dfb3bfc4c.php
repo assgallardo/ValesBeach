@@ -1,6 +1,4 @@
-@extends('layouts.manager')
-
-@section('content')
+<?php $__env->startSection('content'); ?>
 <div class="container mx-auto px-4 lg:px-8 py-8">
     <!-- Page Title -->
     <div class="mb-8">
@@ -12,14 +10,15 @@
             
             <!-- Month Navigation -->
             <div class="flex items-center space-x-4">
-                <a href="{{ route('manager.calendar', ['year' => $startDate->copy()->subMonth()->year, 'month' => $startDate->copy()->subMonth()->month]) }}" 
+                <a href="<?php echo e(route('manager.calendar', ['year' => $startDate->copy()->subMonth()->year, 'month' => $startDate->copy()->subMonth()->month])); ?>" 
                    class="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors">
                     ← Previous
                 </a>
                 <div class="text-white font-semibold text-lg">
-                    {{ $startDate->format('F Y') }}
+                    <?php echo e($startDate->format('F Y')); ?>
+
                 </div>
-                <a href="{{ route('manager.calendar', ['year' => $startDate->copy()->addMonth()->year, 'month' => $startDate->copy()->addMonth()->month]) }}" 
+                <a href="<?php echo e(route('manager.calendar', ['year' => $startDate->copy()->addMonth()->year, 'month' => $startDate->copy()->addMonth()->month])); ?>" 
                    class="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors">
                     Next →
                 </a>
@@ -31,12 +30,12 @@
     <div class="bg-gray-800 rounded-lg p-6 mb-8">
         <h3 class="text-lg font-semibold text-white mb-4">Rooms</h3>
         <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-            @foreach($rooms as $room)
+            <?php $__currentLoopData = $rooms; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $room): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                 <div class="flex items-center space-x-2">
-                    <div class="w-4 h-4 rounded" style="background-color: {{ $room->color ?? sprintf('#%06X', mt_rand(0, 0xFFFFFF)) }};"></div>
-                    <span class="text-white text-sm">{{ $room->name }}</span>
+                    <div class="w-4 h-4 rounded" style="background-color: <?php echo e($room->color ?? sprintf('#%06X', mt_rand(0, 0xFFFFFF))); ?>;"></div>
+                    <span class="text-white text-sm"><?php echo e($room->name); ?></span>
                 </div>
-            @endforeach
+            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
         </div>
     </div>
 
@@ -75,44 +74,46 @@
     <div class="bg-gray-800 rounded-lg shadow-xl overflow-hidden">
         <!-- Calendar Header -->
         <div class="grid grid-cols-7 bg-gray-900">
-            @foreach(['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] as $day)
+            <?php $__currentLoopData = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $day): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                 <div class="px-4 py-3 text-center text-sm font-medium text-gray-300 border-r border-gray-700 last:border-r-0">
-                    {{ $day }}
+                    <?php echo e($day); ?>
+
                 </div>
-            @endforeach
+            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
         </div>
 
         <!-- Calendar Body -->
         <div class="grid grid-cols-7">
-            @php
+            <?php
                 $currentDate = $startDate->copy()->startOfWeek();
                 $endOfCalendar = $endDate->copy()->endOfWeek();
-            @endphp
+            ?>
 
-            @while($currentDate <= $endOfCalendar)
-                @php
+            <?php while($currentDate <= $endOfCalendar): ?>
+                <?php
                     $isCurrentMonth = $currentDate->month === $startDate->month;
                     $isToday = $currentDate->isToday();
                     $dayBookings = $bookings->filter(function($booking) use ($currentDate) {
                         return $currentDate->between($booking->check_in->toDateString(), $booking->check_out->copy()->subDay()->toDateString());
                     });
-                @endphp
+                ?>
 
-                <div class="min-h-[120px] border-r border-b border-gray-700 last:border-r-0 p-2 {{ $isCurrentMonth ? 'bg-gray-800' : 'bg-gray-900' }} {{ $isToday ? 'ring-2 ring-blue-500' : '' }}">
+                <div class="min-h-[120px] border-r border-b border-gray-700 last:border-r-0 p-2 <?php echo e($isCurrentMonth ? 'bg-gray-800' : 'bg-gray-900'); ?> <?php echo e($isToday ? 'ring-2 ring-blue-500' : ''); ?>">
                     <!-- Date Number -->
                     <div class="flex justify-between items-start mb-2">
-                        <span class="text-sm font-medium {{ $isCurrentMonth ? 'text-white' : 'text-gray-500' }} {{ $isToday ? 'bg-blue-500 px-2 py-1 rounded-full' : '' }}">
-                            {{ $currentDate->day }}
+                        <span class="text-sm font-medium <?php echo e($isCurrentMonth ? 'text-white' : 'text-gray-500'); ?> <?php echo e($isToday ? 'bg-blue-500 px-2 py-1 rounded-full' : ''); ?>">
+                            <?php echo e($currentDate->day); ?>
+
                         </span>
-                        @if($isCurrentMonth && $dayBookings->isEmpty())
+                        <?php if($isCurrentMonth && $dayBookings->isEmpty()): ?>
                             <span class="text-xs text-green-400">Available</span>
-                        @endif
+                        <?php endif; ?>
                     </div>
 
                     <!-- Bookings for this day -->
                     <div class="space-y-1">
-                        @foreach($dayBookings->take(3) as $booking)
-                            @php
+                        <?php $__currentLoopData = $dayBookings->take(3); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $booking): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                            <?php
                                 $statusColors = [
                                     'pending' => 'bg-yellow-500',
                                     'confirmed' => 'bg-green-500',
@@ -122,27 +123,27 @@
                                     'completed' => 'bg-purple-500',
                                 ];
                                 $statusColor = $statusColors[$booking->status] ?? 'bg-gray-500';
-                            @endphp
-                            <div class="text-xs {{ $statusColor }} text-white p-1 rounded cursor-pointer hover:opacity-80"
-                                 onclick="showBookingDetails({{ $booking->id }})"
-                                 title="{{ $booking->room->name }} - {{ $booking->user->name }}">
-                                <div class="truncate">{{ $booking->room->name }}</div>
-                                <div class="truncate">{{ $booking->user->name }}</div>
+                            ?>
+                            <div class="text-xs <?php echo e($statusColor); ?> text-white p-1 rounded cursor-pointer hover:opacity-80"
+                                 onclick="showBookingDetails(<?php echo e($booking->id); ?>)"
+                                 title="<?php echo e($booking->room->name); ?> - <?php echo e($booking->user->name); ?>">
+                                <div class="truncate"><?php echo e($booking->room->name); ?></div>
+                                <div class="truncate"><?php echo e($booking->user->name); ?></div>
                             </div>
-                        @endforeach
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
 
-                        @if($dayBookings->count() > 3)
+                        <?php if($dayBookings->count() > 3): ?>
                             <div class="text-xs text-gray-400 p-1">
-                                +{{ $dayBookings->count() - 3 }} more
+                                +<?php echo e($dayBookings->count() - 3); ?> more
                             </div>
-                        @endif
+                        <?php endif; ?>
                     </div>
                 </div>
 
-                @php
+                <?php
                     $currentDate->addDay();
-                @endphp
-            @endwhile
+                ?>
+            <?php endwhile; ?>
         </div>
     </div>
 
@@ -152,7 +153,7 @@
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-blue-100 text-sm">This Month</p>
-                    <p class="text-2xl font-bold">{{ $bookings->count() }}</p>
+                    <p class="text-2xl font-bold"><?php echo e($bookings->count()); ?></p>
                 </div>
                 <div class="bg-blue-500 bg-opacity-50 rounded-full p-3">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -166,7 +167,7 @@
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-green-100 text-sm">Confirmed</p>
-                    <p class="text-2xl font-bold">{{ $bookings->where('status', 'confirmed')->count() }}</p>
+                    <p class="text-2xl font-bold"><?php echo e($bookings->where('status', 'confirmed')->count()); ?></p>
                 </div>
                 <div class="bg-green-500 bg-opacity-50 rounded-full p-3">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -180,7 +181,7 @@
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-yellow-100 text-sm">Pending</p>
-                    <p class="text-2xl font-bold">{{ $bookings->where('status', 'pending')->count() }}</p>
+                    <p class="text-2xl font-bold"><?php echo e($bookings->where('status', 'pending')->count()); ?></p>
                 </div>
                 <div class="bg-yellow-500 bg-opacity-50 rounded-full p-3">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -194,7 +195,7 @@
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-purple-100 text-sm">Completed</p>
-                    <p class="text-2xl font-bold">{{ $bookings->where('status', 'completed')->count() }}</p>
+                    <p class="text-2xl font-bold"><?php echo e($bookings->where('status', 'completed')->count()); ?></p>
                 </div>
                 <div class="bg-purple-500 bg-opacity-50 rounded-full p-3">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -227,9 +228,9 @@
     </div>
 </div>
 
-@push('scripts')
+<?php $__env->startPush('scripts'); ?>
 <script>
-const bookings = @json($bookings->values());
+const bookings = <?php echo json_encode($bookings->values(), 15, 512) ?>;
 
 function showBookingDetails(bookingId) {
     const booking = bookings.find(b => b.id === bookingId);
@@ -308,5 +309,7 @@ document.getElementById('bookingModal').addEventListener('click', function(e) {
     }
 });
 </script>
-@endpush
-@endsection
+<?php $__env->stopPush(); ?>
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('layouts.manager', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\VALESBEACH_LATEST\ValesBeach\resources\views/manager/calendar.blade.php ENDPATH**/ ?>

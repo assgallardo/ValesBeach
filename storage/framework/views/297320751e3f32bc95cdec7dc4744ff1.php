@@ -69,6 +69,27 @@
                     </div>
                 </div>
 
+                <!-- Service Requests -->
+                <div class="bg-green-800 rounded-lg p-6 lg:p-8 hover:bg-green-700 transition-all duration-300 transform hover:scale-105 shadow-lg">
+                    <div class="text-center h-full flex flex-col">
+                        <div class="mb-4">
+                            <svg class="w-12 h-12 mx-auto text-green-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/>
+                            </svg>
+                        </div>
+                        <h3 class="text-2xl lg:text-3xl font-bold text-white mb-6 leading-tight">
+                            Service Requests
+                        </h3>
+                        <p class="text-green-100 text-sm lg:text-base mb-8 flex-grow">
+                            View and manage guest service requests and bookings.
+                        </p>
+                        <a href="<?php echo e(route('manager.service-requests.index')); ?>" 
+                           class="w-full py-3 bg-green-50 text-black font-medium text-lg rounded-lg hover:bg-white transition-colors duration-200 text-center">
+                            View Requests
+                        </a>
+                    </div>
+                </div>
+
                 <!-- Rooms Management -->
                 <div class="bg-green-800 rounded-lg p-6 lg:p-8 hover:bg-green-700 transition-all duration-300 transform hover:scale-105 shadow-lg">
                     <div class="text-center h-full flex flex-col">
@@ -153,6 +174,27 @@
                     </div>
                 </div>
 
+                <!-- Payment Management -->
+                <div class="bg-green-800 rounded-lg p-6 lg:p-8 hover:bg-green-700 transition-all duration-300 transform hover:scale-105 shadow-lg">
+                    <div class="text-center h-full flex flex-col">
+                        <div class="mb-4">
+                            <svg class="w-12 h-12 mx-auto text-green-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v2a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
+                            </svg>
+                        </div>
+                        <h3 class="text-2xl lg:text-3xl font-bold text-white mb-6 leading-tight">
+                            Payment Management
+                        </h3>
+                        <p class="text-green-100 text-sm lg:text-base mb-8 flex-grow">
+                            Monitor guest payments, refunds, and billing status.
+                        </p>
+                        <a href="<?php echo e(route('manager.payments.index')); ?>" 
+                           class="w-full py-3 bg-green-50 text-black font-medium text-lg rounded-lg hover:bg-white transition-colors duration-200 text-center">
+                            Manage Payments
+                        </a>
+                    </div>
+                </div>
+
                 <!-- Maintenance Management -->
                 <div class="bg-green-800 rounded-lg p-6 lg:p-8 hover:bg-green-700 transition-all duration-300 transform hover:scale-105 shadow-lg">
                     <div class="text-center h-full flex flex-col">
@@ -231,4 +273,4 @@
         </div>
     </main>
 <?php $__env->stopSection(); ?>
-<?php echo $__env->make('layouts.admin', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\VALESBEACH_LATEST\ValesBeach\resources\views/manager/dashboard.blade.php ENDPATH**/ ?>
+<?php echo $__env->make('layouts.manager', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\VALESBEACH_LATEST\ValesBeach\resources\views/manager/dashboard.blade.php ENDPATH**/ ?>
