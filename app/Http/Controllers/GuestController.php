@@ -36,7 +36,7 @@ class GuestController extends Controller
         $available_rooms = Room::where('is_available', true)->count();
 
         // Get service requests count for this guest
-        $service_requests_count = ServiceRequest::where('user_id', $user->id)
+        $service_requests_count = ServiceRequest::where('guest_id', $user->id)
                                                ->where('status', '!=', 'cancelled')
                                                ->count();
 
@@ -180,3 +180,4 @@ class GuestController extends Controller
         }
     }
 }
+

@@ -12,19 +12,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // Check if the 'completed' status already exists
-        $hasCompleted = DB::select("SHOW COLUMNS FROM bookings LIKE 'status'");
-
-        if (!empty($hasCompleted)) {
-            // Modify the existing enum to include 'completed'
-            DB::statement("ALTER TABLE bookings MODIFY COLUMN status ENUM('pending', 'confirmed', 'checked_in', 'checked_out', 'cancelled', 'completed') NOT NULL DEFAULT 'pending'");
-        } else {
-            // If status column doesn't exist, add it
+        // For SQLite, we just need to ensure the column exists
+        // Laravel's Blueprint will handle the enum as a string check constraint
+        if (!Schema::hasColumn('bookings', 'status')) {
             Schema::table('bookings', function (Blueprint $table) {
                 $table->enum('status', ['pending', 'confirmed', 'checked_in', 'checked_out', 'cancelled', 'completed'])
                       ->default('pending');
             });
         }
+        // Note: SQLite doesn't support modifying enum values after creation
+        // If status column already exists, this migration assumes it includes all values
     }
 
     /**
@@ -32,7 +29,10 @@ return new class extends Migration
      */
     public function down(): void
     {
-        // Revert back to original enum without 'completed'
-        DB::statement("ALTER TABLE bookings MODIFY COLUMN status ENUM('pending', 'confirmed', 'checked_in', 'checked_out', 'cancelled') NOT NULL DEFAULT 'pending'");
+        // For SQLite, we cannot easily modify enum constraints
+        // This is a no-op for SQLite databases
+        if (Schema::hasColumn('bookings', 'status')) {
+            // Keep the column as-is since SQLite doesn't support enum modification
+        }
     }
 };

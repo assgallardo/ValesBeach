@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.guest')
 
 @section('title', 'Order #' . $foodOrder->order_number . ' - ValesBeach Resort')
 

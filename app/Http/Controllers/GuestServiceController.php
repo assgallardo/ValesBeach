@@ -269,7 +269,6 @@ class GuestServiceController extends Controller
             $serviceRequests = ServiceRequest::with(['service']) // Add this relationship
                 ->where(function($query) use ($user) {
                     $query->where('guest_id', $user->id)
-                          ->orWhere('user_id', $user->id)
                           ->orWhere('guest_email', $user->email);
                 })
                 ->orderBy('created_at', 'desc')
@@ -278,7 +277,6 @@ class GuestServiceController extends Controller
             // Calculate stats
             $allRequests = ServiceRequest::where(function($query) use ($user) {
                 $query->where('guest_id', $user->id)
-                      ->orWhere('user_id', $user->id)
                       ->orWhere('guest_email', $user->email);
             });
 
@@ -336,7 +334,6 @@ class GuestServiceController extends Controller
     public function requestsHistory()
     {
         $serviceRequests = ServiceRequest::where('guest_id', auth()->id())
-            ->orWhere('user_id', auth()->id())
             ->orderBy('created_at', 'desc')
             ->paginate(10);
         
@@ -363,7 +360,6 @@ class GuestServiceController extends Controller
         
         $serviceRequest = ServiceRequest::where(function($query) use ($user) {
             $query->where('guest_id', $user->id)
-                  ->orWhere('user_id', $user->id)
                   ->orWhere('guest_email', $user->email);
         })
         ->findOrFail($id);
@@ -388,7 +384,6 @@ class GuestServiceController extends Controller
         
         $serviceRequest = ServiceRequest::where(function($query) use ($user) {
             $query->where('guest_id', $user->id)
-                  ->orWhere('user_id', $user->id)
                   ->orWhere('guest_email', $user->email);
         })
         ->findOrFail($id);
@@ -430,7 +425,6 @@ class GuestServiceController extends Controller
         
         $serviceRequest = ServiceRequest::where(function($query) use ($user) {
             $query->where('guest_id', $user->id)
-                  ->orWhere('user_id', $user->id)
                   ->orWhere('guest_email', $user->email);
         })
         ->findOrFail($id);
@@ -481,7 +475,6 @@ class GuestServiceController extends Controller
         try {
             $deletedCount = ServiceRequest::where(function($query) use ($user) {
                 $query->where('guest_id', $user->id)
-                      ->orWhere('user_id', $user->id)
                       ->orWhere('guest_email', $user->email);
             })
             ->where('status', 'cancelled')
