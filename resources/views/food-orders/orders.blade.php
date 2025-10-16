@@ -62,7 +62,7 @@
                     
                     <div class="text-right">
                         <div class="text-2xl font-bold text-gray-900">
-                            ${{ $order->formatted_total_amount }}
+                            {{ $order->formatted_total_amount }}
                         </div>
                         <div class="text-sm text-gray-600">
                             {{ $order->orderItems->sum('quantity') }} item{{ $order->orderItems->sum('quantity') !== 1 ? 's' : '' }}
@@ -92,7 +92,7 @@
                         <div class="flex-1 min-w-0">
                             <p class="font-medium text-gray-900 truncate">{{ $item->menuItem->name }}</p>
                             <p class="text-sm text-gray-600">
-                                Qty: {{ $item->quantity }} × ${{ $item->formatted_unit_price }}
+                                Qty: {{ $item->quantity }} × {{ $item->formatted_price }}
                             </p>
                         </div>
                     </div>

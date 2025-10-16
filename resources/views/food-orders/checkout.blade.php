@@ -5,7 +5,7 @@
 @section('content')
 <div class="container mx-auto px-4 py-8">
     <div class="flex items-center mb-8">
-        <a href="{{ route('guest.food-orders.cart') }}" 
+        <a href="{{ route('guest.food-orders.cart') }}"
            class="text-blue-600 hover:text-blue-800 mr-4">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
@@ -14,10 +14,26 @@
         <h1 class="text-3xl font-bold text-gray-900">Checkout</h1>
     </div>
 
+    <!-- Error Messages -->
+    @if($errors->any())
+    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
+        <strong class="font-bold">Please fix the following errors:</strong>
+        <ul class="list-disc list-inside mt-2">
+            @foreach($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+    @endif
+
+    @if(session('error'))
+    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
+        {{ session('error') }}
+    </div>
+    @endif
+
     <form action="{{ route('guest.food-orders.place-order') }}" method="POST" class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        @csrf
-        
-        <!-- Order Details Form -->
+        @csrf        <!-- Order Details Form -->
         <div class="lg:col-span-2 space-y-6">
             <!-- Delivery Information -->
             <div class="bg-white rounded-lg shadow-md p-6">
@@ -28,11 +44,11 @@
                     <label class="block text-sm font-medium text-gray-700 mb-2">Delivery Type</label>
                     <div class="space-y-2">
                         <label class="flex items-center">
-                            <input type="radio" name="delivery_type" value="room_service" 
+                            <input type="radio" name="delivery_type" value="room_service"
                                    class="mr-2" {{ old('delivery_type', 'room_service') == 'room_service' ? 'checked' : '' }}
                                    onchange="toggleDeliveryLocation()">
                             <span class="font-medium">Room Service</span>
-                            <span class="text-sm text-gray-600 ml-2">(+$5.00 delivery fee)</span>
+                            <span class="text-sm text-gray-600 ml-2">(+₱5.00 delivery fee)</span>
                         </label>
                         <label class="flex items-center">
                             <input type="radio" name="delivery_type" value="pickup" 
@@ -129,7 +145,7 @@
                             @endif
                         </div>
                         <span class="font-semibold text-gray-900 ml-2">
-                            ${{ number_format($item['total'], 2) }}
+                            ₱{{ number_format($item['total'], 2) }}
                         </span>
                     </div>
                     @endforeach
@@ -139,20 +155,20 @@
                 <div class="border-t border-gray-200 pt-4 space-y-2">
                     <div class="flex justify-between">
                         <span class="text-gray-600">Subtotal</span>
-                        <span class="font-semibold">${{ number_format($subtotal, 2) }}</span>
+                        <span class="font-semibold">₱{{ number_format($subtotal, 2) }}</span>
                     </div>
                     <div class="flex justify-between">
                         <span class="text-gray-600">Delivery Fee</span>
-                        <span class="font-semibold" id="delivery-fee">$0.00</span>
+                        <span class="font-semibold" id="delivery-fee">₱0.00</span>
                     </div>
                     <div class="flex justify-between">
                         <span class="text-gray-600">Tax (8%)</span>
-                        <span class="font-semibold" id="tax-amount">$0.00</span>
+                        <span class="font-semibold" id="tax-amount">₱0.00</span>
                     </div>
                     <div class="border-t border-gray-200 pt-2">
                         <div class="flex justify-between text-lg font-bold">
                             <span>Total</span>
-                            <span id="final-total">$0.00</span>
+                            <span id="final-total">₱0.00</span>
                         </div>
                     </div>
                 </div>
@@ -192,42 +208,40 @@ function toggleDeliveryLocation() {
     const locationSection = document.getElementById('delivery-location-section');
     const locationLabel = document.getElementById('location-label');
     const locationInput = document.getElementById('delivery_location');
-    
+
     if (deliveryType === 'room_service') {
         locationSection.style.display = 'block';
-        locationLabel.textContent = 'Room Number';
+        locationLabel.textContent = 'Room Number (Optional)';
         locationInput.placeholder = 'Enter room number';
-        locationInput.required = true;
+        locationInput.required = false;
     } else if (deliveryType === 'pickup') {
         locationSection.style.display = 'block';
-        locationLabel.textContent = 'Contact Number';
+        locationLabel.textContent = 'Contact Number (Optional)';
         locationInput.placeholder = 'Enter phone number for pickup notification';
-        locationInput.required = true;
+        locationInput.required = false;
     } else {
         locationSection.style.display = 'block';
         locationLabel.textContent = 'Table Preference (Optional)';
         locationInput.placeholder = 'Preferred seating area or table number';
         locationInput.required = false;
     }
-}
-
-function calculateTotal() {
+}function calculateTotal() {
     const subtotal = {{ $subtotal }};
     const deliveryType = document.querySelector('input[name="delivery_type"]:checked').value;
-    
+
     // Calculate delivery fee
     const deliveryFee = deliveryType === 'room_service' ? 5.00 : 0.00;
-    
+
     // Calculate tax (8% on subtotal + delivery fee)
     const taxAmount = (subtotal + deliveryFee) * 0.08;
-    
+
     // Calculate total
     const total = subtotal + deliveryFee + taxAmount;
-    
+
     // Update display
-    document.getElementById('delivery-fee').textContent = '$' + deliveryFee.toFixed(2);
-    document.getElementById('tax-amount').textContent = '$' + taxAmount.toFixed(2);
-    document.getElementById('final-total').textContent = '$' + total.toFixed(2);
+    document.getElementById('delivery-fee').textContent = '₱' + deliveryFee.toFixed(2);
+    document.getElementById('tax-amount').textContent = '₱' + taxAmount.toFixed(2);
+    document.getElementById('final-total').textContent = '₱' + total.toFixed(2);
 }
 </script>
 @endsection

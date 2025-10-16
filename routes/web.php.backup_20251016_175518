@@ -404,30 +404,7 @@ Route::prefix('staff')->name('staff.')->middleware(['auth', 'user.status', 'role
     });
 });
 
-
-// Staff Routes - Menu Management (Staff can edit menu items)
-Route::prefix('staff')->name('staff.')->middleware(['auth', 'user.status', 'role:staff,manager,admin'])->group(function () {
-    Route::prefix('menu')->name('menu.')->group(function () {
-        Route::get('/', [StaffMenuController::class, 'index'])->name('index');
-        Route::get('/create', [StaffMenuController::class, 'create'])->name('create');
-        Route::post('/', [StaffMenuController::class, 'store'])->name('store');
-        Route::get('/{menuItem}/edit', [StaffMenuController::class, 'edit'])->name('edit');
-        Route::put('/{menuItem}', [StaffMenuController::class, 'update'])->name('update');
-        Route::delete('/{menuItem}', [StaffMenuController::class, 'destroy'])->name('destroy');
-        Route::post('/{menuItem}/toggle-availability', [StaffMenuController::class, 'toggleAvailability'])->name('toggle-availability');
-        Route::post('/{menuItem}/toggle-featured', [StaffMenuController::class, 'toggleFeatured'])->name('toggle-featured');
-    });
-});
-
-// Staff & Manager Routes - Food Order Management (View and manage customer orders)
-Route::prefix('staff')->name('staff.')->middleware(['auth', 'user.status', 'role:staff,manager,admin'])->group(function () {
-    Route::prefix('orders')->name('orders.')->group(function () {
-        Route::get('/', [StaffFoodOrderController::class, 'index'])->name('index');
-        Route::get('/statistics', [StaffFoodOrderController::class, 'statistics'])->name('statistics');
-        Route::get('/{foodOrder}', [StaffFoodOrderController::class, 'show'])->name('show');
-        Route::post('/{foodOrder}/status', [StaffFoodOrderController::class, 'updateStatus'])->name('update-status');
-    });
-});// ADD THIS EXPLICIT ROUTE RIGHT HERE
+// ADD THIS EXPLICIT ROUTE RIGHT HERE
 Route::post('guest/services/submit', [App\Http\Controllers\GuestServiceController::class, 'store'])
     ->name('guest.services.store')
     ->middleware(['auth', 'user.status', 'role:guest']);
@@ -582,4 +559,3 @@ Route::prefix('manager')->name('manager.')->middleware(['auth', 'user.status', '
 
 // Quick Book Room (show booking form for a specific room)
 Route::get('/bookings/quick-book/{room}', [App\Http\Controllers\ManagerController::class, 'quickBookRoom'])->name('bookings.quick-book');
-

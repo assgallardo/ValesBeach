@@ -152,16 +152,45 @@ class MenuItem extends Model
     public function getDietaryBadgesAttribute()
     {
         $badges = [];
-        
-        if ($this->is_vegetarian) $badges[] = ['label' => 'Vegetarian', 'color' => 'green', 'icon' => '🥬'];
-        if ($this->is_vegan) $badges[] = ['label' => 'Vegan', 'color' => 'emerald', 'icon' => '🌱'];
-        if ($this->is_gluten_free) $badges[] = ['label' => 'Gluten-Free', 'color' => 'blue', 'icon' => '🌾'];
-        if ($this->is_spicy) $badges[] = ['label' => 'Spicy', 'color' => 'red', 'icon' => '🌶️'];
-        
-        return $badges;
-    }
 
-    /**
+        if ($this->is_vegetarian) {
+            $badges[] = [
+                'label' => 'Vegetarian',
+                'color' => 'green',
+                'icon' => '🥬',
+                'class' => 'bg-green-100 text-green-800'
+            ];
+        }
+        
+        if ($this->is_vegan) {
+            $badges[] = [
+                'label' => 'Vegan',
+                'color' => 'emerald',
+                'icon' => '🌱',
+                'class' => 'bg-emerald-100 text-emerald-800'
+            ];
+        }
+        
+        if ($this->is_gluten_free) {
+            $badges[] = [
+                'label' => 'Gluten-Free',
+                'color' => 'blue',
+                'icon' => '🌾',
+                'class' => 'bg-blue-100 text-blue-800'
+            ];
+        }
+        
+        if ($this->is_spicy) {
+            $badges[] = [
+                'label' => 'Spicy',
+                'color' => 'red',
+                'icon' => '🌶️',
+                'class' => 'bg-red-100 text-red-800'
+            ];
+        }
+
+        return $badges;
+    }    /**
      * Get popularity score based on order count.
      */
     public function getPopularityScoreAttribute()

@@ -4,6 +4,14 @@
 
 @section('content')
 <div class="container mx-auto px-4 py-8">
+    <!-- Success Message -->
+    @if(session('success'))
+    <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-6">
+        <strong class="font-bold">Success!</strong>
+        <span class="block sm:inline">{{ session('success') }}</span>
+    </div>
+    @endif
+
     <!-- Header -->
     <div class="flex justify-between items-center mb-8">
         <div>
@@ -198,10 +206,10 @@
                                 Qty: {{ $item->quantity }}
                             </div>
                             <div class="text-sm text-gray-600 mb-1">
-                                ${{ $item->formatted_unit_price }} each
+                                {{ $item->formatted_price }} each
                             </div>
                             <div class="text-lg font-bold text-gray-900">
-                                ${{ $item->formatted_total_price }}
+                                {{ $item->formatted_total }}
                             </div>
                         </div>
                     </div>
@@ -240,22 +248,22 @@
                 <div class="border-t border-gray-200 pt-4 space-y-2">
                     <div class="flex justify-between">
                         <span class="text-gray-600">Subtotal</span>
-                        <span class="font-semibold">${{ $foodOrder->formatted_subtotal }}</span>
+                        <span class="font-semibold">{{ $foodOrder->formatted_subtotal }}</span>
                     </div>
                     @if($foodOrder->delivery_fee > 0)
                     <div class="flex justify-between">
                         <span class="text-gray-600">Delivery Fee</span>
-                        <span class="font-semibold">${{ $foodOrder->formatted_delivery_fee }}</span>
+                        <span class="font-semibold">{{ $foodOrder->formatted_delivery_fee }}</span>
                     </div>
                     @endif
                     <div class="flex justify-between">
                         <span class="text-gray-600">Tax</span>
-                        <span class="font-semibold">${{ $foodOrder->formatted_tax_amount }}</span>
+                        <span class="font-semibold">{{ $foodOrder->formatted_tax_amount }}</span>
                     </div>
                     <div class="border-t border-gray-200 pt-2">
                         <div class="flex justify-between text-lg font-bold">
                             <span>Total</span>
-                            <span>${{ $foodOrder->formatted_total_amount }}</span>
+                            <span>{{ $foodOrder->formatted_total_amount }}</span>
                         </div>
                     </div>
                 </div>

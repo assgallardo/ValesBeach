@@ -145,9 +145,9 @@ class FoodOrderController extends Controller
     public function checkout()
     {
         $cart = session('food_cart', []);
-        
+
         if (empty($cart)) {
-            return redirect()->route('food-orders.menu')->with('error', 'Your cart is empty');
+            return redirect()->route('guest.food-orders.menu')->with('error', 'Your cart is empty');
         }
 
         $cartItems = [];
@@ -181,20 +181,18 @@ class FoodOrderController extends Controller
     {
         $request->validate([
             'delivery_type' => 'required|in:room_service,pickup,dining_room',
-            'delivery_location' => 'required_if:delivery_type,room_service|string|max:50',
+            'delivery_location' => 'nullable|string|max:50',
             'special_instructions' => 'nullable|string|max:1000',
-            'requested_delivery_time' => 'nullable|date|after:now'
+            'requested_delivery_time' => 'nullable|date'
         ]);
 
         $cart = session('food_cart', []);
-        
+
         if (empty($cart)) {
-            return redirect()->route('food-orders.menu')->with('error', 'Your cart is empty');
+            return redirect()->route('guest.food-orders.menu')->with('error', 'Your cart is empty');
         }
 
-        DB::beginTransaction();
-        
-        try {
+        DB::beginTransaction();        try {
             // Calculate totals
             $subtotal = 0;
             $validItems = [];
@@ -263,7 +261,7 @@ class FoodOrderController extends Controller
             // Clear cart
             session()->forget('food_cart');
 
-            return redirect()->route('food-orders.show', $foodOrder)->with('success', 'Your order has been placed successfully!');
+            return redirect()->route('guest.food-orders.show', $foodOrder)->with('success', 'Your order has been placed successfully!');
 
         } catch (\Exception $e) {
             DB::rollback();

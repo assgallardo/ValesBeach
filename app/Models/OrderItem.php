@@ -18,7 +18,8 @@ class OrderItem extends Model
         'food_order_id',
         'menu_item_id',
         'quantity',
-        'price',
+        'unit_price',
+        'total_price',
         'special_instructions',
     ];
 
@@ -29,7 +30,8 @@ class OrderItem extends Model
      */
     protected $casts = [
         'quantity' => 'integer',
-        'price' => 'decimal:2',
+        'unit_price' => 'decimal:2',
+        'total_price' => 'decimal:2',
     ];
 
     /**
@@ -49,19 +51,19 @@ class OrderItem extends Model
     }
 
     /**
-     * Get the formatted price.
+     * Get the formatted unit price.
      */
     public function getFormattedPriceAttribute()
     {
-        return '₱' . number_format((float)$this->price, 2);
+        return '₱' . number_format((float)$this->unit_price, 2);
     }
 
     /**
-     * Get the formatted total (price * quantity).
+     * Get the formatted total price.
      */
     public function getFormattedTotalAttribute()
     {
-        return '₱' . number_format((float)($this->price * $this->quantity), 2);
+        return '₱' . number_format((float)$this->total_price, 2);
     }
 
     /**
@@ -69,7 +71,7 @@ class OrderItem extends Model
      */
     public function getTotalAttribute()
     {
-        return $this->price * $this->quantity;
+        return $this->total_price;
     }
 
     /**

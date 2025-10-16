@@ -104,10 +104,10 @@
                                 </div>
                                 
                                 <div class="text-sm text-gray-600">
-                                    ${{ $item['menu_item']->formatted_price }} each
+                                    {{ $item['menu_item']->formatted_price }} each
                                 </div>
                                 <div class="text-lg font-bold text-gray-900 item-total">
-                                    ${{ number_format($item['total'], 2) }}
+                                    ₱{{ number_format($item['total'], 2) }}
                                 </div>
                             </div>
                         </div>
@@ -125,7 +125,7 @@
                 <div class="space-y-2 mb-4">
                     <div class="flex justify-between">
                         <span class="text-gray-600">Subtotal</span>
-                        <span class="font-semibold" id="subtotal">${{ number_format($subtotal, 2) }}</span>
+                        <span class="font-semibold" id="subtotal">₱{{ number_format($subtotal, 2) }}</span>
                     </div>
                     <div class="flex justify-between text-sm text-gray-500">
                         <span>Delivery fee will be calculated at checkout</span>
@@ -138,7 +138,7 @@
                 <div class="border-t border-gray-200 pt-4 mb-6">
                     <div class="flex justify-between text-lg font-bold">
                         <span>Items Total</span>
-                        <span id="total">${{ number_format($subtotal, 2) }}</span>
+                        <span id="total">₱{{ number_format($subtotal, 2) }}</span>
                     </div>
                 </div>
                 

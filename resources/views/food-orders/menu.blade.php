@@ -46,9 +46,9 @@
                 <div class="p-4">
                     <div class="flex justify-between items-start mb-2">
                         <h3 class="font-semibold text-lg text-gray-900">{{ $item->name }}</h3>
-                        <span class="text-lg font-bold text-blue-600">${{ $item->formatted_price }}</span>
+                        <span class="text-lg font-bold text-blue-600">{{ $item->formatted_price }}</span>
                     </div>
-                    
+
                     @if($item->description)
                     <p class="text-gray-600 text-sm mb-3">{{ $item->description }}</p>
                     @endif
@@ -147,9 +147,9 @@
                         </p>
                         @endif
                     </div>
-                    
+
                     <div class="ml-4 text-right">
-                        <span class="text-xl font-bold text-blue-600">${{ $item->formatted_price }}</span>
+                        <span class="text-xl font-bold text-blue-600">{{ $item->formatted_price }}</span>
                     </div>
                 </div>
 
