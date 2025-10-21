@@ -195,34 +195,24 @@
 
         <!-- Action Buttons -->
         <div class="mt-8 flex flex-col sm:flex-row gap-4">
-            <a 
-                href="{{ route('guest.bookings.show', $payment->booking) }}" 
+            <a
+                href="{{ route('guest.bookings.show', $payment->booking) }}"
                 class="flex-1 bg-green-600 text-white px-6 py-3 rounded-lg font-medium text-center hover:bg-green-700 transition-colors"
             >
                 <i class="fas fa-bed mr-2"></i>
                 View Booking
             </a>
-            
-            @if($payment->booking->invoice)
-            <a 
-                href="{{ route('invoices.show', $payment->booking->invoice) }}" 
-                class="flex-1 bg-purple-600 text-white px-6 py-3 rounded-lg font-medium text-center hover:bg-purple-700 transition-colors"
-            >
-                <i class="fas fa-file-invoice mr-2"></i>
-                View Invoice
-            </a>
-            @endif
-            
-            <a 
-                href="{{ route('payments.history') }}" 
+
+            <a
+                href="{{ route('payments.history') }}"
                 class="flex-1 bg-gray-600 text-white px-6 py-3 rounded-lg font-medium text-center hover:bg-gray-700 transition-colors"
             >
                 <i class="fas fa-history mr-2"></i>
                 Payment History
             </a>
-            
-            <button 
-                onclick="window.print()" 
+
+            <button
+                onclick="window.print()"
                 class="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors"
             >
                 <i class="fas fa-print mr-2"></i>

@@ -14,45 +14,33 @@
         <!-- Quick Actions Section -->
         <div class="mb-6">
             <div class="flex flex-wrap gap-4">
-                <a href="{{ route('invoices.index') }}" 
-                   class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors">
-                    <i class="fas fa-file-invoice mr-2"></i>
-                    View All Invoices
-                </a>
-                <a href="{{ route('guest.bookings') }}" 
+                <a href="{{ route('guest.bookings') }}"
                    class="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-colors">
                     <i class="fas fa-calendar mr-2"></i>
                     My Bookings
                 </a>
-                <a href="{{ route('guest.services.index') }}" 
+                <a href="{{ route('guest.services.index') }}"
                    class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors">
                     <i class="fas fa-concierge-bell mr-2"></i>
                     Services
                 </a>
             </div>
-        </div>
-
-        @if($payments->isEmpty())
+        </div>        @if($payments->isEmpty())
             <!-- Empty State -->
             <div class="bg-gray-800 rounded-lg p-8 text-center">
                 <i class="fas fa-receipt text-6xl text-gray-600 mb-4"></i>
                 <h3 class="text-xl font-semibold text-green-50 mb-2">No Payments Yet</h3>
                 <p class="text-gray-400 mb-6">You haven't made any payments yet. Make a booking to get started!</p>
                 <div class="flex justify-center space-x-4">
-                    <a href="{{ route('guest.rooms.browse') }}" 
+                    <a href="{{ route('guest.rooms.browse') }}"
                        class="inline-flex items-center px-6 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors">
                         <i class="fas fa-bed mr-2"></i>
                         Browse Rooms
                     </a>
-                    <a href="{{ route('guest.services.index') }}" 
+                    <a href="{{ route('guest.services.index') }}"
                        class="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors">
                         <i class="fas fa-concierge-bell mr-2"></i>
                         Browse Services
-                    </a>
-                    <a href="{{ route('invoices.index') }}" 
-                       class="inline-flex items-center px-6 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-colors">
-                        <i class="fas fa-file-invoice mr-2"></i>
-                        View Invoices
                     </a>
                 </div>
             </div>
@@ -227,20 +215,11 @@
                                 Booking
                             </a>
                             @elseif($payment->serviceRequest && Route::has('guest.service-requests.show'))
-                            <a href="{{ route('guest.service-requests.show', $payment->serviceRequest->id) }}" 
+                            <a href="{{ route('guest.service-requests.show', $payment->serviceRequest->id) }}"
                                class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
                                title="View Service Request">
                                 <i class="fas fa-concierge-bell mr-2"></i>
                                 Service
-                            </a>
-                            @endif
-                            
-                            @if($payment->booking && $payment->booking->invoice && Route::has('invoices.show'))
-                            <a href="{{ route('invoices.show', $payment->booking->invoice) }}" 
-                               class="inline-flex items-center px-4 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 transition-colors"
-                               title="View Invoice">
-                                <i class="fas fa-file-invoice mr-2"></i>
-                                Invoice
                             </a>
                             @endif
                         </div>
@@ -257,25 +236,8 @@
             @endif
         @endif
 
-        <!-- Quick Stats with Invoice Stats -->
-        <div class="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            <!-- Clickable Invoice Stats Card -->
-            <div class="bg-gray-800 rounded-lg p-4 hover:bg-gray-750 transition-colors cursor-pointer" 
-                 onclick="window.location.href='{{ route('invoices.index') }}'">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <i class="fas fa-file-invoice text-indigo-400 text-2xl"></i>
-                    </div>
-                    <div class="ml-4">
-                        <p class="text-sm text-gray-400">My Invoices</p>
-                        <p class="text-lg font-semibold text-green-50">
-                            {{ auth()->user()->invoices()->count() ?? 0 }}
-                        </p>
-                        <p class="text-xs text-indigo-400 mt-1">Click to view all</p>
-                    </div>
-                </div>
-            </div>
-            
+        <!-- Quick Stats -->
+        <div class="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-6">
             <div class="bg-gray-800 rounded-lg p-4">
                 <div class="flex items-center">
                     <div class="flex-shrink-0">
@@ -288,9 +250,7 @@
                         </p>
                     </div>
                 </div>
-            </div>
-            
-            <div class="bg-gray-800 rounded-lg p-4">
+            </div>            <div class="bg-gray-800 rounded-lg p-4">
                 <div class="flex items-center">
                     <div class="flex-shrink-0">
                         <i class="fas fa-bed text-blue-400 text-2xl"></i>
@@ -319,17 +279,12 @@
             </div>
         </div>
 
-        <!-- Enhanced Back Section with Multiple Options -->
-        <div class="mt-8 flex justify-center space-x-4">
-            <a href="{{ route('guest.dashboard') }}" 
+        <!-- Enhanced Back Section -->
+        <div class="mt-8 flex justify-center">
+            <a href="{{ route('guest.dashboard') }}"
                class="inline-flex items-center px-6 py-3 bg-gray-600 text-white rounded-lg font-medium hover:bg-gray-700 transition-colors">
                 <i class="fas fa-arrow-left mr-2"></i>
                 Back to Dashboard
-            </a>
-            <a href="{{ route('invoices.index') }}" 
-               class="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors">
-                <i class="fas fa-file-invoice mr-2"></i>
-                All Invoices
             </a>
         </div>
     </div>

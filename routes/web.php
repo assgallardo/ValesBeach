@@ -473,17 +473,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 });
 
-// Invoice routes
-Route::middleware(['auth'])->group(function () {
+// Invoice routes - Only accessible by admin, manager, and staff
+Route::middleware(['auth', 'user.status', 'role:admin,manager,staff'])->group(function () {
     Route::get('/invoices', [InvoiceController::class, 'index'])->name('invoices.index');
     Route::get('/invoices/{invoice}', [InvoiceController::class, 'show'])->name('invoices.show');
     Route::get('/invoices/{invoice}/download', [InvoiceController::class, 'download'])->name('invoices.download');
-    
+
     // Generate invoice for a specific booking (this matches your existing controller method)
     Route::post('/bookings/{booking}/invoice/generate', [InvoiceController::class, 'generate'])->name('invoices.generate');
-});
-
-// Add this to your admin routes section in web.php
+});// Add this to your admin routes section in web.php
 Route::prefix('admin')->name('admin.')->middleware(['auth', 'user.status', 'role:admin'])->group(function () {
     // ... existing admin routes ...
     
