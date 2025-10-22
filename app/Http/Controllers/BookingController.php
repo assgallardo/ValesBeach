@@ -80,6 +80,7 @@ class BookingController extends Controller
     public function myBookings()
     {
         $bookings = auth()->user()->bookings()
+            ->whereNotIn('status', ['checked_out', 'cancelled', 'completed']) // Only active bookings
             ->with('room')
             ->latest()
             ->paginate(10);
@@ -130,10 +131,26 @@ class BookingController extends Controller
     public function history()
     {
         $bookings = Booking::where('user_id', auth()->id())
+            ->whereIn('status', ['checked_out', 'cancelled', 'completed']) // Only completed/cancelled
             ->with(['room', 'payments', 'invoice'])
             ->orderBy('created_at', 'desc')
             ->paginate(10);
 
         return view('guest.bookings.history', compact('bookings'));
+    }
+
+    /**
+     * Destroy a booking.
+     */
+    public function destroy($id)
+    {
+        $booking = Booking::where('id', $id)
+            ->where('user_id', auth()->id())
+            ->where('status', 'cancelled')
+            ->firstOrFail();
+
+        $booking->delete();
+
+        return redirect()->route('guest.bookings.history')->with('success', 'Cancelled booking deleted successfully.');
     }
 }

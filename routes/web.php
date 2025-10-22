@@ -427,7 +427,8 @@ Route::prefix('staff')->name('staff.')->middleware(['auth', 'user.status', 'role
         Route::get('/{foodOrder}', [StaffFoodOrderController::class, 'show'])->name('show');
         Route::post('/{foodOrder}/status', [StaffFoodOrderController::class, 'updateStatus'])->name('update-status');
     });
-});// ADD THIS EXPLICIT ROUTE RIGHT HERE
+});
+// ADD THIS EXPLICIT ROUTE RIGHT HERE
 Route::post('guest/services/submit', [App\Http\Controllers\GuestServiceController::class, 'store'])
     ->name('guest.services.store')
     ->middleware(['auth', 'user.status', 'role:guest']);
@@ -481,7 +482,8 @@ Route::middleware(['auth', 'user.status', 'role:admin,manager,staff'])->group(fu
 
     // Generate invoice for a specific booking (this matches your existing controller method)
     Route::post('/bookings/{booking}/invoice/generate', [InvoiceController::class, 'generate'])->name('invoices.generate');
-});// Add this to your admin routes section in web.php
+});
+// Add this to your admin routes section in web.php
 Route::prefix('admin')->name('admin.')->middleware(['auth', 'user.status', 'role:admin'])->group(function () {
     // ... existing admin routes ...
     
@@ -580,4 +582,7 @@ Route::prefix('manager')->name('manager.')->middleware(['auth', 'user.status', '
 
 // Quick Book Room (show booking form for a specific room)
 Route::get('/bookings/quick-book/{room}', [App\Http\Controllers\ManagerController::class, 'quickBookRoom'])->name('bookings.quick-book');
+
+// DELETE ROUTE FOR GUEST BOOKINGS
+Route::delete('/guest/bookings/{id}', [App\Http\Controllers\BookingController::class, 'destroy'])->name('guest.bookings.destroy');
 
