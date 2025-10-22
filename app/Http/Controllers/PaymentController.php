@@ -31,9 +31,8 @@ class PaymentController extends Controller
         }
 
         $remainingBalance = $booking->remaining_balance;
-        $minimumPayment = max(1, floor($booking->total_price * 0.5)); // 50% of total price
         
-        return view('payments.create', compact('booking', 'remainingBalance', 'minimumPayment'));
+        return view('payments.create', compact('booking', 'remainingBalance'));
     }
 
     /**
