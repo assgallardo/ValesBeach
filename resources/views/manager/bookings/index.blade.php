@@ -3,63 +3,65 @@
 @section('content')
 <div class="container mx-auto px-4 lg:px-8 py-8">
     <!-- Page Title -->
-    <div class="mb-8 flex justify-between items-center">
-        <div>
-            <h1 class="text-3xl font-bold text-white">Reservations Management</h1>
-            <p class="text-gray-400 mt-2">View and manage all resort bookings</p>
-        </div>
-        @if(in_array(auth()->user()->role, ['admin', 'manager']))
-        <div class="flex space-x-3">
-            <!-- Quick Room Selection for Booking (Same as Admin) -->
-            <div x-data="{ open: false }" class="relative">
-                <button @click="open = !open" 
-                        class="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors duration-200 shadow-lg">
-                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
-                    </svg>
-                    Quick Book Room
-                    <svg class="w-4 h-4 ml-2 transition-transform" :class="{'rotate-180': open}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                    </svg>
-                </button>
-                
-                <div x-show="open" 
-                     x-transition:enter="transition ease-out duration-100"
-                     x-transition:enter-start="transform opacity-0 scale-95"
-                     x-transition:enter-end="transform opacity-100 scale-100"
-                     x-transition:leave="transition ease-in duration-75"
-                     x-transition:leave-start="transform opacity-100 scale-100"
-                     x-transition:leave-end="transform opacity-0 scale-95"
-                     @click.away="open = false"
-                     class="absolute right-0 mt-2 w-64 bg-gray-800 rounded-md shadow-lg py-1 z-50 max-h-64 overflow-y-auto"
-                     style="display: none;">
-                    <div class="px-4 py-2 text-sm text-gray-300 border-b border-gray-700">Select Room to Book:</div>
-                    @php
-                        $availableRooms = \App\Models\Room::where('is_available', true)->get();
-                    @endphp
-                    @foreach($availableRooms as $room)
-                        <a href="{{ route('manager.bookings.createFromRoom', $room) }}" 
-                           class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white">
-                            <div class="font-medium">{{ $room->name }}</div>
-                            <div class="text-xs text-gray-400">₱{{ number_format((float)$room->price, 2) }}/night • {{ $room->capacity }} guests</div>
-                        </a>
-                    @endforeach
-                    @if($availableRooms->isEmpty())
-                        <div class="px-4 py-2 text-sm text-gray-400">No available rooms</div>
-                    @endif
-                </div>
+    <div class="mb-8">
+        <div class="flex justify-between items-center">
+            <div>
+                <h1 class="text-3xl font-bold text-white">Manage Reservations</h1>
+                <p class="text-gray-400 mt-2">View and manage all resort reservations</p>
             </div>
+            @if(in_array(auth()->user()->role, ['admin', 'manager', 'staff']))
+            <div class="flex space-x-3">
+                <!-- Quick Room Selection for Booking -->
+                <div x-data="{ open: false }" class="relative">
+                    <button @click="open = !open" 
+                            class="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors duration-200 shadow-lg">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                        </svg>
+                        Quick Book Room
+                        <svg class="w-4 h-4 ml-2 transition-transform" :class="{'rotate-180': open}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                        </svg>
+                    </button>
+                    
+                    <div x-show="open" 
+                         x-transition:enter="transition ease-out duration-100"
+                         x-transition:enter-start="transform opacity-0 scale-95"
+                         x-transition:enter-end="transform opacity-100 scale-100"
+                         x-transition:leave="transition ease-in duration-75"
+                         x-transition:leave-start="transform opacity-100 scale-100"
+                         x-transition:leave-end="transform opacity-0 scale-95"
+                         @click.away="open = false"
+                         class="absolute right-0 mt-2 w-64 bg-gray-800 rounded-md shadow-lg py-1 z-50 max-h-64 overflow-y-auto"
+                         style="display: none;">
+                        <div class="px-4 py-2 text-sm text-gray-300 border-b border-gray-700">Select Room to Book:</div>
+                        @php
+                            $availableRooms = \App\Models\Room::where('is_available', true)->get();
+                        @endphp
+                        @foreach($availableRooms as $room)
+                            <a href="{{ route('manager.bookings.createFromRoom', $room) }}" 
+                               class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white">
+                                <div class="font-medium">{{ $room->name }}</div>
+                                <div class="text-xs text-gray-400">₱{{ number_format((float)$room->price, 2) }}/night • {{ $room->capacity }} guests</div>
+                            </a>
+                        @endforeach
+                        @if($availableRooms->isEmpty())
+                            <div class="px-4 py-2 text-sm text-gray-400">No available rooms</div>
+                        @endif
+                    </div>
+                </div>
 
-            <!-- Original Manual Booking -->
-            <a href="{{ route('manager.bookings.create') }}" 
-               class="inline-flex items-center px-6 py-3 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors duration-200 shadow-lg">
-                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-                </svg>
-                Create Manual Booking
-            </a>
+                <!-- Original Manual Booking -->
+                <a href="{{ route('manager.bookings.create') }}" 
+                   class="inline-flex items-center px-6 py-3 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors duration-200 shadow-lg">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                    </svg>
+                    Create Manual Reservation
+                </a>
+            </div>
+            @endif
         </div>
-        @endif
     </div>
 
     <!-- Success Message -->
@@ -86,21 +88,37 @@
     </div>
     @endif
 
+    <!-- Validation Errors -->
+    @if($errors->any())
+    <div class="bg-red-800 border border-red-600 text-red-100 px-6 py-4 rounded-lg mb-8">
+        <div class="font-bold mb-2">Please fix the following errors:</div>
+        <ul class="list-disc list-inside">
+            @foreach($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+    @endif
+
     <!-- Filters -->
     <div class="bg-gray-800 rounded-lg p-6 mb-8">
-        <form action="{{ route('manager.bookings.index') }}" method="GET" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <form action="{{ route('manager.bookings.index') }}" method="GET" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
             <!-- Search -->
             <div>
-                <label class="block text-sm font-medium text-gray-300 mb-2">Search Guest</label>
-                <input type="text" name="search" value="{{ request('search') }}" 
-                       placeholder="Name or email..."
-                       class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400">
+                <label for="search" class="block text-sm font-medium text-gray-300 mb-2">Search</label>
+                <input type="text" 
+                       name="search" 
+                       id="search" 
+                       value="{{ request('search') }}"
+                       placeholder="Guest name, email, or room..."
+                       class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500">
             </div>
 
             <!-- Status Filter -->
             <div>
-                <label class="block text-sm font-medium text-gray-300 mb-2">Status</label>
-                <select name="status" class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white">
+                <label for="status" class="block text-sm font-medium text-gray-300 mb-2">Status</label>
+                <select name="status" id="status" 
+                        class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
                     <option value="">All Statuses</option>
                     <option value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}>Pending</option>
                     <option value="confirmed" {{ request('status') === 'confirmed' ? 'selected' : '' }}>Confirmed</option>
@@ -110,34 +128,58 @@
                 </select>
             </div>
 
-            <!-- Date Range -->
+            <!-- Room Filter -->
             <div>
-                <label class="block text-sm font-medium text-gray-300 mb-2">From Date</label>
-                <input type="date" name="date_from" value="{{ request('date_from') }}"
-                       class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white">
+                <label for="room_id" class="block text-sm font-medium text-gray-300 mb-2">Room</label>
+                <select name="room_id" id="room_id" 
+                        class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="">All Rooms</option>
+                    @php
+                        $rooms = \App\Models\Room::all();
+                    @endphp
+                    @foreach($rooms as $room)
+                        <option value="{{ $room->id }}" {{ request('room_id') == $room->id ? 'selected' : '' }}>
+                            {{ $room->name }}
+                        </option>
+                    @endforeach
+                </select>
             </div>
 
+            <!-- Date From -->
             <div>
-                <label class="block text-sm font-medium text-gray-300 mb-2">To Date</label>
-                <input type="date" name="date_to" value="{{ request('date_to') }}"
-                       class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white">
+                <label for="date_from" class="block text-sm font-medium text-gray-300 mb-2">Check-in From</label>
+                <input type="date" 
+                       name="date_from" 
+                       id="date_from" 
+                       value="{{ request('date_from') }}"
+                       class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
             </div>
 
-            <!-- Filter Buttons -->
-            <div class="md:col-span-2 lg:col-span-4 flex justify-end space-x-4">
-                <a href="{{ route('manager.bookings.index') }}" 
-                   class="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-500 transition-all">
-                    Reset
-                </a>
+            <!-- Date To -->
+            <div>
+                <label for="date_to" class="block text-sm font-medium text-gray-300 mb-2">Check-out To</label>
+                <input type="date" 
+                       name="date_to" 
+                       id="date_to" 
+                       value="{{ request('date_to') }}"
+                       class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+
+            <!-- Actions -->
+            <div class="flex items-end space-x-2">
                 <button type="submit" 
-                        class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-all">
-                    Apply Filters
+                        class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                    Filter
                 </button>
+                <a href="{{ route('manager.bookings.index') }}" 
+                   class="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors">
+                    Clear
+                </a>
             </div>
         </form>
     </div>
 
-<!-- Statistics -->
+    <!-- Statistics -->
     <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
         <div class="bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg p-6 text-white">
             <div class="flex items-center justify-between">
@@ -196,72 +238,63 @@
         </div>
     </div>
 
-    <!-- Bookings Table -->
+    <!-- Reservations Table -->
     <div class="bg-gray-800 rounded-lg shadow-xl overflow-hidden">
         <div class="overflow-x-auto">
             <table class="w-full text-left">
-                <thead class="bg-gray-900 text-white">
+                <thead class="bg-gray-900">
                     <tr>
-                        <th class="px-6 py-4">ID</th>
-                        <th class="px-6 py-4">Guest</th>
-                        <th class="px-6 py-4">Room</th>
-                        <th class="px-6 py-4">Dates & Times</th>
-                        <th class="px-6 py-4">Total Amount</th>
-                        <th class="px-6 py-4">Status</th>
-                        <th class="px-6 py-4">Actions</th>
+                        <th class="px-6 py-4 text-xs font-medium text-gray-300 uppercase tracking-wider">ID</th>
+                        <th class="px-6 py-4 text-xs font-medium text-gray-300 uppercase tracking-wider">Guest</th>
+                        <th class="px-6 py-4 text-xs font-medium text-gray-300 uppercase tracking-wider">Room</th>
+                        <th class="px-6 py-4 text-xs font-medium text-gray-300 uppercase tracking-wider">Dates</th>
+                        <th class="px-6 py-4 text-xs font-medium text-gray-300 uppercase tracking-wider">Total</th>
+                        <th class="px-6 py-4 text-xs font-medium text-gray-300 uppercase tracking-wider">Status</th>
+                        <th class="px-6 py-4 text-xs font-medium text-gray-300 uppercase tracking-wider">Actions</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-700">
-                    @forelse($bookings ?? [] as $booking)
-                    <tr class="text-gray-300 hover:bg-gray-700/50" id="booking-row-{{ $booking->id }}">
+                    @forelse($bookings as $booking)
+                    <tr class="hover:bg-gray-700 transition-colors" id="booking-row-{{ $booking->id }}">
                         <td class="px-6 py-4">
-                            #{{ $booking->id }}
+                            <div class="text-white font-medium">#{{ $booking->id }}</div>
+                            <div class="text-xs text-gray-400">{{ $booking->created_at->format('M d, Y') }}</div>
                         </td>
                         <td class="px-6 py-4">
-                            <div class="text-white">{{ $booking->user->name ?? 'N/A' }}</div>
-                            <div class="text-sm text-gray-400">{{ $booking->user->email ?? 'N/A' }}</div>
+                            <div class="text-white">{{ $booking->user->name }}</div>
+                            <div class="text-sm text-gray-400">{{ $booking->user->email }}</div>
                         </td>
                         <td class="px-6 py-4">
-                            <div class="text-white booking-room-name">{{ $booking->room->name ?? 'Room #' . ($booking->room_id ?? 'N/A') }}</div>
-                            <div class="text-sm text-gray-400 booking-guests">{{ $booking->guests ?? 'N/A' }} guests</div>
+                            <div class="text-white booking-room-name">{{ $booking->room->name }}</div>
+                            <div class="text-sm text-gray-400 booking-guests">{{ $booking->guests }} guests</div>
                         </td>
                         <td class="px-6 py-4 booking-dates">
-                            @if(isset($booking->check_in) && $booking->check_in && isset($booking->check_out) && $booking->check_out)
                             <div class="text-white">{{ $booking->check_in->format('M d, Y') }}</div>
                             <div class="text-sm text-gray-400">{{ $booking->check_in->format('l \a\t g:i A') }}</div>
                             <div class="text-white mt-1">{{ $booking->check_out->format('M d, Y') }}</div>
                             <div class="text-sm text-gray-400">{{ $booking->check_out->format('l \a\t g:i A') }}</div>
-                            @else
-                            <div class="text-gray-400">Date not set</div>
-                            @endif
                         </td>
                         <td class="px-6 py-4">
-                            <div class="text-green-400 font-bold text-lg booking-total">₱{{ number_format($booking->total_price ?? 0, 2) }}</div>
-                            @if(isset($booking->check_in) && $booking->check_in && isset($booking->check_out) && $booking->check_out)
+                            <div class="text-green-400 font-bold text-lg booking-total">{{ $booking->formatted_total_price }}</div>
                             <div class="text-sm text-gray-400 booking-nights">
                                 {{ $booking->check_in->diffInDays($booking->check_out) }} night(s)
                             </div>
-                            @endif
                         </td>
                         <td class="px-6 py-4">
-                            @php
-                                $status = $booking->status ?? 'pending';
-                            @endphp
-                            <span class="px-3 py-1 rounded-full text-xs font-medium
-                                @if($status === 'pending') bg-yellow-100 text-yellow-800
-                                @elseif($status === 'confirmed') bg-green-100 text-green-800
-                                @elseif($status === 'checked_in') bg-blue-100 text-blue-800
-                                @elseif($status === 'checked_out') bg-gray-100 text-gray-800
-                                @elseif($status === 'cancelled') bg-red-100 text-red-800
-                                @elseif($status === 'completed') bg-purple-100 text-purple-800
-                                @else bg-gray-100 text-gray-800
-                                @endif">
-                                {{ ucfirst(str_replace('_', ' ', $status)) }}
+                            <span @class([
+                                'px-3 py-1 rounded-full text-xs font-medium',
+                                'bg-yellow-100 text-yellow-800' => $booking->status === 'pending',
+                                'bg-green-100 text-green-800' => $booking->status === 'confirmed',
+                                'bg-blue-100 text-blue-800' => $booking->status === 'checked_in',
+                                'bg-gray-100 text-gray-800' => $booking->status === 'checked_out',
+                                'bg-red-100 text-red-800' => $booking->status === 'cancelled',
+                                'bg-purple-100 text-purple-800' => $booking->status === 'completed',
+                            ])>
+                                {{ ucfirst(str_replace('_', ' ', $booking->status)) }}
                             </span>
                         </td>
                         <td class="px-6 py-4">
                             <div class="flex items-center space-x-3">
-                                <!-- View Button -->
                                 <a href="{{ route('manager.bookings.show', $booking) }}" 
                                    class="text-blue-400 hover:text-blue-300 transition-colors"
                                    title="View Details">
@@ -272,10 +305,10 @@
                                               d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
                                     </svg>
                                 </a>
-                                
+                                @if(in_array(auth()->user()->role, ['admin', 'manager', 'staff']))
                                 <!-- Edit Booking Details Button -->
                                 <button type="button"
-                                        onclick="editBookingDetails({{ json_encode($booking) }})"
+                                        onclick='editBookingDetails(@json($booking->load(["user", "room"])))'
                                         class="text-green-400 hover:text-green-300 transition-colors"
                                         title="Edit Booking Details">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -283,7 +316,6 @@
                                               d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                                     </svg>
                                 </button>
-                                
                                 <!-- Status Update Button -->
                                 <button type="button"
                                         onclick="updateStatus('{{ $booking->id }}')"
@@ -294,23 +326,14 @@
                                               d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
                                     </svg>
                                 </button>
+                                @endif
                             </div>
                         </td>
                     </tr>
                     @empty
                     <tr>
                         <td colspan="7" class="px-6 py-8 text-center text-gray-400">
-                            <div class="flex flex-col items-center">
-                                <svg class="w-12 h-12 mb-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                                </svg>
-                                <p class="text-lg font-medium mb-2">No bookings found</p>
-                                <p class="text-sm text-gray-500 mb-4">Start by creating your first booking.</p>
-                                <a href="{{ route('manager.bookings.create') }}" 
-                                   class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors duration-200">
-                                    Create New Booking
-                                </a>
-                            </div>
+                            No reservations found.
                         </td>
                     </tr>
                     @endforelse
@@ -319,11 +342,9 @@
         </div>
 
         <!-- Pagination -->
-        @if(isset($bookings) && method_exists($bookings, 'links'))
         <div class="px-6 py-3 bg-gray-900">
-            {{ $bookings->links() }}
+            {{ $bookings->appends(request()->query())->links() }}
         </div>
-        @endif
     </div>
 
     <!-- Edit Booking Details Modal -->
@@ -364,11 +385,11 @@
                                     class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                                 <option value="">Select Room</option>
                                 @php
-                                    $rooms = \App\Models\Room::all();
+                                    $allRooms = \App\Models\Room::all();
                                 @endphp
-                                @foreach($rooms as $room)
-                                    <option value="{{ $room->id }}" data-price="{{ $room->price }}">
-                                        {{ $room->name }} - ₱{{ number_format($room->price, 2) }}/night ({{ $room->capacity }} guests)
+                                @foreach($allRooms as $room)
+                                    <option value="{{ $room->id }}" data-price="{{ $room->price }}" data-capacity="{{ $room->capacity }}">
+                                        {{ $room->name }} - ₱{{ number_format($room->price, 2) }}/night (Max: {{ $room->capacity }} guests)
                                     </option>
                                 @endforeach
                             </select>
@@ -390,9 +411,18 @@
 
                         <!-- Number of Guests -->
                         <div>
-                            <label for="edit_guests" class="block text-sm font-medium text-gray-300 mb-2">Number of Guests</label>
+                            <label for="edit_guests" class="block text-sm font-medium text-gray-300 mb-2">
+                                Number of Guests
+                                <span id="edit_capacity_info" class="text-blue-400 text-xs font-normal ml-2"></span>
+                            </label>
                             <input type="number" name="guests" id="edit_guests" min="1" max="20" required
                                    class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <p id="edit_capacity_warning" class="text-yellow-400 text-sm mt-2 hidden">
+                                <svg class="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                                </svg>
+                                Maximum capacity exceeded!
+                            </p>
                         </div>
 
                         <!-- Special Requests -->
@@ -436,21 +466,14 @@
         <div class="flex items-center justify-center min-h-screen p-4">
             <div class="bg-gray-800 rounded-lg shadow-xl max-w-md w-full">
                 <div class="p-6">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-xl font-semibold text-white">Update Booking Status</h3>
-                        <button type="button" onclick="closeStatusModal()" class="text-gray-400 hover:text-white">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                            </svg>
-                        </button>
-                    </div>
+                    <h3 class="text-xl font-semibold text-white mb-4">Update Booking Status</h3>
                     <form id="statusForm" method="POST" class="space-y-4">
                         @csrf
                         @method('PATCH')
                         <div>
                             <label for="status" class="block text-sm font-medium text-gray-300 mb-2">Status</label>
                             <select name="status" id="status"
-                                    class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                    class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white">
                                 <option value="pending">Pending</option>
                                 <option value="confirmed">Confirmed</option>
                                 <option value="checked_in">Checked In</option>
@@ -459,13 +482,13 @@
                             </select>
                         </div>
                         <div class="flex justify-end space-x-3">
-                            <button type="button" onclick="closeStatusModal()"
-                                    class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-500 transition-colors">
+                            <button type="button" onclick="closeModal()"
+                                    class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-500 transition-colors">
                                 Cancel
                             </button>
                             <button type="submit"
-                                    class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors">
-                                Update Status
+                                    class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-500 transition-colors">
+                                Update
                             </button>
                         </div>
                     </form>
@@ -473,8 +496,8 @@
             </div>
         </div>
     </div>
+
 </div>
-@endsection
 
 @push('scripts')
 <script>
@@ -507,22 +530,59 @@ function editBookingDetails(booking) {
     document.getElementById('edit_guest_email').value = booking.user?.email || 'N/A';
     
     // Populate editable fields
-    document.getElementById('edit_room_id').value = booking.room_id || '';
+    const roomSelect = document.getElementById('edit_room_id');
+    if (roomSelect && booking.room_id) {
+        roomSelect.value = booking.room_id;
+        console.log('Set room to:', booking.room_id, 'Current room:', booking.room?.name);
+    }
+    
     document.getElementById('edit_guests').value = booking.guests || 1;
     document.getElementById('edit_special_requests').value = booking.special_requests || '';
     
-    // Handle dates
+    // Handle dates - convert to local timezone
     if (booking.check_in) {
-        const checkIn = new Date(booking.check_in);
-        document.getElementById('edit_check_in').value = checkIn.toISOString().slice(0, 16);
-    }
-    if (booking.check_out) {
-        const checkOut = new Date(booking.check_out);
-        document.getElementById('edit_check_out').value = checkOut.toISOString().slice(0, 16);
+        try {
+            // Handle both Date objects and string formats
+            const checkIn = typeof booking.check_in === 'string' 
+                ? new Date(booking.check_in) 
+                : booking.check_in;
+            
+            // Format for datetime-local input (YYYY-MM-DDTHH:MM)
+            const year = checkIn.getFullYear();
+            const month = String(checkIn.getMonth() + 1).padStart(2, '0');
+            const day = String(checkIn.getDate()).padStart(2, '0');
+            const hours = String(checkIn.getHours()).padStart(2, '0');
+            const minutes = String(checkIn.getMinutes()).padStart(2, '0');
+            
+            document.getElementById('edit_check_in').value = `${year}-${month}-${day}T${hours}:${minutes}`;
+        } catch (e) {
+            console.error('Error parsing check-in date:', e);
+        }
     }
     
-    // Calculate and display total
-    calculateEditTotal();
+    if (booking.check_out) {
+        try {
+            const checkOut = typeof booking.check_out === 'string' 
+                ? new Date(booking.check_out) 
+                : booking.check_out;
+            
+            const year = checkOut.getFullYear();
+            const month = String(checkOut.getMonth() + 1).padStart(2, '0');
+            const day = String(checkOut.getDate()).padStart(2, '0');
+            const hours = String(checkOut.getHours()).padStart(2, '0');
+            const minutes = String(checkOut.getMinutes()).padStart(2, '0');
+            
+            document.getElementById('edit_check_out').value = `${year}-${month}-${day}T${hours}:${minutes}`;
+        } catch (e) {
+            console.error('Error parsing check-out date:', e);
+        }
+    }
+    
+    // Calculate and display total (after setting all values)
+    setTimeout(() => {
+        calculateEditTotal();
+        updateEditRoomCapacity();
+    }, 100);
     
     // Show modal
     modal.classList.remove('hidden');
@@ -534,6 +594,41 @@ document.getElementById('editBookingForm').addEventListener('submit', function(e
     
     const form = this;
     const formData = new FormData(form);
+    
+    // Validate dates
+    const checkInInput = document.getElementById('edit_check_in');
+    const checkOutInput = document.getElementById('edit_check_out');
+    
+    if (checkInInput.value && checkOutInput.value) {
+        const checkIn = new Date(checkInInput.value);
+        const checkOut = new Date(checkOutInput.value);
+        
+        if (checkOut <= checkIn) {
+            showNotification('Check-out date must be after check-in date!', 'error');
+            return;
+        }
+        
+        const nights = Math.ceil((checkOut - checkIn) / (1000 * 60 * 60 * 24));
+        if (nights < 1) {
+            showNotification('Booking must be for at least 1 night!', 'error');
+            return;
+        }
+    }
+    
+    // Validate room capacity
+    const guestsInput = document.getElementById('edit_guests');
+    const maxCapacity = parseInt(guestsInput.max) || 20;
+    const currentGuests = parseInt(guestsInput.value) || 0;
+    
+    if (currentGuests > maxCapacity) {
+        showNotification(`Number of guests (${currentGuests}) exceeds room capacity (${maxCapacity})!`, 'error');
+        return;
+    }
+    
+    if (currentGuests < 1) {
+        showNotification('Number of guests must be at least 1!', 'error');
+        return;
+    }
     
     // Show loading state
     const submitBtn = form.querySelector('button[type="submit"]');
@@ -553,8 +648,6 @@ document.getElementById('editBookingForm').addEventListener('submit', function(e
     
     // Calculate total price and add to form data
     const roomSelect = document.getElementById('edit_room_id');
-    const checkInInput = document.getElementById('edit_check_in');
-    const checkOutInput = document.getElementById('edit_check_out');
     
     if (roomSelect.value && checkInInput.value && checkOutInput.value) {
         const selectedOption = roomSelect.options[roomSelect.selectedIndex];
@@ -567,13 +660,8 @@ document.getElementById('editBookingForm').addEventListener('submit', function(e
         if (nights > 0) {
             const total = nights * roomPrice;
             formData.append('total_price', total);
+            console.log(`Calculated: ${nights} nights × ₱${roomPrice} = ₱${total}`);
         }
-    }
-    
-    console.log('Form action:', form.action);
-    console.log('CSRF Token:', csrfToken);
-    for (let [key, value] of formData.entries()) {
-        console.log(key, value);
     }
     
     fetch(form.action, {
@@ -698,10 +786,116 @@ function calculateEditTotal() {
     }
 }
 
-// Add event listeners for real-time calculation
-document.getElementById('edit_room_id').addEventListener('change', calculateEditTotal);
+// Update room capacity constraints
+function updateEditRoomCapacity() {
+    const roomSelect = document.getElementById('edit_room_id');
+    const guestsInput = document.getElementById('edit_guests');
+    const capacityInfo = document.getElementById('edit_capacity_info');
+    const capacityWarning = document.getElementById('edit_capacity_warning');
+    
+    if (roomSelect.value) {
+        const selectedOption = roomSelect.options[roomSelect.selectedIndex];
+        const capacity = parseInt(selectedOption.dataset.capacity) || 20;
+        
+        // Update max attribute
+        guestsInput.max = capacity;
+        
+        // Update capacity info text
+        capacityInfo.textContent = `(Maximum: ${capacity} guests)`;
+        
+        // Check if current value exceeds capacity
+        const currentGuests = parseInt(guestsInput.value) || 0;
+        if (currentGuests > capacity) {
+            capacityWarning.classList.remove('hidden');
+            guestsInput.classList.add('border-yellow-500');
+        } else {
+            capacityWarning.classList.add('hidden');
+            guestsInput.classList.remove('border-yellow-500');
+        }
+    } else {
+        guestsInput.max = 20;
+        capacityInfo.textContent = '';
+        capacityWarning.classList.add('hidden');
+        guestsInput.classList.remove('border-yellow-500');
+    }
+}
+
+// Validate guests on input
+function validateEditGuests() {
+    const guestsInput = document.getElementById('edit_guests');
+    const capacityWarning = document.getElementById('edit_capacity_warning');
+    const maxCapacity = parseInt(guestsInput.max) || 20;
+    const currentGuests = parseInt(guestsInput.value) || 0;
+    
+    if (currentGuests > maxCapacity) {
+        capacityWarning.classList.remove('hidden');
+        guestsInput.classList.add('border-yellow-500');
+    } else {
+        capacityWarning.classList.add('hidden');
+        guestsInput.classList.remove('border-yellow-500');
+    }
+}
+
+// Update booking row in the table
+function updateBookingRow(bookingId, bookingData) {
+    const row = document.getElementById(`booking-row-${bookingId}`);
+    if (!row) return;
+    
+    // Update room name and guests
+    const roomNameEl = row.querySelector('.booking-room-name');
+    if (roomNameEl && bookingData.room) {
+        roomNameEl.textContent = bookingData.room.name;
+    }
+    
+    const guestsEl = row.querySelector('.booking-guests');
+    if (guestsEl) {
+        guestsEl.textContent = `${bookingData.guests} guests`;
+    }
+    
+    // Update dates
+    const datesEl = row.querySelector('.booking-dates');
+    if (datesEl && bookingData.check_in && bookingData.check_out) {
+        const checkIn = new Date(bookingData.check_in);
+        const checkOut = new Date(bookingData.check_out);
+        const nights = Math.ceil((checkOut - checkIn) / (1000 * 60 * 60 * 24));
+        
+        datesEl.innerHTML = `
+            <div class="text-white">${checkIn.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</div>
+            <div class="text-sm text-gray-400">${checkIn.toLocaleDateString('en-US', { weekday: 'long' })} at ${checkIn.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}</div>
+            <div class="text-white mt-1">${checkOut.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</div>
+            <div class="text-sm text-gray-400">${checkOut.toLocaleDateString('en-US', { weekday: 'long' })} at ${checkOut.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}</div>
+        `;
+    }
+    
+    // Update total price
+    const totalEl = row.querySelector('.booking-total');
+    if (totalEl && bookingData.total_price) {
+        totalEl.textContent = `₱${parseFloat(bookingData.total_price).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+    }
+    
+    const nightsEl = row.querySelector('.booking-nights');
+    if (nightsEl && bookingData.check_in && bookingData.check_out) {
+        const checkIn = new Date(bookingData.check_in);
+        const checkOut = new Date(bookingData.check_out);
+        const nights = Math.ceil((checkOut - checkIn) / (1000 * 60 * 60 * 24));
+        nightsEl.textContent = `${nights} night${nights > 1 ? 's' : ''}`;
+    }
+    
+    // Highlight the updated row
+    row.classList.add('bg-green-900', 'bg-opacity-30');
+    setTimeout(() => {
+        row.classList.remove('bg-green-900', 'bg-opacity-30');
+    }, 2000);
+}
+
+// Add event listeners for real-time calculation and validation
+document.getElementById('edit_room_id').addEventListener('change', function() {
+    updateEditRoomCapacity();
+    calculateEditTotal();
+});
 document.getElementById('edit_check_in').addEventListener('change', calculateEditTotal);
 document.getElementById('edit_check_out').addEventListener('change', calculateEditTotal);
+document.getElementById('edit_guests').addEventListener('input', validateEditGuests);
 
 function closeEditModal() {
     document.getElementById('editBookingModal').classList.add('hidden');
@@ -711,7 +905,7 @@ function closeEditModal() {
 function updateStatus(bookingId) {
     const modal = document.getElementById('statusModal');
     const form = document.getElementById('statusForm');
-    form.action = `{{ url('manager/bookings') }}/${bookingId}/status`;
+    form.action = `/manager/bookings/${bookingId}/status`;
     modal.classList.remove('hidden');
 }
 
@@ -726,41 +920,6 @@ document.getElementById('statusModal').addEventListener('click', function(e) {
         closeModal();
     }
 });
-
-// Show notification function
-function showNotification(message, type = 'success') {
-    const existingNotifications = document.querySelectorAll('.notification');
-    existingNotifications.forEach(n => n.remove());
-    
-    const notification = document.createElement('div');
-    notification.className = `notification fixed top-4 right-4 z-50 px-6 py-4 rounded-lg text-white transition-all duration-300 ${
-        type === 'success' ? 'bg-green-600' : 'bg-red-600'
-    }`;
-    notification.innerHTML = `
-        <div class="flex items-center">
-            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                ${type === 'success' 
-                    ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>'
-                    : '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>'
-                }
-            </svg>
-            ${message}
-            <button onclick="this.parentElement.parentElement.remove()" class="ml-4 text-white hover:text-gray-200">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                </svg>
-            </button>
-        </div>
-    `;
-    
-    document.body.appendChild(notification);
-    
-    // Remove after 5 seconds
-    setTimeout(() => {
-        if (notification.parentNode) {
-            notification.remove();
-        }
-    }, 5000);
-}
 </script>
 @endpush
+@endsection

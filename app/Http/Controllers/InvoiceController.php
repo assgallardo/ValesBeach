@@ -11,10 +11,30 @@ use Illuminate\Support\Facades\Auth;
 class InvoiceController extends Controller
 {
     /**
-     * Display a listing of invoices for the authenticated user
+     * Display a listing of invoices (role-aware)
      */
     public function index()
     {
+        $role = Auth::user()->role;
+        
+        // Admin, Manager, and Staff see all invoices
+        if (in_array($role, ['admin', 'manager', 'staff'])) {
+            $invoices = Invoice::with(['booking', 'booking.room', 'user'])
+                ->orderBy('created_at', 'desc')
+                ->paginate(15);
+                
+            // Calculate stats for admin/manager/staff
+            $stats = [
+                'total_invoiced' => Invoice::sum('total_amount'),
+                'paid_invoices' => Invoice::paid()->sum('total_amount'),
+                'pending_invoices' => Invoice::whereIn('status', ['draft', 'sent'])->sum('total_amount'),
+                'overdue_count' => Invoice::overdue()->count()
+            ];
+            
+            return view('invoices.index', compact('invoices', 'stats'));
+        }
+        
+        // Guests see only their own invoices
         $invoices = Auth::user()->invoices()
             ->with(['booking', 'booking.room'])
             ->orderBy('created_at', 'desc')
@@ -26,12 +46,15 @@ class InvoiceController extends Controller
     /**
      * Generate invoice for a booking
      */
-    public function generate(Booking $booking)
+    public function generate(Request $request, Booking $booking)
     {
         // Ensure user can access this booking
-        if (Auth::user()->role !== 'admin' && $booking->user_id !== Auth::id()) {
+        if (Auth::user()->role !== 'admin' && Auth::user()->role !== 'manager' && $booking->user_id !== Auth::id()) {
             abort(403, 'Unauthorized access to this booking.');
         }
+
+        // Load necessary relationships
+        $booking->load(['room', 'invoice']);
 
         // Check if invoice already exists
         if ($booking->invoice) {
@@ -39,35 +62,62 @@ class InvoiceController extends Controller
                 ->with('info', 'Invoice already exists for this booking.');
         }
 
-        // Calculate line items
-        $nights = $booking->check_in->diffInDays($booking->check_out);
-        $lineItems = [
-            [
-                'description' => 'Room: ' . $booking->room->name,
-                'quantity' => $nights,
-                'unit_price' => $booking->room->price,
-                'total' => $booking->room->price * $nights
-            ]
-        ];
+        // Ensure booking has payment
+        if ($booking->amount_paid <= 0) {
+            return back()->with('error', 'Cannot generate invoice for booking without payment.');
+        }
 
-        $subtotal = $booking->total_price;
-        $taxRate = 12.00; // VAT 12%
-        $taxAmount = ($subtotal * $taxRate) / 100;
-        $totalAmount = $subtotal + $taxAmount;
-
-        // Create invoice
-        $invoice = Invoice::create([
-            'booking_id' => $booking->id,
-            'user_id' => $booking->user_id,
-            'subtotal' => $subtotal,
-            'tax_rate' => $taxRate,
-            'tax_amount' => $taxAmount,
-            'total_amount' => $totalAmount,
-            'issue_date' => now(),
-            'due_date' => now()->addDays(7), // 7 days payment terms
-            'line_items' => $lineItems,
-            'status' => 'sent'
+        // Validate request with defaults
+        $validated = $request->validate([
+            'due_date' => 'nullable|date|after_or_equal:today',
+            'tax_rate' => 'nullable|numeric|min:0|max:100',
+            'notes' => 'nullable|string|max:1000'
         ]);
+        
+        // Set defaults if not provided
+        $validated['due_date'] = $validated['due_date'] ?? now()->addDays(7)->format('Y-m-d');
+        $validated['tax_rate'] = $validated['tax_rate'] ?? 0;
+
+        // Use database transaction to ensure lock works properly
+        $invoice = \DB::transaction(function () use ($booking, $validated) {
+            // Calculate line items
+            $nights = $booking->check_in->diffInDays($booking->check_out);
+            $lineItems = [
+                [
+                    'description' => 'Room: ' . $booking->room->name,
+                    'quantity' => $nights,
+                    'unit_price' => $booking->room->price,
+                    'total' => $booking->room->price * $nights
+                ]
+            ];
+
+            $subtotal = $booking->total_price;
+            $taxRate = $validated['tax_rate'] ?? 0;
+            $taxAmount = ($subtotal * $taxRate) / 100;
+            $totalAmount = $subtotal + $taxAmount;
+
+            // Determine invoice status based on payment status
+            $invoiceStatus = 'sent';
+            if ($booking->payment_status === 'paid' || $booking->remaining_balance <= 0) {
+                $invoiceStatus = 'paid';
+            }
+
+            // Create invoice
+            return Invoice::create([
+                'booking_id' => $booking->id,
+                'user_id' => $booking->user_id,
+                'subtotal' => $subtotal,
+                'tax_rate' => $taxRate,
+                'tax_amount' => $taxAmount,
+                'total_amount' => $totalAmount,
+                'issue_date' => now(),
+                'due_date' => $validated['due_date'],
+                'line_items' => $lineItems,
+                'status' => $invoiceStatus,
+                'paid_date' => $invoiceStatus === 'paid' ? now() : null,
+                'notes' => $validated['notes'] ?? null
+            ]);
+        });
 
         return redirect()->route('invoices.show', $invoice)
             ->with('success', 'Invoice generated successfully!');
@@ -79,9 +129,13 @@ class InvoiceController extends Controller
     public function show(Invoice $invoice)
     {
         // Ensure user can access this invoice
-        if (Auth::user()->role !== 'admin' && $invoice->user_id !== Auth::id()) {
+        // Allow: invoice owner (guest), admin, manager, staff
+        if (!in_array(Auth::user()->role, ['admin', 'manager', 'staff']) && $invoice->user_id !== Auth::id()) {
             abort(403, 'Unauthorized access to this invoice.');
         }
+
+        // Load necessary relationships
+        $invoice->load(['booking.room', 'booking.payments', 'user']);
 
         return view('invoices.show', compact('invoice'));
     }
@@ -92,9 +146,13 @@ class InvoiceController extends Controller
     public function download(Invoice $invoice)
     {
         // Ensure user can access this invoice
-        if (Auth::user()->role !== 'admin' && $invoice->user_id !== Auth::id()) {
+        // Allow: invoice owner (guest), admin, manager, staff
+        if (!in_array(Auth::user()->role, ['admin', 'manager', 'staff']) && $invoice->user_id !== Auth::id()) {
             abort(403, 'Unauthorized access to this invoice.');
         }
+
+        // Load necessary relationships
+        $invoice->load(['booking.room', 'booking.payments', 'user']);
 
         // For now, return the printable view
         // In production, you would use a PDF library like DomPDF or wkhtmltopdf

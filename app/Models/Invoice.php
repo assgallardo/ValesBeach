@@ -51,7 +51,7 @@ class Invoice extends Model
         
         static::creating(function ($invoice) {
             if (!$invoice->invoice_number) {
-                $invoice->invoice_number = 'INV-' . date('Y') . '-' . str_pad(static::count() + 1, 6, '0', STR_PAD_LEFT);
+                $invoice->invoice_number = static::generateInvoiceNumber();
             }
             
             // Calculate tax amount if not set
@@ -64,6 +64,32 @@ class Invoice extends Model
                 $invoice->total_amount = $invoice->subtotal + $invoice->tax_amount;
             }
         });
+    }
+
+    /**
+     * Generate unique invoice number for current year
+     */
+    protected static function generateInvoiceNumber()
+    {
+        $year = date('Y');
+        $prefix = 'INV-' . $year . '-';
+        
+        // Get the latest invoice number for this year
+        $latestInvoice = static::where('invoice_number', 'LIKE', $prefix . '%')
+            ->orderBy('invoice_number', 'DESC')
+            ->lockForUpdate()
+            ->first();
+        
+        if ($latestInvoice) {
+            // Extract the number part and increment
+            $lastNumber = (int) substr($latestInvoice->invoice_number, -6);
+            $nextNumber = $lastNumber + 1;
+        } else {
+            // First invoice of the year
+            $nextNumber = 1;
+        }
+        
+        return $prefix . str_pad($nextNumber, 6, '0', STR_PAD_LEFT);
     }
 
     /**

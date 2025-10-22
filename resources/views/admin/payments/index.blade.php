@@ -13,6 +13,12 @@
             </div>
             <div class="flex space-x-3 mt-4 sm:mt-0">
                 <button type="button" 
+                        onclick="openGenerateInvoiceModal()" 
+                        class="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-colors">
+                    <i class="fas fa-file-invoice-dollar mr-2"></i>
+                    Generate Invoice
+                </button>
+                <button type="button" 
                         onclick="toggleFilterPanel()" 
                         class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors">
                     <i class="fas fa-filter mr-2"></i>
@@ -172,6 +178,7 @@
                         <option value="completed" {{ request('status') === 'completed' ? 'selected' : '' }}>Completed</option>
                         <option value="failed" {{ request('status') === 'failed' ? 'selected' : '' }}>Failed</option>
                         <option value="refunded" {{ request('status') === 'refunded' ? 'selected' : '' }}>Refunded</option>
+                        <option value="cancelled" {{ request('status') === 'cancelled' ? 'selected' : '' }}>Cancelled</option>
                     </select>
                 </div>
 
@@ -422,6 +429,7 @@
                                             'processing' => ['bg' => 'bg-blue-600', 'text' => 'text-white'],
                                             'failed' => ['bg' => 'bg-red-600', 'text' => 'text-white'],
                                             'refunded' => ['bg' => 'bg-gray-600', 'text' => 'text-white'],
+                                            'cancelled' => ['bg' => 'bg-gray-700', 'text' => 'text-gray-300'],
                                             default => ['bg' => 'bg-gray-700', 'text' => 'text-gray-300']
                                         };
                                     @endphp
@@ -476,6 +484,25 @@
                                                title="View Booking Details">
                                                 <i class="fas fa-bed mr-1"></i>Booking
                                             </a>
+                                            
+                                            <!-- Invoice Actions for Booking Payments -->
+                                            @if($payment->booking->invoice)
+                                                <a href="{{ route('invoices.show', $payment->booking->invoice) }}" 
+                                                   class="inline-flex items-center px-2 py-1 text-xs bg-purple-600 text-white rounded hover:bg-purple-700 transition-colors" 
+                                                   title="View Invoice">
+                                                    <i class="fas fa-file-invoice mr-1"></i>Invoice
+                                                </a>
+                                            @elseif($payment->booking->amount_paid > 0)
+                                                <form action="{{ route('invoices.generate', $payment->booking) }}" method="POST" class="inline">
+                                                    @csrf
+                                                    <button type="submit" 
+                                                            class="inline-flex items-center px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 transition-colors w-full" 
+                                                            title="Generate Invoice"
+                                                            onclick="return confirm('Generate invoice for {{ $payment->booking->booking_reference }}?');">
+                                                        <i class="fas fa-file-invoice-dollar mr-1"></i>Generate Invoice
+                                                    </button>
+                                                </form>
+                                            @endif
                                         @elseif($payment->serviceRequest)
                                             <a href="{{ route('admin.service-requests.show', $payment->serviceRequest) }}" 
                                                class="inline-flex items-center px-2 py-1 text-xs bg-purple-600 text-white rounded hover:bg-purple-700 transition-colors" 
@@ -577,7 +604,19 @@ function toggleFilterPanel() {
 }
 
 function updatePaymentStatus(paymentId, status) {
-    if (confirm('Are you sure you want to update this payment status?')) {
+    if (!status || !['pending', 'completed', 'failed', 'refunded', 'cancelled'].includes(status)) {
+        console.error('Invalid payment status:', status);
+        alert('Invalid payment status selected');
+        return;
+    }
+
+    if (confirm('Are you sure you want to update this payment status to ' + status + '?')) {
+        console.log('Updating payment status:', {
+            paymentId: paymentId,
+            status: status,
+            action: `/admin/payments/${paymentId}/status`
+        });
+
         const form = document.createElement('form');
         form.method = 'POST';
         form.action = `/admin/payments/${paymentId}/status`;
@@ -624,5 +663,158 @@ document.getElementById('refundModal').addEventListener('click', function(e) {
         closeRefundModal();
     }
 });
+
+// Generate Invoice Modal Functions
+function openGenerateInvoiceModal() {
+    document.getElementById('generateInvoiceModal').classList.remove('hidden');
+}
+
+function closeGenerateInvoiceModal() {
+    document.getElementById('generateInvoiceModal').classList.add('hidden');
+    document.getElementById('generateInvoiceForm').reset();
+    document.getElementById('generateInvoiceForm').action = '';
+    updateButtonState();
+}
+
+function updateFormAction() {
+    const bookingSelect = document.getElementById('booking_id');
+    const form = document.getElementById('generateInvoiceForm');
+    
+    if (bookingSelect.value) {
+        form.action = `/bookings/${bookingSelect.value}/invoice/generate`;
+    } else {
+        form.action = '';
+    }
+    updateButtonState();
+}
+
+function updateButtonState() {
+    const bookingSelect = document.getElementById('booking_id');
+    const button = document.getElementById('generateButton');
+    
+    if (bookingSelect.value) {
+        button.disabled = false;
+        button.className = 'flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors';
+    } else {
+        button.disabled = true;
+        button.className = 'flex-1 px-4 py-2 bg-gray-500 text-white rounded-lg cursor-not-allowed';
+    }
+}
+
+// Close modal when clicking outside
+document.getElementById('generateInvoiceModal')?.addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeGenerateInvoiceModal();
+    }
+});
 </script>
+
+<!-- Generate Invoice Modal -->
+<div id="generateInvoiceModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-gray-800 rounded-lg p-6 w-full max-w-md">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-semibold text-green-50">Generate Invoice</h3>
+                <button onclick="closeGenerateInvoiceModal()" class="text-gray-400 hover:text-white">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <form id="generateInvoiceForm" method="POST">
+                @csrf
+                
+                <!-- Booking Selection -->
+                <div class="mb-4">
+                    <label for="booking_id" class="block text-sm font-medium text-gray-300 mb-2">
+                        Select Booking
+                    </label>
+                    <select 
+                        name="booking_id" 
+                        id="booking_id" 
+                        required 
+                        onchange="updateFormAction()"
+                        class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-green-50 focus:outline-none focus:ring-2 focus:ring-green-500"
+                    >
+                        <option value="">Select a booking...</option>
+                        @foreach(\App\Models\Booking::with('room', 'user')->whereDoesntHave('invoice')->whereHas('payments')->orderBy('created_at', 'desc')->get() as $booking)
+                        <option value="{{ $booking->id }}">
+                            {{ $booking->booking_reference }} - {{ $booking->room->name }} - {{ $booking->user->name }}
+                            ({{ $booking->check_in->format('M d') }} - {{ $booking->check_out->format('M d, Y') }})
+                        </option>
+                        @endforeach
+                    </select>
+                    <p class="text-xs text-gray-400 mt-1">Only bookings with payments and without invoices are shown</p>
+                </div>
+                
+                <!-- Due Date -->
+                <div class="mb-4">
+                    <label for="due_date" class="block text-sm font-medium text-gray-300 mb-2">
+                        Due Date
+                    </label>
+                    <input 
+                        type="date" 
+                        name="due_date" 
+                        id="due_date" 
+                        value="{{ now()->addDays(7)->format('Y-m-d') }}"
+                        min="{{ now()->format('Y-m-d') }}"
+                        required 
+                        class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-green-50 focus:outline-none focus:ring-2 focus:ring-green-500"
+                    >
+                </div>
+                
+                <!-- Tax Rate -->
+                <div class="mb-4">
+                    <label for="tax_rate" class="block text-sm font-medium text-gray-300 mb-2">
+                        Tax Rate (%)
+                    </label>
+                    <input 
+                        type="number" 
+                        name="tax_rate" 
+                        id="tax_rate" 
+                        value="0" 
+                        min="0" 
+                        max="100" 
+                        step="0.01"
+                        class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-green-50 focus:outline-none focus:ring-2 focus:ring-green-500"
+                    >
+                    <p class="text-xs text-gray-400 mt-1">Enter tax rate (e.g., 12 for 12% VAT)</p>
+                </div>
+                
+                <!-- Notes -->
+                <div class="mb-6">
+                    <label for="notes" class="block text-sm font-medium text-gray-300 mb-2">
+                        Notes (Optional)
+                    </label>
+                    <textarea 
+                        name="notes" 
+                        id="notes" 
+                        rows="3" 
+                        class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-green-50 focus:outline-none focus:ring-2 focus:ring-green-500"
+                        placeholder="Additional notes for this invoice..."
+                    ></textarea>
+                </div>
+                
+                <!-- Actions -->
+                <div class="flex space-x-3">
+                    <button 
+                        type="button" 
+                        onclick="closeGenerateInvoiceModal()" 
+                        class="flex-1 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                    >
+                        Cancel
+                    </button>
+                    <button 
+                        type="submit" 
+                        id="generateButton"
+                        disabled
+                        class="flex-1 px-4 py-2 bg-gray-500 text-white rounded-lg cursor-not-allowed"
+                    >
+                        <i class="fas fa-file-invoice mr-2"></i>
+                        Generate
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 @endsection

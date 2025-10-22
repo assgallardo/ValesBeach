@@ -1,4 +1,4 @@
-@extends('layouts.guest')
+@extends(auth()->user()->role === 'admin' ? 'layouts.admin' : (auth()->user()->role === 'manager' ? 'layouts.manager' : (auth()->user()->role === 'staff' ? 'layouts.staff' : 'layouts.guest')))
 
 @section('title', 'Invoices')
 
@@ -13,7 +13,8 @@
                     <p class="text-gray-400 mt-2">View and manage your invoices</p>
                 </div>
                 
-                <!-- Generate Invoice Button -->
+                <!-- Generate Invoice Button (Admin/Manager/Staff only) -->
+                @if(in_array(auth()->user()->role, ['admin', 'manager', 'staff']))
                 <div class="mt-4 sm:mt-0">
                     <button 
                         onclick="openGenerateInvoiceModal()" 
@@ -23,6 +24,7 @@
                         Generate Invoice
                     </button>
                 </div>
+                @endif
             </div>
         </div>
 
@@ -31,8 +33,13 @@
             <div class="bg-gray-800 rounded-lg p-8 text-center">
                 <i class="fas fa-file-invoice text-6xl text-gray-600 mb-4"></i>
                 <h3 class="text-xl font-semibold text-green-50 mb-2">No Invoices Yet</h3>
-                <p class="text-gray-400 mb-6">You don't have any invoices yet. Invoices are automatically generated for your bookings, or you can generate one manually.</p>
+                @if(in_array(auth()->user()->role, ['admin', 'manager', 'staff']))
+                    <p class="text-gray-400 mb-6">You don't have any invoices yet. Invoices are automatically generated for bookings, or you can generate one manually.</p>
+                @else
+                    <p class="text-gray-400 mb-6">You don't have any invoices yet. Invoices are automatically generated when you make a booking and complete payment.</p>
+                @endif
                 <div class="flex justify-center space-x-4">
+                    @if(auth()->user()->role === 'guest')
                     <a 
                         href="{{ route('guest.rooms.browse') }}" 
                         class="inline-flex items-center px-6 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors"
@@ -40,6 +47,8 @@
                         <i class="fas fa-search mr-2"></i>
                         Browse Rooms
                     </a>
+                    @endif
+                    @if(in_array(auth()->user()->role, ['admin', 'manager', 'staff']))
                     <button 
                         onclick="openGenerateInvoiceModal()" 
                         class="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
@@ -47,6 +56,7 @@
                         <i class="fas fa-plus mr-2"></i>
                         Generate Invoice
                     </button>
+                    @endif
                 </div>
             </div>
         @else
@@ -70,6 +80,15 @@
                                     </span>
                                 @endif
                             </div>
+                            
+                            @if(in_array(auth()->user()->role, ['admin', 'manager', 'staff']))
+                            <!-- Guest Information (for admin/manager/staff) -->
+                            <div class="mb-3">
+                                <span class="text-gray-400 text-sm">Guest: </span>
+                                <span class="text-green-50 font-medium">{{ $invoice->user->name }}</span>
+                                <span class="text-gray-500 text-sm ml-2">({{ $invoice->user->email }})</span>
+                            </div>
+                            @endif
                             
                             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-sm mb-4">
                                 <div>
@@ -159,6 +178,7 @@
         @endif
 
         <!-- Invoice Summary Stats -->
+        @if(!$invoices->isEmpty())
         <div class="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             <div class="bg-gray-800 rounded-lg p-4">
                 <div class="flex items-center">
@@ -168,7 +188,11 @@
                     <div class="ml-4">
                         <p class="text-sm text-gray-400">Total Invoiced</p>
                         <p class="text-lg font-semibold text-green-50">
-                            ₱{{ number_format($invoices->sum('total_amount'), 2) }}
+                            @if(isset($stats))
+                                ₱{{ number_format($stats['total_invoiced'], 2) }}
+                            @else
+                                ₱{{ number_format($invoices->sum('total_amount'), 2) }}
+                            @endif
                         </p>
                     </div>
                 </div>
@@ -182,7 +206,11 @@
                     <div class="ml-4">
                         <p class="text-sm text-gray-400">Paid</p>
                         <p class="text-lg font-semibold text-green-50">
-                            ₱{{ number_format($invoices->where('status', 'paid')->sum('total_amount'), 2) }}
+                            @if(isset($stats))
+                                ₱{{ number_format($stats['paid_invoices'], 2) }}
+                            @else
+                                ₱{{ number_format($invoices->where('status', 'paid')->sum('total_amount'), 2) }}
+                            @endif
                         </p>
                     </div>
                 </div>
@@ -196,7 +224,11 @@
                     <div class="ml-4">
                         <p class="text-sm text-gray-400">Pending</p>
                         <p class="text-lg font-semibold text-green-50">
-                            ₱{{ number_format($invoices->whereIn('status', ['draft', 'sent'])->sum('total_amount'), 2) }}
+                            @if(isset($stats))
+                                ₱{{ number_format($stats['pending_invoices'], 2) }}
+                            @else
+                                ₱{{ number_format($invoices->whereIn('status', ['draft', 'sent'])->sum('total_amount'), 2) }}
+                            @endif
                         </p>
                     </div>
                 </div>
@@ -210,17 +242,34 @@
                     <div class="ml-4">
                         <p class="text-sm text-gray-400">Overdue</p>
                         <p class="text-lg font-semibold text-green-50">
-                            {{ $invoices->filter(function($invoice) { return $invoice->isOverdue(); })->count() }}
+                            @if(isset($stats))
+                                {{ $stats['overdue_count'] }}
+                            @else
+                                {{ $invoices->filter(function($invoice) { return $invoice->isOverdue(); })->count() }}
+                            @endif
                         </p>
                     </div>
                 </div>
             </div>
         </div>
+        @endif
 
         <!-- Back to Dashboard -->
         <div class="mt-8 text-center">
+            @php
+                $role = auth()->user()->role;
+                if ($role === 'admin') {
+                    $dashboardRoute = route('admin.dashboard');
+                } elseif ($role === 'manager') {
+                    $dashboardRoute = route('manager.dashboard');
+                } elseif ($role === 'staff') {
+                    $dashboardRoute = route('staff.dashboard');
+                } else {
+                    $dashboardRoute = route('guest.dashboard');
+                }
+            @endphp
             <a 
-                href="{{ route('guest.dashboard') }}" 
+                href="{{ $dashboardRoute }}" 
                 class="inline-flex items-center px-6 py-3 bg-gray-600 text-white rounded-lg font-medium hover:bg-gray-700 transition-colors"
             >
                 <i class="fas fa-arrow-left mr-2"></i>
@@ -230,7 +279,8 @@
     </div>
 </div>
 
-<!-- Generate Invoice Modal -->
+<!-- Generate Invoice Modal (Admin/Manager/Staff only) -->
+@if(in_array(auth()->user()->role, ['admin', 'manager', 'staff']))
 <div id="generateInvoiceModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden">
     <div class="flex items-center justify-center min-h-screen p-4">
         <div class="bg-gray-800 rounded-lg p-6 w-full max-w-md">
@@ -292,13 +342,13 @@
                         type="number" 
                         name="tax_rate" 
                         id="tax_rate" 
-                        value="12.00" 
+                        value="0" 
                         min="0" 
                         max="100" 
                         step="0.01"
                         class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-green-50 focus:outline-none focus:ring-2 focus:ring-green-500"
                     >
-                    <p class="text-xs text-gray-400 mt-1">Default VAT rate is 12%</p>
+                    <p class="text-xs text-gray-400 mt-1">Enter tax rate (e.g., 12 for 12% VAT)</p>
                 </div>
                 
                 <!-- Notes -->
@@ -379,10 +429,11 @@ function updateButtonState() {
 }
 
 // Close modal when clicking outside
-document.getElementById('generateInvoiceModal').addEventListener('click', function(e) {
+document.getElementById('generateInvoiceModal')?.addEventListener('click', function(e) {
     if (e.target === this) {
         closeGenerateInvoiceModal();
     }
 });
 </script>
+@endif
 @endsection

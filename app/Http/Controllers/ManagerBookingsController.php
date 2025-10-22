@@ -160,7 +160,7 @@ class ManagerBookingsController extends Controller
      */
     public function show(Booking $booking)
     {
-        $booking->load(['user', 'room', 'services']);
+        $booking->load(['user', 'room', 'payments.user']);
         return view('manager.bookings.show', compact('booking'));
     }
 
@@ -256,6 +256,10 @@ class ManagerBookingsController extends Controller
     /**
      * Remove the specified booking.
      */
+    /**
+     * Delete a booking.
+     * Note: All associated payments will be automatically deleted via cascade delete.
+     */
     public function destroy(Booking $booking)
     {
         if (in_array($booking->status, ['checked_in', 'completed'])) {
@@ -265,16 +269,29 @@ class ManagerBookingsController extends Controller
 
         DB::beginTransaction();
         try {
+            $paymentCount = $booking->payments()->count();
+            
+            // Detach services (many-to-many relationship)
             $booking->services()->detach();
+            
+            // Delete the booking (payments will be cascade deleted automatically)
             $booking->delete();
             
             DB::commit();
 
+            $message = $paymentCount > 0
+                ? "Booking and {$paymentCount} associated payment(s) deleted successfully!"
+                : 'Booking deleted successfully!';
+
             return redirect()->route('manager.bookings.index')
-                           ->with('success', 'Booking deleted successfully!');
+                           ->with('success', $message);
 
         } catch (\Exception $e) {
             DB::rollback();
+            \Log::error('Booking deletion failed', [
+                'booking_id' => $booking->id,
+                'error' => $e->getMessage()
+            ]);
             return redirect()->back()
                            ->with('error', 'An error occurred while deleting the booking: ' . $e->getMessage());
         }
@@ -386,12 +403,8 @@ class ManagerBookingsController extends Controller
      */
     public function createFromRoom(Room $room)
     {
-        $rooms = Room::where('is_available', true)->orderBy('name')->get();
-        $guests = User::where('role', 'user')->where('status', 'active')->orderBy('name')->get();
+        $users = User::where('role', 'guest')->get();
         
-        // Pre-select the room
-        $selectedRoom = $room;
-
-        return view('manager.bookings.create', compact('rooms', 'guests', 'selectedRoom'));
+        return view('manager.bookings.create-from-room', compact('room', 'users'));
     }
 }

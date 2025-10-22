@@ -6,14 +6,14 @@
         <!-- Header -->
         <div class="flex justify-between items-center mb-6">
             <h2 class="text-3xl font-bold text-white">Edit Room</h2>
-            <a href="{{ route('admin.rooms.index') }}" 
+            <a href="{{ route('manager.rooms.index') }}" 
                class="text-gray-300 hover:text-white">
                 Back to Rooms
             </a>
         </div>
 
         <!-- Form -->
-        <form action="{{ route('admin.rooms.update', $room) }}" method="POST" class="bg-gray-800 rounded-lg shadow-xl p-6" enctype="multipart/form-data">
+        <form action="{{ route('manager.rooms.update', $room) }}" method="POST" class="bg-gray-800 rounded-lg shadow-xl p-6" enctype="multipart/form-data">
             @csrf
             @method('PUT')
             
@@ -188,7 +188,7 @@
 <script>
 function deleteImage(roomId, imageId) {
     if (confirm('Are you sure you want to delete this image?')) {
-        fetch(`/admin/rooms/${roomId}/images/${imageId}`, {
+        fetch(`/manager/rooms/${roomId}/images/${imageId}`, {
             method: 'DELETE',
             headers: {
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content

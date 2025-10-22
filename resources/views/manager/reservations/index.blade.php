@@ -76,6 +76,30 @@
     </div>
     @endif
 
+    <!-- Error Message -->
+    @if(session('error'))
+    <div class="bg-red-800 border border-red-600 text-red-100 px-6 py-4 rounded-lg mb-8">
+        <div class="flex items-center">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+            {{ session('error') }}
+        </div>
+    </div>
+    @endif
+
+    <!-- Validation Errors -->
+    @if($errors->any())
+    <div class="bg-red-800 border border-red-600 text-red-100 px-6 py-4 rounded-lg mb-8">
+        <div class="font-bold mb-2">Please fix the following errors:</div>
+        <ul class="list-disc list-inside">
+            @foreach($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+    @endif
+
     <!-- Filters -->
     <div class="bg-gray-800 rounded-lg p-6 mb-8">
         <form action="{{ route('admin.reservations') }}" method="GET" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
@@ -268,8 +292,9 @@
                         </td>
                         <td class="px-6 py-4">
                             <div class="flex items-center space-x-3">
-                                <a href="{{ route('admin.bookings.show', $booking) }}" 
-                                   class="text-blue-400 hover:text-blue-300 transition-colors">
+                                <a href="{{ route('manager.bookings.show', $booking) }}" 
+                                   class="text-blue-400 hover:text-blue-300 transition-colors"
+                                   title="View Details">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
                                               d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
@@ -277,10 +302,11 @@
                                               d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
                                     </svg>
                                 </a>
-                                @if(in_array(auth()->user()->role, ['admin', 'manager']))
+                                @if(in_array(auth()->user()->role, ['admin', 'manager', 'staff']))
                                 <button type="button"
                                         onclick="updateStatus('{{ $booking->id }}')"
-                                        class="text-green-400 hover:text-green-300 transition-colors">
+                                        class="text-green-400 hover:text-green-300 transition-colors"
+                                        title="Update Status">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
                                               d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
@@ -307,7 +333,7 @@
         </div>
     </div>
 
-    <!-- Status Update Modal (reuse from bookings index) -->
+    <!-- Status Update Modal -->
     <div id="statusModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden">
         <div class="flex items-center justify-center min-h-screen p-4">
             <div class="bg-gray-800 rounded-lg shadow-xl max-w-md w-full">
@@ -342,6 +368,7 @@
             </div>
         </div>
     </div>
+
 </div>
 
 @push('scripts')
@@ -349,7 +376,7 @@
 function updateStatus(bookingId) {
     const modal = document.getElementById('statusModal');
     const form = document.getElementById('statusForm');
-    form.action = `/admin/reservations/${bookingId}/status`;
+    form.action = `/manager/bookings/${bookingId}/status`;
     modal.classList.remove('hidden');
 }
 

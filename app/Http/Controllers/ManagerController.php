@@ -34,10 +34,57 @@ class ManagerController extends Controller
      */
     public function rooms(Request $request)
     {
-        // Get all rooms with their images
-        $rooms = \App\Models\Room::with(['images'])->orderBy('name')->paginate(12);
-        
-        return view('manager.rooms', compact('rooms'));
+        $query = \App\Models\Room::query();
+
+        // Apply search filter
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('number', 'like', "%{$search}%")
+                    ->orWhere('name', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%");
+            });
+        }
+
+        // Apply type filter
+        if ($request->filled('type')) {
+            $query->where('type', $request->type);
+        }
+
+        // Apply price range filters
+        if ($request->filled('min_price')) {
+            $query->where('price', '>=', $request->min_price);
+        }
+        if ($request->filled('max_price')) {
+            $query->where('price', '<=', $request->max_price);
+        }
+
+        // Apply availability filter
+        if ($request->filled('is_available')) {
+            $query->where('is_available', $request->is_available === '1');
+        }
+
+        // Apply sorting
+        $sortField = in_array($request->input('sort_by'), ['number', 'name', 'type', 'price', 'created_at']) 
+            ? $request->input('sort_by') 
+            : 'name';
+            
+        $sortOrder = in_array(strtolower($request->input('sort_order')), ['asc', 'desc']) 
+            ? strtolower($request->input('sort_order')) 
+            : 'asc';
+
+        $query->orderBy($sortField, $sortOrder);
+
+        // Get paginated results
+        $rooms = $query->paginate(10)->withQueryString();
+
+        // Get available types for filter dropdown
+        $types = \App\Models\Room::distinct()->pluck('type');
+
+        return view('manager.rooms.index', [
+            'rooms' => $rooms,
+            'types' => $types,
+        ]);
     }
 
     /**
@@ -103,7 +150,7 @@ class ManagerController extends Controller
      */
     public function bookings(Request $request)
     {
-        $query = Booking::with(['user', 'room']);
+        $query = Booking::with(['user', 'room', 'payments']);
 
         // Get the correct column names
         $checkinColumn = $this->getCheckinColumn();
@@ -424,6 +471,92 @@ class ManagerController extends Controller
     }
 
     /**
+     * Update booking payment status
+     */
+    public function updatePaymentStatus(Request $request, $id)
+    {
+        \Log::info('Payment status update requested (Manager)', [
+            'booking_id' => $id,
+            'requested_status' => $request->payment_status,
+            'request_data' => $request->all()
+        ]);
+
+        \DB::beginTransaction();
+        try {
+            $booking = Booking::findOrFail($id);
+            
+            $request->validate([
+                'payment_status' => 'required|in:unpaid,partial,paid,cancelled'
+            ]);
+
+            $oldStatus = $booking->payment_status;
+            
+            // Update booking payment status
+            $booking->update(['payment_status' => $request->payment_status]);
+
+            $paymentsUpdated = 0;
+
+            // Update all related payment records' status
+            if ($request->payment_status === 'paid') {
+                // If marking as paid, set all payments to completed
+                $paymentsUpdated = $booking->payments()->update(['status' => 'completed']);
+            } elseif ($request->payment_status === 'cancelled') {
+                // If marking as cancelled, set all payments to cancelled
+                $paymentsUpdated = $booking->payments()->update(['status' => 'cancelled']);
+            } elseif ($request->payment_status === 'unpaid') {
+                // If marking as unpaid, set all payments to pending
+                $paymentsUpdated = $booking->payments()->update(['status' => 'pending']);
+            }
+            // For 'partial', we keep the existing payment statuses as they are
+
+            // Refresh the booking to get updated data
+            $booking->refresh();
+
+            \DB::commit();
+
+            \Log::info('Payment status updated successfully (Manager)', [
+                'booking_id' => $booking->id,
+                'old_status' => $oldStatus,
+                'new_status' => $booking->payment_status,
+                'updated_by' => auth()->id(),
+                'total_payments' => $booking->payments()->count(),
+                'payments_updated' => $paymentsUpdated
+            ]);
+
+            $message = "Payment status updated successfully to " . ucfirst($request->payment_status) . ".";
+            if ($paymentsUpdated > 0) {
+                $message .= " {$paymentsUpdated} payment record(s) have been updated.";
+            }
+
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => $message
+                ]);
+            }
+
+            return redirect()->back()->with('success', $message);
+            
+        } catch (\Exception $e) {
+            \DB::rollBack();
+            \Log::error('Payment status update error (Manager)', [
+                'booking_id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to update payment status: ' . $e->getMessage()
+                ], 500);
+            }
+
+            return redirect()->back()->with('error', 'Failed to update payment status: ' . $e->getMessage());
+        }
+    }
+
+    /**
      * Confirm a booking
      */
     public function confirmBooking($id)
@@ -469,12 +602,9 @@ class ManagerController extends Controller
     public function createFromRoom($roomId)
     {
         $room = \App\Models\Room::findOrFail($roomId);
-        $guests = \App\Models\User::where('role', 'user')->get();
+        $users = \App\Models\User::where('role', 'guest')->get();
         
-        // Get available rooms (in case user wants to change room)
-        $rooms = \App\Models\Room::where('status', 'available')->get();
-        
-        return view('manager.bookings.create-from-room', compact('room', 'guests', 'rooms'));
+        return view('manager.bookings.create-from-room', compact('room', 'users'));
     }
 
     /**
@@ -574,7 +704,7 @@ class ManagerController extends Controller
 
         Room::create($roomData);
 
-        return redirect()->route('manager.rooms')->with('success', 'Room created successfully!');
+        return redirect()->route('manager.rooms.index')->with('success', 'Room created successfully!');
     }
 
     /**

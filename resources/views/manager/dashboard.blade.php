@@ -106,7 +106,7 @@
                         <p class="text-green-100 text-sm lg:text-base mb-8 flex-grow">
                             Update room availability, rates, and facility details.
                         </p>
-                        <a href="{{ route('manager.rooms') }}" 
+                        <a href="{{ route('manager.rooms.index') }}" 
                            class="w-full py-3 bg-green-50 text-black font-medium text-lg rounded-lg hover:bg-white transition-colors duration-200 text-center">
                             Manage Rooms
                         </a>

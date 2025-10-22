@@ -347,7 +347,7 @@
                         @endif
 
                         @if($payment->status === 'pending')
-                            <form method="POST" action="{{ route('admin.payments.status', $payment) }}" class="w-full">
+                            <form method="POST" action="{{ route('admin.payments.updateStatus', $payment) }}" class="w-full">
                                 @csrf
                                 @method('PATCH')
                                 <input type="hidden" name="status" value="completed">
@@ -358,7 +358,7 @@
                                 </button>
                             </form>
 
-                            <form method="POST" action="{{ route('admin.payments.status', $payment) }}" class="w-full">
+                            <form method="POST" action="{{ route('admin.payments.updateStatus', $payment) }}" class="w-full">
                                 @csrf
                                 @method('PATCH')
                                 <input type="hidden" name="status" value="failed">

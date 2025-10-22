@@ -146,18 +146,20 @@ Route::middleware(['auth', 'user.status'])->group(function () {
     Route::get('/bookings/{booking}/payment', [PaymentController::class, 'create'])->name('payments.create');
     Route::post('/bookings/{booking}/payment', [PaymentController::class, 'store'])->name('payments.store');
     Route::get('/payments/{payment}/confirmation', [PaymentController::class, 'confirmation'])->name('payments.confirmation');
+    Route::get('/payments/{payment}/edit', [PaymentController::class, 'edit'])->name('payments.edit');
+    Route::patch('/payments/{payment}', [PaymentController::class, 'update'])->name('payments.update');
     Route::get('/payments/history', [PaymentController::class, 'history'])->name('payments.history');
     Route::get('/payments/{payment}', [PaymentController::class, 'show'])->name('payments.show');
     
     // Invoice management
     Route::get('/invoices', [InvoiceController::class, 'index'])->name('invoices.index');
-    Route::get('/bookings/{booking}/invoice/generate', [InvoiceController::class, 'generate'])->name('invoices.generate');
+    Route::match(['get', 'post'], '/bookings/{booking}/invoice/generate', [InvoiceController::class, 'generate'])->name('invoices.generate');
     Route::get('/invoices/{invoice}', [InvoiceController::class, 'show'])->name('invoices.show');
     Route::get('/invoices/{invoice}/download', [InvoiceController::class, 'download'])->name('invoices.download');
 });
 
 // Admin Payment & Billing Routes
-Route::prefix('admin')->name('admin.')->middleware(['auth', 'user.status', 'role:admin,manager'])->group(function () {
+Route::prefix('admin')->name('admin.')->middleware(['auth', 'user.status', 'role:admin,manager,staff'])->group(function () {
     // Payment management
     Route::get('/payments', [PaymentController::class, 'adminIndex'])->name('payments.index');
     Route::get('/payments/{payment}', [PaymentController::class, 'adminShow'])->name('payments.show');
@@ -184,8 +186,8 @@ Route::middleware('guest')->group(function () {
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 Route::get('/logout', [AuthController::class, 'logout'])->name('logout.get');
 
-// Admin Routes - Accessible by admin and staff (managers have their own dashboard)
-Route::prefix('admin')->name('admin.')->middleware(['auth', 'user.status', 'role:admin,staff'])->group(function () {
+// Admin Routes - Accessible by admin, manager, and staff
+Route::prefix('admin')->name('admin.')->middleware(['auth', 'user.status', 'role:admin,manager,staff'])->group(function () {
     // Dashboard
     Route::get('/dashboard', function () {
         return view('admin.dashboard');
@@ -206,6 +208,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'user.status', 'role
         Route::post('/reservations/store', 'store')->name('reservations.store');
         Route::get('/reservations/{booking}', 'show')->name('reservations.show');
         Route::patch('/reservations/{booking}/status', 'updateStatus')->name('reservations.status');
+        Route::patch('/reservations/{booking}/payment-status', 'updatePaymentStatus')->name('reservations.payment-status');
     });
 
     // Legacy booking routes (redirect to reservations)
@@ -230,6 +233,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'user.status', 'role
     })->name('bookings.show');
     
     Route::patch('/bookings/{booking}/status', [AdminBookingController::class, 'updateStatus'])->name('bookings.status');
+    Route::patch('/bookings/{booking}/payment-status', [AdminBookingController::class, 'updatePaymentStatus'])->name('bookings.payment-status');
     
     // Calendar view for bookings
     Route::get('/calendar', [AdminBookingController::class, 'calendar'])->name('calendar');
@@ -259,8 +263,8 @@ Route::prefix('staff')->name('staff.')->middleware(['auth', 'user.status', 'role
     })->name('dashboard');
 });
 
-// Manager Routes - Accessible by manager and admin
-Route::prefix('manager')->name('manager.')->middleware(['auth', 'user.status', 'role:manager,admin'])->group(function () {
+// Manager Routes - Accessible by manager, admin, and staff
+Route::prefix('manager')->name('manager.')->middleware(['auth', 'user.status', 'role:manager,admin,staff'])->group(function () {
     // Add this redirect route for backward compatibility
     Route::get('/reports', function() {
         return redirect()->route('manager.reports.index');
@@ -298,6 +302,7 @@ Route::prefix('manager')->name('manager.')->middleware(['auth', 'user.status', '
     
     // Booking status updates
     Route::patch('/bookings/{id}/status', [App\Http\Controllers\ManagerController::class, 'updateBookingStatus'])->name('bookings.updateStatus');
+    Route::patch('/bookings/{id}/payment-status', [App\Http\Controllers\ManagerController::class, 'updatePaymentStatus'])->name('bookings.payment-status');
     
     // Other booking actions
     Route::patch('/bookings/{id}/confirm', [App\Http\Controllers\ManagerController::class, 'confirmBooking'])->name('bookings.confirm');
@@ -313,8 +318,12 @@ Route::prefix('manager')->name('manager.')->middleware(['auth', 'user.status', '
     // OR if you prefer simple routes:
     // Route::get('/services', [App\Http\Controllers\ManagerController::class, 'services'])->name('services.index');
     
+    // Rooms Resource Routes
+    Route::resource('rooms', App\Http\Controllers\ManagerRoomController::class);
+    Route::post('/rooms/{room}/toggle-availability', [App\Http\Controllers\ManagerRoomController::class, 'toggleAvailability'])->name('rooms.toggle-availability');
+    Route::delete('/rooms/{room}/images/{image}', [App\Http\Controllers\ManagerRoomController::class, 'deleteImage'])->name('rooms.deleteImage');
+    
     // Other management routes
-    Route::get('/rooms', [App\Http\Controllers\ManagerController::class, 'rooms'])->name('rooms');
     Route::get('/staff', [App\Http\Controllers\ManagerController::class, 'staff'])->name('staff');
     Route::get('/guests', [App\Http\Controllers\ManagerController::class, 'guests'])->name('guests');
 
@@ -473,18 +482,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('/service-requests/delete-cancelled', [GuestServiceController::class, 'deleteAllCancelled'])->name('service-requests.delete-cancelled');
     });
 });
-
-// Invoice routes - Only accessible by admin, manager, and staff
-Route::middleware(['auth', 'user.status', 'role:admin,manager,staff'])->group(function () {
-    Route::get('/invoices', [InvoiceController::class, 'index'])->name('invoices.index');
-    Route::get('/invoices/{invoice}', [InvoiceController::class, 'show'])->name('invoices.show');
-    Route::get('/invoices/{invoice}/download', [InvoiceController::class, 'download'])->name('invoices.download');
-
-    // Generate invoice for a specific booking (this matches your existing controller method)
-    Route::post('/bookings/{booking}/invoice/generate', [InvoiceController::class, 'generate'])->name('invoices.generate');
-});
-// Add this to your admin routes section in web.php
-Route::prefix('admin')->name('admin.')->middleware(['auth', 'user.status', 'role:admin'])->group(function () {
+Route::prefix('admin')->name('admin.')->middleware(['auth', 'user.status', 'role:admin,manager,staff'])->group(function () {
     // ... existing admin routes ...
     
     // Payment routes - use PaymentController instead of AdminPaymentController
@@ -505,9 +503,9 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/payments/{payment}', [PaymentController::class, 'show'])->name('payments.show');
 });
 
-// Admin and Manager shared routes
-Route::middleware(['auth', 'user.status', 'role:admin,manager'])->group(function () {
-    // Payment management routes (accessible by both admin and manager)
+// Admin, Manager, and Staff shared routes
+Route::middleware(['auth', 'user.status', 'role:admin,manager,staff'])->group(function () {
+    // Payment management routes (accessible by admin, manager, and staff)
     Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/payments', [PaymentController::class, 'index'])->name('payments.index');
         Route::get('/payments/{payment}', [PaymentController::class, 'show'])->name('payments.show');
@@ -523,11 +521,11 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'user.status', 'role
     // Add any admin-only payment routes here if needed
 });
 
-// Manager routes - add payment management access
-Route::prefix('manager')->name('manager.')->middleware(['auth', 'user.status', 'role:manager,admin'])->group(function () {
+// Manager routes - add payment management access for manager, admin, and staff
+Route::prefix('manager')->name('manager.')->middleware(['auth', 'user.status', 'role:manager,admin,staff'])->group(function () {
     // Existing manager routes...
     
-    // Payment management routes for managers
+    // Payment management routes for managers and staff
     Route::get('/payments', [PaymentController::class, 'index'])->name('payments.index');
     Route::get('/payments/{payment}', [PaymentController::class, 'show'])->name('payments.show');
     Route::patch('/payments/{payment}/status', [PaymentController::class, 'updateStatus'])->name('payments.updateStatus');
@@ -542,8 +540,8 @@ Route::middleware(['auth', 'user.status', 'role:admin'])->group(function () {
          ->name('admin.service-requests.show');
 });
 
-// Manager routes for service requests
-Route::middleware(['auth', 'user.status', 'role:manager,admin'])->group(function () {
+// Manager routes for service requests and payments - accessible to manager, admin, and staff
+Route::middleware(['auth', 'user.status', 'role:manager,admin,staff'])->group(function () {
     Route::prefix('manager')->name('manager.')->group(function () {
         Route::get('/service-requests/{serviceRequest}', [\App\Http\Controllers\Manager\ServiceRequestController::class, 'show'])
              ->name('service-requests.show');
@@ -560,24 +558,6 @@ Route::prefix('manager')->name('manager.')->middleware(['auth', 'user.status', '
 
     // Reservation details for admin/manager/staff
     Route::get('/reservations/{id}', [App\Http\Controllers\ManagerController::class, 'showReservation'])->name('reservations.show');
-    
-    // Show create room form
-    Route::get('/rooms/create', [App\Http\Controllers\ManagerController::class, 'createRoom'])->name('rooms.create');
-    // Store new room (optional, for form submission)
-    Route::post('/rooms', [App\Http\Controllers\ManagerController::class, 'storeRoom'])->name('rooms.store');
-    
-    // Show all rooms
-    Route::get('/rooms', [App\Http\Controllers\ManagerController::class, 'rooms'])->name('rooms');
-    // Show create room form
-    Route::get('/rooms/create', [App\Http\Controllers\ManagerController::class, 'createRoom'])->name('rooms.create');
-    // Store new room
-    Route::post('/rooms', [App\Http\Controllers\ManagerController::class, 'storeRoom'])->name('rooms.store');
-    // Show single room details
-    Route::get('/rooms/{room}', [App\Http\Controllers\ManagerController::class, 'showRoom'])->name('rooms.show');
-    // Edit room (THIS IS THE MISSING ROUTE)
-    Route::get('/rooms/{room}/edit', [App\Http\Controllers\ManagerController::class, 'editRoom'])->name('rooms.edit');
-    // Update room
-    Route::put('/rooms/{room}', [App\Http\Controllers\ManagerController::class, 'updateRoom'])->name('rooms.update');
 });
 
 // Quick Book Room (show booking form for a specific room)

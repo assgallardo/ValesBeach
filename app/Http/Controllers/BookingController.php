@@ -98,6 +98,9 @@ class BookingController extends Controller
             abort(403);
         }
 
+        // Load payment transactions
+        $booking->load(['user', 'room', 'payments.user']);
+
         return view('guest.bookings.show', compact('booking'));
     }
 
@@ -140,7 +143,8 @@ class BookingController extends Controller
     }
 
     /**
-     * Destroy a booking.
+     * Destroy a cancelled booking.
+     * Note: All associated payments will be automatically deleted.
      */
     public function destroy($id)
     {
@@ -149,8 +153,15 @@ class BookingController extends Controller
             ->where('status', 'cancelled')
             ->firstOrFail();
 
+        $paymentCount = $booking->payments()->count();
+        
+        // Delete the booking (payments will be cascade deleted automatically)
         $booking->delete();
 
-        return redirect()->route('guest.bookings.history')->with('success', 'Cancelled booking deleted successfully.');
+        $message = $paymentCount > 0 
+            ? "Cancelled booking and {$paymentCount} associated payment(s) deleted successfully."
+            : 'Cancelled booking deleted successfully.';
+
+        return redirect()->route('guest.bookings.history')->with('success', $message);
     }
 }

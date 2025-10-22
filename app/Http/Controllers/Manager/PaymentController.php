@@ -16,11 +16,11 @@ class PaymentController extends Controller
      */
     public function index(Request $request)
     {
-        if (!in_array(Auth::user()->role, ['admin', 'manager'])) {
-            abort(403, 'Only administrators and managers can access payment tracking.');
+        if (!in_array(Auth::user()->role, ['admin', 'manager', 'staff'])) {
+            abort(403, 'Only administrators, managers, and staff can access payment tracking.');
         }
 
-        $query = Payment::with(['booking', 'user', 'booking.room', 'serviceRequest', 'refundedBy']);
+        $query = Payment::with(['booking', 'user', 'booking.room', 'booking.invoice', 'serviceRequest', 'refundedBy']);
 
         // Filter by status
         if ($request->filled('status')) {
@@ -83,7 +83,19 @@ class PaymentController extends Controller
             ];
         }
 
-        return view('manager.payments.index', compact('payments', 'stats', 'recent_payments', 'payment_trends'));
+        // Get bookings with payments for card display
+        $bookings = \App\Models\Booking::with(['room', 'payments', 'invoice'])
+            ->whereHas('payments')
+            ->orderBy('created_at', 'desc')
+            ->paginate(10);
+
+        // Get service payments separately
+        $servicePayments = Payment::whereNotNull('service_request_id')
+            ->with(['serviceRequest', 'user'])
+            ->orderBy('created_at', 'desc')
+            ->paginate(10);
+
+        return view('manager.payments.index', compact('payments', 'stats', 'recent_payments', 'payment_trends', 'bookings', 'servicePayments'));
     }
 
     /**
@@ -91,8 +103,8 @@ class PaymentController extends Controller
      */
     public function show(Payment $payment)
     {
-        if (!in_array(Auth::user()->role, ['admin', 'manager'])) {
-            abort(403, 'Only administrators and managers can view payment details.');
+        if (!in_array(Auth::user()->role, ['admin', 'manager', 'staff'])) {
+            abort(403, 'Only administrators, managers, and staff can view payment details.');
         }
 
         $payment->load(['booking', 'user', 'booking.room', 'serviceRequest', 'refundedBy']);
@@ -114,14 +126,14 @@ class PaymentController extends Controller
      */
     public function updateStatus(Request $request, Payment $payment)
     {
-        if (!in_array(Auth::user()->role, ['admin', 'manager'])) {
-            abort(403, 'Only administrators and managers can update payment status.');
+        if (!in_array(Auth::user()->role, ['admin', 'manager', 'staff'])) {
+            abort(403, 'Only administrators, managers, and staff can update payment status.');
         }
 
         // Managers can only update certain statuses
         $allowedStatuses = Auth::user()->role === 'admin' 
-            ? ['pending', 'processing', 'completed', 'failed']
-            : ['pending', 'processing', 'completed']; // Managers cannot mark as failed
+            ? ['pending', 'processing', 'completed', 'failed', 'refunded', 'cancelled']
+            : ['pending', 'processing', 'completed', 'cancelled']; // Managers cannot mark as failed or refunded
 
         $request->validate([
             'status' => 'required|in:' . implode(',', $allowedStatuses),
@@ -166,8 +178,8 @@ class PaymentController extends Controller
      */
     public function analytics(Request $request)
     {
-        if (!in_array(Auth::user()->role, ['admin', 'manager'])) {
-            abort(403, 'Only administrators and managers can view payment analytics.');
+        if (!in_array(Auth::user()->role, ['admin', 'manager', 'staff'])) {
+            abort(403, 'Only administrators, managers, and staff can view payment analytics.');
         }
 
         $period = $request->get('period', '7days');
@@ -233,8 +245,8 @@ class PaymentController extends Controller
      */
     public function export(Request $request)
     {
-        if (!in_array(Auth::user()->role, ['admin', 'manager'])) {
-            abort(403, 'Only administrators and managers can export payment data.');
+        if (!in_array(Auth::user()->role, ['admin', 'manager', 'staff'])) {
+            abort(403, 'Only administrators, managers, and staff can export payment data.');
         }
 
         $query = Payment::with(['booking', 'user', 'serviceRequest']);

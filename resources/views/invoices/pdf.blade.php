@@ -227,10 +227,12 @@
                     <td>Subtotal:</td>
                     <td style="text-align: right;">{{ $invoice->formatted_subtotal }}</td>
                 </tr>
+                @if($invoice->tax_rate > 0)
                 <tr>
                     <td>VAT ({{ $invoice->tax_rate }}%):</td>
                     <td style="text-align: right;">{{ $invoice->formatted_tax_amount }}</td>
                 </tr>
+                @endif
                 <tr class="total-row">
                     <td>Total:</td>
                     <td style="text-align: right; color: #059669;">{{ $invoice->formatted_total_amount }}</td>

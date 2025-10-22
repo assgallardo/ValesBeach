@@ -41,7 +41,30 @@ class Booking extends Model
         'total_price' => 'decimal:2',
         'amount_paid' => 'decimal:2',
         'remaining_balance' => 'decimal:2'
-    ];    // Relationships
+    ];
+
+    /**
+     * Boot method to handle model events
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        // When a booking is being deleted, ensure all related payments are deleted
+        static::deleting(function ($booking) {
+            // Delete all associated payments
+            // Note: This is a safeguard - cascade delete at database level should handle this automatically
+            $booking->payments()->delete();
+            
+            \Log::info('Booking deleted - payments also removed', [
+                'booking_id' => $booking->id,
+                'booking_reference' => $booking->booking_reference,
+                'status' => $booking->status
+            ]);
+        });
+    }
+
+    // Relationships
     /**
      * Get the user that owns the booking.
      */
@@ -235,6 +258,16 @@ class Booking extends Model
         } elseif ($totalPaid > 0) {
             $paymentStatus = 'partial';
         }
+
+        // Debug logging
+        \Log::info('Booking updatePaymentTracking', [
+            'booking_id' => $this->id,
+            'total_price' => $this->total_price,
+            'total_paid_calculated' => $totalPaid,
+            'remaining_balance_calculated' => $remainingBalance,
+            'payment_status' => $paymentStatus,
+            'payment_count' => $this->payments()->where('status', 'completed')->count()
+        ]);
 
         $this->update([
             'amount_paid' => $totalPaid,

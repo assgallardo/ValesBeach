@@ -656,6 +656,7 @@ class BookingController extends Controller
      */
     public function show(Booking $booking)
     {
+        $booking->load(['user', 'room', 'payments.user']);
         return view('admin.bookings.show', compact('booking'));
     }
 
@@ -680,6 +681,80 @@ class BookingController extends Controller
         ]);
 
         return redirect()->back()->with('success', 'Booking updated.');
+    }
+
+    /**
+     * Update booking payment status.
+     */
+    public function updatePaymentStatus(Request $request, Booking $booking)
+    {
+        \Log::info('Payment status update requested', [
+            'booking_id' => $booking->id,
+            'requested_status' => $request->payment_status,
+            'current_status' => $booking->payment_status,
+            'request_data' => $request->all()
+        ]);
+
+        $request->validate([
+            'payment_status' => ['required', 'string', 'in:unpaid,partial,paid,cancelled']
+        ]);
+
+        $oldStatus = $booking->payment_status;
+
+        // Start transaction
+        \DB::beginTransaction();
+        try {
+            // Update booking payment status
+            $booking->update([
+                'payment_status' => $request->payment_status
+            ]);
+
+            $paymentsUpdated = 0;
+            
+            // Update all related payment records' status
+            if ($request->payment_status === 'paid') {
+                // If marking as paid, set all payments to completed
+                $paymentsUpdated = $booking->payments()->update(['status' => 'completed']);
+            } elseif ($request->payment_status === 'cancelled') {
+                // If marking as cancelled, set all payments to cancelled
+                $paymentsUpdated = $booking->payments()->update(['status' => 'cancelled']);
+            } elseif ($request->payment_status === 'unpaid') {
+                // If marking as unpaid, set all payments to pending
+                $paymentsUpdated = $booking->payments()->update(['status' => 'pending']);
+            }
+            // For 'partial', we keep the existing payment statuses as they are
+
+            // Refresh the booking to get updated data
+            $booking->refresh();
+
+            \DB::commit();
+
+            \Log::info('Payment status updated successfully', [
+                'booking_id' => $booking->id,
+                'old_status' => $oldStatus,
+                'new_status' => $booking->payment_status,
+                'updated_by' => auth()->id(),
+                'total_payments' => $booking->payments()->count(),
+                'payments_updated' => $paymentsUpdated
+            ]);
+
+            $message = "Payment status updated successfully to " . ucfirst($request->payment_status) . ".";
+            if ($paymentsUpdated > 0) {
+                $message .= " {$paymentsUpdated} payment record(s) have been updated.";
+            }
+
+            return redirect()->back()->with('success', $message);
+            
+        } catch (\Exception $e) {
+            \DB::rollBack();
+            \Log::error('Payment status update failed', [
+                'booking_id' => $booking->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return redirect()->back()->with('error', 'Failed to update payment status: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -797,7 +872,7 @@ class BookingController extends Controller
      */
     public function reservations(Request $request)
     {
-        $query = Booking::with(['user', 'room']);
+        $query = Booking::with(['user', 'room', 'payments']);
 
         // Apply filters
         if ($request->filled('status')) {

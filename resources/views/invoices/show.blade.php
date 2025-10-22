@@ -1,4 +1,4 @@
-@extends('layouts.guest')
+@extends(auth()->user()->role === 'admin' ? 'layouts.admin' : (auth()->user()->role === 'manager' ? 'layouts.manager' : (auth()->user()->role === 'staff' ? 'layouts.staff' : 'layouts.guest')))
 
 @section('title', 'Invoice - ' . $invoice->invoice_number)
 
@@ -147,10 +147,12 @@
                                 <span class="text-gray-600">Subtotal:</span>
                                 <span>{{ $invoice->formatted_subtotal }}</span>
                             </div>
+                            @if($invoice->tax_rate > 0)
                             <div class="flex justify-between py-2">
                                 <span class="text-gray-600">VAT ({{ $invoice->tax_rate }}%):</span>
                                 <span>{{ $invoice->formatted_tax_amount }}</span>
                             </div>
+                            @endif
                             <div class="flex justify-between py-3 border-t-2 border-gray-300 font-bold text-lg">
                                 <span>Total:</span>
                                 <span class="text-green-600">{{ $invoice->formatted_total_amount }}</span>
@@ -232,14 +234,40 @@
                 Print Invoice
             </button>
             
+            @php
+                $role = auth()->user()->role;
+                if ($role === 'admin') {
+                    $bookingRoute = route('admin.bookings.show', $invoice->booking);
+                    $dashboardRoute = route('admin.dashboard');
+                } elseif ($role === 'manager') {
+                    $bookingRoute = route('manager.bookings.show', $invoice->booking);
+                    $dashboardRoute = route('manager.dashboard');
+                } elseif ($role === 'staff') {
+                    $bookingRoute = route('admin.bookings.show', $invoice->booking);
+                    $dashboardRoute = route('staff.dashboard');
+                } else {
+                    $bookingRoute = route('guest.bookings.show', $invoice->booking);
+                    $dashboardRoute = route('guest.dashboard');
+                }
+            @endphp
+            
             <a 
-                href="{{ route('guest.bookings.show', $invoice->booking) }}" 
+                href="{{ $bookingRoute }}" 
                 class="flex-1 bg-gray-600 text-white px-6 py-3 rounded-lg font-medium text-center hover:bg-gray-700 transition-colors"
             >
                 <i class="fas fa-bed mr-2"></i>
                 View Booking
             </a>
             
+            @if(in_array($role, ['admin', 'manager', 'staff']))
+            <a 
+                href="{{ $dashboardRoute }}" 
+                class="flex-1 bg-gray-600 text-white px-6 py-3 rounded-lg font-medium text-center hover:bg-gray-700 transition-colors"
+            >
+                <i class="fas fa-arrow-left mr-2"></i>
+                Back to Dashboard
+            </a>
+            @else
             <a 
                 href="{{ route('invoices.index') }}" 
                 class="flex-1 bg-gray-600 text-white px-6 py-3 rounded-lg font-medium text-center hover:bg-gray-700 transition-colors"
@@ -247,6 +275,7 @@
                 <i class="fas fa-arrow-left mr-2"></i>
                 Back to Invoices
             </a>
+            @endif
         </div>
     </div>
 </div>

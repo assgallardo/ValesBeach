@@ -6,7 +6,7 @@
         <!-- Header with Back Button -->
         <div class="flex justify-between items-center mb-6">
             <h2 class="text-3xl font-bold text-white">Room Details</h2>
-            <a href="{{ route('admin.rooms.index') }}" 
+            <a href="{{ route('manager.rooms.index') }}" 
                class="text-gray-300 hover:text-white">
                 Back to Rooms
             </a>
@@ -106,11 +106,11 @@
 
             <!-- Action Buttons -->
             <div class="p-6 bg-gray-700 flex justify-end space-x-4">
-                <a href="{{ route('admin.rooms.edit', $room) }}" 
+                <a href="{{ route('manager.rooms.edit', $room) }}" 
                    class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
                     Edit Room
                 </a>
-                <form action="{{ route('admin.rooms.destroy', $room) }}" 
+                <form action="{{ route('manager.rooms.destroy', $room) }}" 
                       method="POST"
                       onsubmit="return confirm('Are you sure you want to delete this room?')">
                     @csrf
@@ -129,7 +129,7 @@
 <script>
 function deleteImage(roomId, imageId) {
     if (confirm('Are you sure you want to delete this image?')) {
-        fetch(`/admin/rooms/${roomId}/images/${imageId}`, {
+        fetch(`/manager/rooms/${roomId}/images/${imageId}`, {
             method: 'DELETE',
             headers: {
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content

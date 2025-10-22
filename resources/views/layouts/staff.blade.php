@@ -8,7 +8,10 @@
 </head>
 <body class="font-sans antialiased min-h-screen bg-gray-900">
     <!-- Sidebar -->
-    <div class="fixed inset-y-0 left-0 w-64 bg-green-900/50 backdrop-blur-sm">
+    @php
+        $hidesSidebar = request()->routeIs('invoices.*');
+    @endphp
+    <div class="fixed inset-y-0 left-0 w-64 bg-green-900/50 backdrop-blur-sm {{ $hidesSidebar ? 'hidden' : '' }}">
         <div class="flex items-center justify-center h-16 border-b border-green-800">
             <span class="text-xl font-bold text-white">Vales Beach Resort</span>
         </div>
@@ -72,9 +75,9 @@
     </div>
 
     <!-- Main Content -->
-    <div class="ml-64">
+    <div class="{{ $hidesSidebar ? '' : 'ml-64' }}">
         <!-- Top Navigation -->
-        <div class="bg-green-900/50 backdrop-blur-sm">
+        <div class="bg-green-900/50 backdrop-blur-sm {{ $hidesSidebar ? 'hidden' : '' }}">
             <div class="flex items-center justify-end h-16 px-6">
                 <div class="flex items-center space-x-4">
                     <div class="flex items-center">
@@ -93,7 +96,7 @@
         </div>
 
         <!-- Page Content -->
-        <main class="p-6">
+        <main class="{{ $hidesSidebar ? '' : 'p-6' }}">
             @yield('content')
         </main>
     </div>

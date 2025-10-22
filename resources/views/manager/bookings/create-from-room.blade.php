@@ -1,237 +1,236 @@
-@extends('layouts.admin')
+@extends('layouts.manager')
 
 @section('content')
-    <main class="relative z-10 py-8 lg:py-16">
-        <div class="container mx-auto px-4 lg:px-16">
-            <!-- Page Header -->
-            <div class="text-center mb-12">
-                <h2 class="text-3xl md:text-4xl lg:text-5xl font-bold text-green-50 mb-4">
-                    Quick Book Room - {{ $room->name }}
-                </h2>
-                <p class="text-green-50 opacity-80 text-lg">
-                    Create a new booking for this room
-                </p>
-                <div class="mt-6">
-                    <a href="{{ route('manager.bookings.index') }}" 
-                       class="bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg transition-colors duration-200">
-                        <i class="fas fa-arrow-left mr-2"></i>Back to Bookings
-                    </a>
-                </div>
+<div class="container mx-auto px-4 lg:px-8 py-8">
+    <!-- Page Title -->
+    <div class="mb-8 flex items-center">
+        <a href="{{ route('manager.bookings.index') }}" 
+           class="inline-flex items-center text-gray-400 hover:text-white mr-4">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+            </svg>
+            Back to Reservations
+        </a>
+        <div>
+            <h1 class="text-3xl font-bold text-white">Reserve Room: {{ $room->name }}</h1>
+            <p class="text-gray-400 mt-2">Create a reservation for this specific room</p>
+        </div>
+    </div>
+
+    <!-- Room Information Card -->
+    <div class="bg-gray-800 rounded-lg p-6 mb-8">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div>
+                <h3 class="text-lg font-semibold text-white mb-2">Room Details</h3>
+                <p class="text-gray-300"><strong>Name:</strong> {{ $room->name }}</p>
+                <p class="text-gray-300"><strong>Type:</strong> {{ $room->type ?? 'Standard' }}</p>
+                <p class="text-gray-300"><strong>Capacity:</strong> {{ $room->capacity }} guests</p>
             </div>
-
-            <div class="max-w-4xl mx-auto">
-                <!-- Room Information Card -->
-                <div class="bg-green-900/50 backdrop-blur-sm rounded-lg p-8 border border-green-700/30 mb-8">
-                    <h3 class="text-xl font-bold text-green-50 mb-6 flex items-center">
-                        <i class="fas fa-bed mr-3 text-purple-400"></i>Room Details
-                    </h3>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div>
-                            <label class="block text-green-300 text-sm font-medium mb-2">Room Name</label>
-                            <p class="text-green-50 font-medium">{{ $room->name }}</p>
-                        </div>
-                        <div>
-                            <label class="block text-green-300 text-sm font-medium mb-2">Room Type</label>
-                            <p class="text-green-50">{{ $room->type ?? 'Standard' }}</p>
-                        </div>
-                        <div>
-                            <label class="block text-green-300 text-sm font-medium mb-2">Capacity</label>
-                            <p class="text-green-50">{{ $room->capacity ?? 2 }} guests</p>
-                        </div>
-                        <div>
-                            <label class="block text-green-300 text-sm font-medium mb-2">Price per Night</label>
-                            <p class="text-green-50 font-medium">₱{{ number_format($room->price ?? 0, 2) }}</p>
-                        </div>
-                        <div>
-                            <label class="block text-green-300 text-sm font-medium mb-2">Status</label>
-                            <span class="px-3 py-1 rounded-full text-sm font-medium
-                                @if(($room->status ?? 'available') === 'available') bg-green-500/20 text-green-400
-                                @elseif(($room->status ?? 'available') === 'occupied') bg-red-500/20 text-red-400
-                                @elseif(($room->status ?? 'available') === 'maintenance') bg-yellow-500/20 text-yellow-400
-                                @endif">
-                                {{ ucfirst($room->status ?? 'Available') }}
-                            </span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Booking Form -->
-                <form action="{{ route('manager.bookings.store') }}" method="POST" class="space-y-8">
-                    @csrf
-                    <input type="hidden" name="room_id" value="{{ $room->id }}">
-
-                    <!-- Guest Selection -->
-                    <div class="bg-green-900/50 backdrop-blur-sm rounded-lg p-8 border border-green-700/30">
-                        <h3 class="text-xl font-bold text-green-50 mb-6 flex items-center">
-                            <i class="fas fa-user mr-3 text-blue-400"></i>Guest Information
-                        </h3>
-                        
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                                <label for="user_id" class="block text-green-300 text-sm font-medium mb-2">Select Guest</label>
-                                <select id="user_id" name="user_id" required
-                                        class="w-full bg-green-800/50 border border-green-600 rounded-lg px-3 py-2 text-green-50 focus:outline-none focus:border-green-400">
-                                    <option value="">Choose a guest...</option>
-                                    @foreach($guests as $guest)
-                                    <option value="{{ $guest->id }}">{{ $guest->name }} ({{ $guest->email }})</option>
-                                    @endforeach
-                                </select>
-                                @error('user_id')
-                                <p class="text-red-400 text-sm mt-1">{{ $message }}</p>
-                                @enderror
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Booking Details -->
-                    <div class="bg-green-900/50 backdrop-blur-sm rounded-lg p-8 border border-green-700/30">
-                        <h3 class="text-xl font-bold text-green-50 mb-6 flex items-center">
-                            <i class="fas fa-calendar-check mr-3 text-green-400"></i>Booking Details
-                        </h3>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                                <label for="check_in_date" class="block text-green-300 text-sm font-medium mb-2">Check-in Date</label>
-                                <input type="datetime-local" 
-                                       id="check_in_date" 
-                                       name="check_in" 
-                                       value="{{ old('check_in', date('Y-m-d\TH:i')) }}"
-                                       min="{{ date('Y-m-d\TH:i') }}"
-                                       required
-                                       class="w-full bg-green-800/50 border border-green-600 rounded-lg px-3 py-2 text-green-50 focus:outline-none focus:border-green-400 @error('check_in') border-red-500 @enderror">
-                                @error('check_in')
-                                <p class="text-red-400 text-sm mt-1">{{ $message }}</p>
-                                @enderror
-                            </div>
-                            
-                            <div>
-                                <label for="check_out_date" class="block text-green-300 text-sm font-medium mb-2">Check-out Date</label>
-                                <input type="datetime-local" 
-                                       id="check_out_date" 
-                                       name="check_out" 
-                                       value="{{ old('check_out', date('Y-m-d\TH:i', strtotime('+1 day'))) }}"
-                                       min="{{ date('Y-m-d\TH:i', strtotime('+1 day')) }}"
-                                       required
-                                       class="w-full bg-green-800/50 border border-green-600 rounded-lg px-3 py-2 text-green-50 focus:outline-none focus:border-green-400 @error('check_out') border-red-500 @enderror">
-                                @error('check_out')
-                                <p class="text-red-400 text-sm mt-1">{{ $message }}</p>
-                                @enderror
-                            </div>
-                            
-                            <div>
-                                <label for="guests" class="block text-green-300 text-sm font-medium mb-2">Number of Guests</label>
-                                <input type="number" 
-                                       id="guests" 
-                                       name="guests" 
-                                       value="{{ old('guests', 1) }}"
-                                       min="1" 
-                                       max="{{ $room->capacity ?? 10 }}"
-                                       required
-                                       class="w-full bg-green-800/50 border border-green-600 rounded-lg px-3 py-2 text-green-50 focus:outline-none focus:border-green-400 @error('guests') border-red-500 @enderror">
-                                @error('guests')
-                                <p class="text-red-400 text-sm mt-1">{{ $message }}</p>
-                                @enderror
-                                <p class="text-green-400 text-sm mt-1">Maximum: {{ $room->capacity ?? 10 }} guests</p>
-                            </div>
-                            
-                            <div>
-                                <label for="status" class="block text-green-300 text-sm font-medium mb-2">Booking Status</label>
-                                <select id="status" 
-                                        name="status" 
-                                        class="w-full bg-green-800/50 border border-green-600 rounded-lg px-3 py-2 text-green-50 focus:outline-none focus:border-green-400">
-                                    <option value="confirmed">Confirmed</option>
-                                    <option value="pending">Pending</option>
-                                    <option value="checked_in">Checked In</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="mt-6">
-                            <label for="special_requests" class="block text-green-300 text-sm font-medium mb-2">Special Requests</label>
-                            <textarea id="special_requests" 
-                                      name="special_requests" 
-                                      rows="4" 
-                                      placeholder="Any special requests or notes..."
-                                      class="w-full bg-green-800/50 border border-green-600 rounded-lg px-3 py-2 text-green-50 focus:outline-none focus:border-green-400">{{ old('special_requests') }}</textarea>
-                        </div>
-                    </div>
-
-                    <!-- Price Summary -->
-                    <div class="bg-green-900/50 backdrop-blur-sm rounded-lg p-8 border border-green-700/30">
-                        <h3 class="text-xl font-bold text-green-50 mb-6 flex items-center">
-                            <i class="fas fa-calculator mr-3 text-yellow-400"></i>Price Summary
-                        </h3>
-                        <div id="price-breakdown">
-                            <div class="space-y-3">
-                                <div class="flex justify-between">
-                                    <span class="text-green-300">Room Rate per Night</span>
-                                    <span class="text-green-50">₱{{ number_format($room->price ?? 0, 2) }}</span>
-                                </div>
-                                <div class="flex justify-between">
-                                    <span class="text-green-300">Number of Nights</span>
-                                    <span class="text-green-50" id="nights-count">1</span>
-                                </div>
-                                <div class="flex justify-between">
-                                    <span class="text-green-300">Subtotal</span>
-                                    <span class="text-green-50" id="subtotal">₱{{ number_format($room->price ?? 0, 2) }}</span>
-                                </div>
-                                <hr class="border-green-700">
-                                <div class="flex justify-between font-bold text-lg">
-                                    <span class="text-green-200">Total Amount</span>
-                                    <span class="text-green-50" id="total-amount">₱{{ number_format($room->price ?? 0, 2) }}</span>
-                                </div>
-                            </div>
-                        </div>
-                        <input type="hidden" name="total_price" id="total_price_input" value="{{ $room->price ?? 0 }}">
-                    </div>
-
-                    <!-- Action Buttons -->
-                    <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                        <button type="submit" 
-                                class="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-lg transition-colors duration-200 font-medium">
-                            <i class="fas fa-calendar-plus mr-2"></i>Create Booking
-                        </button>
-                        <a href="{{ route('manager.bookings.index') }}" 
-                           class="bg-gray-600 hover:bg-gray-700 text-white px-8 py-3 rounded-lg transition-colors duration-200 font-medium text-center">
-                            <i class="fas fa-times mr-2"></i>Cancel
-                        </a>
-                    </div>
-                </form>
+            <div>
+                <h3 class="text-lg font-semibold text-white mb-2">Pricing</h3>
+                <p class="text-green-400 text-2xl font-bold">₱{{ number_format($room->price, 2) }}</p>
+                <p class="text-gray-400">per night</p>
+            </div>
+            <div>
+                <h3 class="text-lg font-semibold text-white mb-2">Amenities</h3>
+                <p class="text-gray-300">{{ $room->description ?? 'Standard amenities included' }}</p>
             </div>
         </div>
-    </main>
-@endsection
+    </div>
 
-@push('scripts')
-<script>
-    const roomPrice = {{ $room->price ?? 0 }};
-    
-    // Price calculation
-    function calculateTotal() {
-        const checkIn = document.getElementById('check_in_date').value;
-        const checkOut = document.getElementById('check_out_date').value;
+    <!-- Booking Form -->
+    <div class="bg-gray-800 rounded-lg p-8">
+        <h2 class="text-xl font-semibold text-white mb-6">Guest & Booking Details</h2>
         
-        if (checkIn && checkOut) {
-            const startDate = new Date(checkIn);
-            const endDate = new Date(checkOut);
-            const timeDiff = endDate.getTime() - startDate.getTime();
-            const nights = Math.ceil(timeDiff / (1000 * 3600 * 24));
+        <form action="{{ route('manager.bookings.store') }}" method="POST" class="space-y-6">
+            @csrf
+            <input type="hidden" name="room_id" value="{{ $room->id }}">
             
-            if (nights > 0) {
-                const subtotal = roomPrice * nights;
-                const total = subtotal;
-                
-                document.getElementById('nights-count').textContent = nights;
-                document.getElementById('subtotal').textContent = '₱' + subtotal.toLocaleString('en-PH', {minimumFractionDigits: 2});
-                document.getElementById('total-amount').textContent = '₱' + total.toLocaleString('en-PH', {minimumFractionDigits: 2});
-                document.getElementById('total_price_input').value = total;
-            }
+            <!-- Guest Selection or Creation -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="md:col-span-2">
+                    <div x-data="{ guestType: 'existing' }">
+                        <label class="block text-sm font-medium text-gray-300 mb-3">Guest Information *</label>
+                        
+                        <!-- Guest Type Selection -->
+                        <div class="flex space-x-4 mb-4">
+                            <label class="flex items-center">
+                                <input type="radio" x-model="guestType" value="existing" class="text-green-600 bg-gray-700 border-gray-600 focus:ring-green-500">
+                                <span class="ml-2 text-gray-300">Select Existing Guest</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="radio" x-model="guestType" value="new" class="text-green-600 bg-gray-700 border-gray-600 focus:ring-green-500">
+                                <span class="ml-2 text-gray-300">Create New Guest</span>
+                            </label>
+                        </div>
+
+                        <!-- Existing Guest Selection -->
+                        <div x-show="guestType === 'existing'" class="space-y-4">
+                            <select name="user_id" :required="guestType === 'existing'"
+                                    class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                                <option value="">Choose a guest...</option>
+                                @foreach($users as $user)
+                                    <option value="{{ $user->id }}" {{ old('user_id') == $user->id ? 'selected' : '' }}>
+                                        {{ $user->name }} ({{ $user->email }})
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <!-- New Guest Creation -->
+                        <div x-show="guestType === 'new'" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm text-gray-400 mb-1">Guest Name *</label>
+                                <input type="text" name="guest_name" :required="guestType === 'new'"
+                                       value="{{ old('guest_name') }}"
+                                       placeholder="Enter guest full name"
+                                       class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                            </div>
+                            <div>
+                                <label class="block text-sm text-gray-400 mb-1">Guest Email *</label>
+                                <input type="email" name="guest_email" :required="guestType === 'new'"
+                                       value="{{ old('guest_email') }}"
+                                       placeholder="Enter guest email address"
+                                       class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                            </div>
+                        </div>
+                    </div>
+                    @error('user_id')
+                        <p class="text-red-400 text-sm mt-1">{{ $message }}</p>
+                    @enderror
+                    @error('guest_name')
+                        <p class="text-red-400 text-sm mt-1">{{ $message }}</p>
+                    @enderror
+                    @error('guest_email')
+                        <p class="text-red-400 text-sm mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+            </div>
+
+            <!-- Booking Details -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Check-in Date *</label>
+                    <input type="date" name="check_in" required id="check_in"
+                           value="{{ old('check_in', date('Y-m-d')) }}"
+                           min="{{ date('Y-m-d') }}"
+                           class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                    @error('check_in')
+                        <p class="text-red-400 text-sm mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Check-out Date *</label>
+                    <input type="date" name="check_out" required id="check_out"
+                           value="{{ old('check_out', date('Y-m-d', strtotime('+1 day'))) }}"
+                           min="{{ date('Y-m-d', strtotime('+1 day')) }}"
+                           class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                    @error('check_out')
+                        <p class="text-red-400 text-sm mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Number of Guests *</label>
+                    <input type="number" name="guests" required min="1" max="{{ $room->capacity }}"
+                           value="{{ old('guests', 1) }}"
+                           class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                    <p class="text-sm text-gray-400 mt-1">Maximum: {{ $room->capacity }} guests</p>
+                    @error('guests')
+                        <p class="text-red-400 text-sm mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+            </div>
+
+            <!-- Status and Price Preview -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Booking Status *</label>
+                    <select name="status" required
+                            class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                        <option value="confirmed" {{ old('status', 'confirmed') == 'confirmed' ? 'selected' : '' }}>Confirmed</option>
+                        <option value="pending" {{ old('status') == 'pending' ? 'selected' : '' }}>Pending</option>
+                        <option value="checked_in" {{ old('status') == 'checked_in' ? 'selected' : '' }}>Checked In</option>
+                        <option value="checked_out" {{ old('status') == 'checked_out' ? 'selected' : '' }}>Checked Out</option>
+                        <option value="cancelled" {{ old('status') == 'cancelled' ? 'selected' : '' }}>Cancelled</option>
+                    </select>
+                    @error('status')
+                        <p class="text-red-400 text-sm mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <!-- Price Preview -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Total Amount</label>
+                    <div class="w-full px-4 py-3 bg-gray-600 border border-gray-600 rounded-lg">
+                        <div class="text-green-400 text-xl font-bold" id="total_preview">
+                            Select dates to calculate
+                        </div>
+                        <div class="text-gray-400 text-sm" id="breakdown_preview">
+                            ₱{{ number_format($room->price, 2) }} per night
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="flex justify-end space-x-4 pt-6">
+                <a href="{{ route('manager.bookings.index') }}" 
+                   class="px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors duration-200">
+                    Cancel
+                </a>
+                <button type="submit" 
+                        class="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200 shadow-lg">
+                    Create Booking for {{ $room->name }}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const checkInInput = document.getElementById('check_in');
+    const checkOutInput = document.getElementById('check_out');
+    const totalPreview = document.getElementById('total_preview');
+    const breakdownPreview = document.getElementById('breakdown_preview');
+    const pricePerNight = {{ $room->price }};
+
+    function updateTotalPreview() {
+        const checkInDate = new Date(checkInInput.value);
+        const checkOutDate = new Date(checkOutInput.value);
+
+        if (checkInInput.value && checkOutInput.value && checkOutDate > checkInDate) {
+            const nights = Math.ceil((checkOutDate - checkInDate) / (1000 * 60 * 60 * 24));
+            const total = pricePerNight * nights;
+            
+            totalPreview.textContent = `₱${total.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            breakdownPreview.textContent = `₱${pricePerNight.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} × ${nights} night${nights > 1 ? 's' : ''}`;
+        } else {
+            totalPreview.textContent = 'Select dates to calculate';
+            breakdownPreview.textContent = `₱${pricePerNight.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} per night`;
         }
     }
 
-    document.getElementById('check_in_date').addEventListener('change', calculateTotal);
-    document.getElementById('check_out_date').addEventListener('change', calculateTotal);
-    
+    // Update check-out minimum date when check-in changes
+    checkInInput.addEventListener('change', function() {
+        const checkInDate = new Date(this.value);
+        const nextDay = new Date(checkInDate);
+        nextDay.setDate(nextDay.getDate() + 1);
+        checkOutInput.min = nextDay.toISOString().split('T')[0];
+        
+        if (checkOutInput.value && new Date(checkOutInput.value) <= checkInDate) {
+            checkOutInput.value = nextDay.toISOString().split('T')[0];
+        }
+        
+        updateTotalPreview();
+    });
+
+    checkOutInput.addEventListener('change', updateTotalPreview);
+
     // Initial calculation
-    calculateTotal();
+    updateTotalPreview();
+});
 </script>
-@endpush
+@endsection

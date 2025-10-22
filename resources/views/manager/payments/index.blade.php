@@ -11,11 +11,14 @@
             Payment Tracking
         </h1>
         <div class="d-flex gap-2">
-            <button type="button" class="btn btn-primary btn-sm" data-toggle="modal" data-target="#filterModal">
-                <i class="fas fa-filter"></i> Filter Payments
+            <button type="button" class="btn btn-purple btn-sm" onclick="openGenerateInvoiceModal()">
+                <i class="fas fa-file-invoice-dollar"></i> Generate Invoice
             </button>
-            <button type="button" class="btn btn-purple btn-sm" onclick="togglePaymentHistory()">
-                <i class="fas fa-history"></i> Payment History
+            <button type="button" class="btn btn-primary btn-sm" data-toggle="modal" data-target="#filterModal">
+                <i class="fas fa-filter"></i> Filter
+            </button>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="togglePaymentHistory()">
+                <i class="fas fa-history"></i> History
             </button>
             <a href="{{ route('manager.payments.analytics') }}" class="btn btn-info btn-sm">
                 <i class="fas fa-chart-bar"></i> Analytics
@@ -151,252 +154,312 @@
     </div>
 
     <div class="row">
-        <!-- Payments Table -->
+        <!-- Booking Payments (Grouped) -->
         <div class="col-lg-8">
             <div class="card shadow mb-4">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">Payment Transactions</h6>
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-bed mr-2"></i>Booking Payments
+                    </h6>
+                    <span class="badge badge-primary badge-pill">{{ $bookings->total() }} Bookings</span>
                 </div>
                 <div class="card-body">
-                    @if($payments->count() > 0)
-                        <div class="table-responsive">
-                            <table class="table table-bordered" width="100%" cellspacing="0">
-                                <thead>
-                                    <tr>
-                                        <th>Reference</th>
-                                        <th>Customer</th>
-                                        <th>Amount</th>
-                                        <th>Method</th>
-                                        <th>Status</th>
-                                        <th>Date</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach($payments as $payment)
-                                        <tr>
-                                            <td>
-                                                <a href="{{ route('manager.payments.show', $payment) }}" class="text-decoration-none">
-                                                    <strong>{{ $payment->payment_reference }}</strong>
-                                                </a>
+                    @if($bookings->count() > 0)
+                        <div class="row">
+                            @foreach($bookings as $booking)
+                            <div class="col-md-6 mb-3">
+                                <div class="card border-left-{{ $booking->remaining_balance > 0 ? 'warning' : 'success' }} h-100">
+                                    <div class="card-body p-3">
+                                        <!-- Booking Header -->
+                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                            <div class="flex-grow-1">
+                                                <h6 class="font-weight-bold mb-1">
+                                                    <i class="fas fa-bed text-primary mr-1"></i>
+                                                    {{ $booking->room->name }}
+                                                </h6>
                                                 <div class="small text-muted">
-                                                    {{ $payment->payment_category }}
+                                                    <i class="fas fa-hashtag"></i> {{ $booking->booking_reference }}
                                                 </div>
-                                            </td>
-                                            <td>
-                                                <div class="font-weight-bold">{{ $payment->user->name }}</div>
-                                                <div class="small text-muted">{{ $payment->user->email }}</div>
-                                            </td>
-                                            <td class="px-6 py-4">
-                                                <div class="font-bold text-green-400">
-                                                    ₱{{ number_format($payment->calculated_amount, 2) }}
-                                                </div>
-                                                
-                                                <!-- Show breakdown for services -->
-                                                @if($payment->serviceRequest && $payment->serviceRequest->service)
-                                                    @php
-                                                        $service = $payment->serviceRequest->service;
-                                                        $quantity = $payment->serviceRequest->quantity ?? 1;
-                                                        $serviceTotal = $service->price * $quantity;
-                                                    @endphp
-                                                    <div class="text-xs text-gray-400 mt-1">
-                                                        {{ $service->name }}
-                                                    </div>
-                                                    <div class="text-xs text-blue-400">
-                                                        ₱{{ number_format($service->price, 2) }}
-                                                        @if($quantity > 1)
-                                                            × {{ $quantity }}
-                                                        @endif
-                                                    </div>
-                                                    @if($quantity > 1)
-                                                        <div class="text-xs font-medium text-green-300">
-                                                            Total: ₱{{ number_format($serviceTotal, 2) }}
-                                                        </div>
-                                                    @endif
-                                                    @if($service->duration)
-                                                        <div class="text-xs text-gray-500">
-                                                            {{ $service->duration }} min
-                                                        </div>
-                                                    @endif
-                                                @endif
-                                                
-                                                <!-- Show breakdown for bookings -->
-                                                @if($payment->booking && $payment->booking->room)
-                                                    @php
-                                                        $checkIn = \Carbon\Carbon::parse($payment->booking->check_in_date);
-                                                        $checkOut = \Carbon\Carbon::parse($payment->booking->check_out_date);
-                                                        $nights = $checkIn->diffInDays($checkOut);
-                                                        $roomCost = $payment->booking->room->price * $nights;
-                                                    @endphp
-                                                    <div class="text-xs text-gray-400 mt-1">
-                                                        {{ $payment->booking->room->name }}
-                                                    </div>
-                                                    <div class="text-xs text-blue-400">
-                                                        ₱{{ number_format($payment->booking->room->price, 2) }} × {{ $nights }} nights
-                                                    </div>
-                                                @endif
-                                                
-                                                <!-- Show refund information -->
-                                                @if($payment->refund_amount > 0)
-                                                    <div class="text-sm text-red-400 mt-1">
-                                                        Refunded: ₱{{ number_format($payment->refund_amount, 2) }}
-                                                    </div>
-                                                    <div class="text-sm font-medium text-green-400">
-                                                        Net: ₱{{ number_format($payment->calculated_amount - ($payment->refund_amount ?? 0), 2) }}
-                                                    </div>
-                                                @endif
-                                            </td>
-                                            <td>
-                                                <span class="badge badge-light">
-                                                    {{ $payment->payment_method_display }}
+                                            </div>
+                                            <!-- Payment Status Badge -->
+                                            @if($booking->payment_status === 'cancelled')
+                                                <span class="badge badge-secondary px-2 py-1">
+                                                    <i class="fas fa-ban"></i> CANCELLED
                                                 </span>
-                                            </td>
-                                            <td>
-                                                @php
-                                                    $statusColors = [
-                                                        'completed' => 'success',
-                                                        'pending' => 'warning',
-                                                        'processing' => 'info',
-                                                        'failed' => 'danger',
-                                                        'refunded' => 'danger',
-                                                        'partially_refunded' => 'warning'
-                                                    ];
+                                            @elseif($booking->remaining_balance <= 0 || $booking->payment_status === 'paid')
+                                                <span class="badge badge-success px-2 py-1">
+                                                    <i class="fas fa-check-circle"></i> FULLY PAID
+                                                </span>
+                                            @elseif($booking->payment_status === 'unpaid')
+                                                <span class="badge badge-danger px-2 py-1">
+                                                    <i class="fas fa-times-circle"></i> UNPAID
+                                                </span>
+                                            @else
+                                                <span class="badge badge-warning px-2 py-1">
+                                                    <i class="fas fa-exclamation-circle"></i> PARTIAL
+                                                </span>
+                                            @endif
+                                                </div>
+                                                
+                                        <!-- Guest Info -->
+                                        <div class="mb-2 pb-2 border-bottom">
+                                            <div class="small">
+                                                <i class="fas fa-user text-muted mr-1"></i>
+                                                <strong>{{ $booking->user->name }}</strong>
+                                                    </div>
+                                            <div class="small text-muted">{{ $booking->user->email }}</div>
+                                                    </div>
+
+                                        <!-- Booking Dates -->
+                                        <div class="mb-2 pb-2 border-bottom">
+                                            <div class="small">
+                                                <i class="fas fa-calendar text-muted mr-1"></i>
+                                                {{ $booking->check_in->format('M d') }} - {{ $booking->check_out->format('M d, Y') }}
+                                                <span class="text-muted">({{ $booking->check_in->diffInDays($booking->check_out) }} nights)</span>
+                                                        </div>
+                                                        </div>
+
+                                        <!-- Payment Amount Display (Prominent) -->
+                                        <div class="text-center mb-3 p-3 bg-light rounded">
+                                            <div class="text-xs text-muted mb-1">PAYMENT AMOUNT</div>
+                                            <div class="h4 mb-2 font-weight-bold text-success">
+                                                ₱{{ number_format($booking->amount_paid, 2) }}
+                                                    </div>
+                                            <div class="small text-muted">
+                                                of ₱{{ number_format($booking->total_price, 2) }}
+                                            </div>
+                                            @if($booking->remaining_balance > 0)
+                                                <div class="mt-2 pt-2 border-top">
+                                                    <div class="text-xs text-muted">REMAINING BALANCE</div>
+                                                    <div class="h6 mb-0 font-weight-bold text-warning">
+                                                        ₱{{ number_format($booking->remaining_balance, 2) }}
+                                                    </div>
+                                                    </div>
+                                                @endif
+                                        </div>
+
+                                        <!-- Payment Status (Prominent) -->
+                                        <div class="mb-3 text-center">
+                                            @if($booking->remaining_balance <= 0 || $booking->payment_status === 'paid')
+                                                <div class="alert alert-success mb-2 py-2" role="alert">
+                                                    <i class="fas fa-check-circle mr-1"></i>
+                                                    <strong>PAYMENT COMPLETED</strong>
+                                                    </div>
+                                            @else
+                                                <div class="alert alert-warning mb-2 py-2" role="alert">
+                                                    <i class="fas fa-exclamation-circle mr-1"></i>
+                                                    <strong>PARTIALLY PAID</strong>
+                                                    </div>
+                                                @endif
+                                        </div>
+
+                                        <!-- Payment Count & Booking Status -->
+                                        <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+                                            <span class="badge badge-info badge-pill">
+                                                {{ $booking->payments->count() }} Payment{{ $booking->payments->count() > 1 ? 's' : '' }}
+                                                </span>
+                                            @php
+                                                $statusConfig = [
+                                                    'completed' => ['color' => 'success', 'icon' => 'check-circle', 'label' => 'Completed'],
+                                                    'confirmed' => ['color' => 'info', 'icon' => 'check', 'label' => 'Confirmed'],
+                                                    'pending' => ['color' => 'warning', 'icon' => 'clock', 'label' => 'Pending'],
+                                                    'cancelled' => ['color' => 'danger', 'icon' => 'times-circle', 'label' => 'Cancelled']
+                                                ];
+                                                $config = $statusConfig[$booking->status] ?? ['color' => 'secondary', 'icon' => 'info-circle', 'label' => ucfirst($booking->status)];
                                                 @endphp
-                                                <span class="badge badge-{{ $statusColors[$payment->status] ?? 'secondary' }}">
-                                                    {{ ucfirst(str_replace('_', ' ', $payment->status)) }}
+                                            <span class="badge badge-{{ $config['color'] }}">
+                                                <i class="fas fa-{{ $config['icon'] }}"></i> {{ $config['label'] }}
                                                 </span>
-                                            </td>
-                                            <td>
-                                                <div class="small">
-                                                    {{ $payment->created_at->format('M d, Y') }}
-                                                    <div class="text-muted">
-                                                        {{ $payment->created_at->format('h:i A') }}
                                                     </div>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <div class="dropdown">
-                                                    <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button" 
-                                                            data-toggle="dropdown">
-                                                        Actions
-                                                    </button>
-                                                    <div class="dropdown-menu">
-                                                        <!-- View Payment Details -->
-                                                        <a class="dropdown-item" href="{{ route('manager.payments.show', $payment) }}">
-                                                            <i class="fas fa-eye mr-2"></i> View Payment Details
-                                                        </a>
-                                                        
-                                                        <!-- View Related Record -->
-                                                        @if($payment->booking)
-                                                            <a class="dropdown-item" href="{{ route('manager.bookings.show', $payment->booking) }}">
-                                                                <i class="fas fa-bed mr-2"></i> View Booking
-                                                            </a>
-                                                        @elseif($payment->serviceRequest)
-                                                            <a class="dropdown-item" href="{{ route('manager.service-requests.show', $payment->serviceRequest) }}">
-                                                                <i class="fas fa-concierge-bell mr-2"></i> View Service Request
-                                                            </a>
-                                                        @endif
-                                                        
-                                                        <div class="dropdown-divider"></div>
-                                                        
-                                                        <!-- Refund Action -->
-                                                        @if($payment->canBeRefunded())
-                                                            <button class="dropdown-item text-warning" 
-                                                                    onclick="showRefundModal({{ $payment->id }}, {{ $payment->getRemainingRefundableAmount() }})">
-                                                                <i class="fas fa-undo mr-2"></i> Process Refund
+
+                                        <!-- Action Buttons -->
+                                        <div class="d-flex flex-column gap-2">
+                                            <a href="{{ route('manager.bookings.show', $booking) }}" 
+                                               class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-eye"></i> View Details
+                                            </a>
+                                            
+                                            <!-- Invoice Actions -->
+                                            @if($booking->invoice)
+                                                <a href="{{ route('invoices.show', $booking->invoice) }}" 
+                                                   class="btn btn-sm btn-outline-purple">
+                                                    <i class="fas fa-file-invoice"></i> View Invoice
+                                                </a>
+                                            @elseif($booking->amount_paid > 0)
+                                                <form action="{{ route('invoices.generate', $booking) }}" method="POST" class="w-100">
+                                                    @csrf
+                                                    <button type="submit" 
+                                                            class="btn btn-sm btn-outline-success w-100"
+                                                            onclick="return confirm('Generate invoice for {{ $booking->booking_reference }}?');">
+                                                        <i class="fas fa-file-invoice-dollar"></i> Generate Invoice
                                                             </button>
+                                                </form>
                                                         @endif
                                                         
-                                                        <!-- Status Update Actions -->
-                                                        @if(in_array($payment->status, ['pending', 'processing']))
-                                                            <button class="dropdown-item text-success" 
-                                                                    onclick="updatePaymentStatus({{ $payment->id }}, 'completed')">
-                                                                <i class="fas fa-check mr-2"></i> Mark Completed
+                                            @if($booking->status === 'completed' && $booking->amount_paid > 0)
+                                                <button type="button" 
+                                                        class="btn btn-sm btn-outline-warning"
+                                                        onclick="showBookingRefundModal({{ $booking->id }}, {{ $booking->amount_paid }}, '{{ $booking->booking_reference }}')">
+                                                    <i class="fas fa-undo"></i> Process Refund
                                                             </button>
-                                                            
-                                                            @if(auth()->user()->role === 'admin')
-                                                                <button class="dropdown-item text-danger" 
-                                                                        onclick="updatePaymentStatus({{ $payment->id }}, 'failed')">
-                                                                    <i class="fas fa-times mr-2"></i> Mark Failed
-                                                                </button>
-                                                            @endif
-                                                        @endif
-                                                        
-                                                        <!-- Reprocess Failed Payments -->
-                                                        @if($payment->status === 'failed')
-                                                            <button class="dropdown-item text-info" 
-                                                                    onclick="updatePaymentStatus({{ $payment->id }}, 'pending')">
-                                                                <i class="fas fa-redo mr-2"></i> Reprocess Payment
+                                            @else
+                                                <button type="button" 
+                                                        class="btn btn-sm btn-outline-secondary"
+                                                        disabled
+                                                        title="Refund only available for completed bookings">
+                                                    <i class="fas fa-ban"></i> Refund Unavailable
                                                             </button>
                                                         @endif
                                                     </div>
                                                 </div>
-                                            </td>
-                                        </tr>
+                                                    </div>
+                                                </div>
                                     @endforeach
-                                </tbody>
-                            </table>
                         </div>
 
                         <!-- Pagination -->
-                        <div class="d-flex justify-content-center">
-                            {{ $payments->links() }}
+                        <div class="d-flex justify-content-center mt-3">
+                            {{ $bookings->links() }}
                         </div>
                     @else
                         <div class="text-center py-4">
                             <div class="mb-3">
-                                <i class="fas fa-credit-card fa-3x text-gray-300"></i>
+                                <i class="fas fa-bed fa-3x text-gray-300"></i>
                             </div>
-                            <h5 class="text-gray-500">No payments found</h5>
-                            <p class="text-gray-400">No payment records match your current filters.</p>
+                            <h5 class="text-gray-600">No Booking Payments Found</h5>
+                            <p class="text-muted">There are no booking payments matching your criteria.</p>
                         </div>
                     @endif
                 </div>
             </div>
+
+            <!-- Service Payments Section -->
+            @if($servicePayments->count() > 0)
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-info">
+                        <i class="fas fa-concierge-bell mr-2"></i>Service Payments
+                    </h6>
+                    <span class="badge badge-info badge-pill">{{ $servicePayments->total() }} Services</span>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        @foreach($servicePayments as $payment)
+                        <div class="col-md-6 mb-3">
+                            <div class="card border-left-info h-100">
+                                <div class="card-body p-3">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <div class="flex-grow-1">
+                                            <h6 class="font-weight-bold mb-1">
+                                                <i class="fas fa-concierge-bell text-info mr-1"></i>
+                                                Service Payment
+                                            </h6>
+                                            <div class="small text-muted">{{ $payment->payment_reference }}</div>
+                                        </div>
+                                        @php
+                                            $statusColors = [
+                                                'completed' => 'success',
+                                                'pending' => 'warning',
+                                                'failed' => 'danger',
+                                            ];
+                                        @endphp
+                                        <span class="badge badge-{{ $statusColors[$payment->status] ?? 'secondary' }}">
+                                            {{ ucfirst($payment->status) }}
+                                        </span>
+                                    </div>
+
+                                    <div class="mb-2 pb-2 border-bottom">
+                                        <div class="small">
+                                            <i class="fas fa-user text-muted mr-1"></i>
+                                            <strong>{{ $payment->user->name }}</strong>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-2">
+                                        <div class="h5 mb-0 font-weight-bold text-success">
+                                            ₱{{ number_format($payment->amount, 2) }}
+                                        </div>
+                                        <div class="small text-muted">
+                                            <i class="fas fa-{{ $payment->payment_method === 'cash' ? 'money-bill-wave' : ($payment->payment_method === 'card' ? 'credit-card' : 'mobile-alt') }} mr-1"></i>
+                                            {{ $payment->payment_method_display }}
+                                        </div>
+                                    </div>
+
+                                    <div class="small text-muted mb-3">
+                                        <i class="fas fa-calendar mr-1"></i>
+                                        {{ $payment->created_at->format('M d, Y h:i A') }}
+                                    </div>
+
+                                    <a href="{{ route('manager.payments.show', $payment) }}" 
+                                       class="btn btn-sm btn-outline-info btn-block">
+                                        <i class="fas fa-eye"></i> View Details
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        @endforeach
+                    </div>
+
+                    <!-- Pagination for Service Payments -->
+                    <div class="d-flex justify-content-center mt-3">
+                        {{ $servicePayments->links() }}
+                    </div>
+                </div>
+            </div>
+            @endif
         </div>
 
         <!-- Sidebar -->
         <div class="col-lg-4">
-            <!-- Recent Activity -->
+            <!-- Recent Payment Activity -->
             <div class="card shadow mb-4">
                 <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">Recent Activity</h6>
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-clock mr-2"></i>Recent Activity
+                    </h6>
                 </div>
                 <div class="card-body">
                     @if($recent_payments->count() > 0)
+                        <div class="list-group list-group-flush">
                         @foreach($recent_payments as $payment)
-                            <div class="d-flex align-items-center mb-3">
-                                <div class="icon-circle bg-{{ $payment->status === 'completed' ? 'success' : 'warning' }} mr-3">
-                                    <i class="fas fa-{{ $payment->status === 'completed' ? 'check' : 'clock' }} text-white"></i>
-                                </div>
+                            <div class="list-group-item px-0 py-2">
+                                <div class="d-flex justify-content-between align-items-start">
                                 <div class="flex-grow-1">
-                                    <div class="small font-weight-bold">
-                                        {{ $payment->formatted_amount }} - {{ $payment->user->name }}
+                                        <div class="font-weight-bold small">₱{{ number_format($payment->amount, 2) }}</div>
+                                        <div class="text-xs text-muted">{{ $payment->user->name }}</div>
+                                        <div class="text-xs text-muted">
+                                            <i class="fas fa-clock mr-1"></i>{{ $payment->created_at->diffForHumans() }}
                                     </div>
-                                    <div class="small text-muted">
-                                        {{ $payment->created_at->diffForHumans() }}
                                     </div>
-                                </div>
-                                <div>
-                                    <span class="badge badge-{{ $payment->status === 'completed' ? 'success' : 'warning' }} badge-sm">
+                                    @php
+                                        $statusColors = [
+                                            'completed' => 'success',
+                                            'pending' => 'warning',
+                                            'failed' => 'danger',
+                                        ];
+                                    @endphp
+                                    <span class="badge badge-{{ $statusColors[$payment->status] ?? 'secondary' }} badge-sm">
                                         {{ ucfirst($payment->status) }}
                                     </span>
                                 </div>
                             </div>
                         @endforeach
+                        </div>
                     @else
-                        <p class="text-muted text-center">No recent activity</p>
+                        <p class="text-muted text-center mb-0">No recent activity</p>
                     @endif
                 </div>
             </div>
 
             <!-- Payment Trends Chart -->
-            <div class="card shadow">
+            <div class="card shadow mb-4">
                 <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">7-Day Payment Trends</h6>
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-chart-line mr-2"></i>7-Day Payment Trends
+                    </h6>
                 </div>
                 <div class="card-body">
-                    <canvas id="paymentTrendsChart" width="100%" height="200"></canvas>
+                    <canvas id="paymentTrendsChart"></canvas>
                 </div>
             </div>
         </div>
@@ -415,102 +478,111 @@
             </div>
             <form method="GET" action="{{ route('manager.payments.index') }}">
                 <div class="modal-body">
-                    <div class="row">
-                        <div class="col-md-6">
                             <div class="form-group">
-                                <label>Status</label>
+                        <label>Booking Status</label>
                                 <select name="status" class="form-control">
                                     <option value="">All Statuses</option>
-                                    <option value="completed" {{ request('status') == 'completed' ? 'selected' : '' }}>Completed</option>
-                                    <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
-                                    <option value="processing" {{ request('status') == 'processing' ? 'selected' : '' }}>Processing</option>
-                                    <option value="failed" {{ request('status') == 'failed' ? 'selected' : '' }}>Failed</option>
-                                    <option value="refunded" {{ request('status') == 'refunded' ? 'selected' : '' }}>Refunded</option>
+                            <option value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}>Pending</option>
+                            <option value="confirmed" {{ request('status') === 'confirmed' ? 'selected' : '' }}>Confirmed</option>
+                            <option value="completed" {{ request('status') === 'completed' ? 'selected' : '' }}>Completed</option>
+                            <option value="cancelled" {{ request('status') === 'cancelled' ? 'selected' : '' }}>Cancelled</option>
                                 </select>
                             </div>
-                        </div>
-                        <div class="col-md-6">
+                    
                             <div class="form-group">
-                                <label>Payment Method</label>
-                                <select name="payment_method" class="form-control">
-                                    <option value="">All Methods</option>
-                                    <option value="cash" {{ request('payment_method') == 'cash' ? 'selected' : '' }}>Cash</option>
-                                    <option value="card" {{ request('payment_method') == 'card' ? 'selected' : '' }}>Credit/Debit Card</option>
-                                    <option value="gcash" {{ request('payment_method') == 'gcash' ? 'selected' : '' }}>GCash</option>
-                                    <option value="paymaya" {{ request('payment_method') == 'paymaya' ? 'selected' : '' }}>PayMaya</option>
-                                    <option value="bank_transfer" {{ request('payment_method') == 'bank_transfer' ? 'selected' : '' }}>Bank Transfer</option>
+                        <label>Payment Status</label>
+                        <select name="payment_status" class="form-control">
+                            <option value="">All Payment Statuses</option>
+                            <option value="unpaid" {{ request('payment_status') === 'unpaid' ? 'selected' : '' }}>Unpaid</option>
+                            <option value="partial" {{ request('payment_status') === 'partial' ? 'selected' : '' }}>Partial</option>
+                            <option value="paid" {{ request('payment_status') === 'paid' ? 'selected' : '' }}>Fully Paid</option>
                                 </select>
                             </div>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6">
+
                             <div class="form-group">
                                 <label>Date From</label>
                                 <input type="date" name="date_from" class="form-control" value="{{ request('date_from') }}">
                             </div>
-                        </div>
-                        <div class="col-md-6">
+
                             <div class="form-group">
                                 <label>Date To</label>
                                 <input type="date" name="date_to" class="form-control" value="{{ request('date_to') }}">
                             </div>
-                        </div>
-                    </div>
+
                     <div class="form-group">
                         <label>Search</label>
                         <input type="text" name="search" class="form-control" 
-                               placeholder="Search by payment reference, customer name, or email" 
+                               placeholder="Booking ref, guest name, email, room..." 
                                value="{{ request('search') }}">
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                    <a href="{{ route('manager.payments.index') }}" class="btn btn-outline-secondary">Clear Filters</a>
-                    <button type="submit" class="btn btn-primary">Apply Filters</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <a href="{{ route('manager.payments.index') }}" class="btn btn-outline-secondary">Clear</a>
+                    <button type="submit" class="btn btn-primary">Apply Filter</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
 
-<!-- Refund Modal -->
-<div class="modal fade" id="refundModal" tabindex="-1" role="dialog">
+<!-- Booking Refund Modal -->
+<div class="modal fade" id="bookingRefundModal" tabindex="-1" role="dialog">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Process Refund</h5>
-                <button type="button" class="close" data-dismiss="modal">
+            <div class="modal-header bg-warning text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-undo mr-2"></i>Process Booking Refund
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal">
                     <span>&times;</span>
                 </button>
             </div>
-            <form id="refundForm" method="POST">
+            <form id="bookingRefundForm" method="POST">
                 @csrf
                 <div class="modal-body">
-                    <div class="form-group">
-                        <label>Refund Amount</label>
-                        <input type="number" name="refund_amount" class="form-control" 
-                               step="0.01" required>
-                        <small class="form-text text-muted">
-                            Maximum refundable: <span id="maxRefund"></span>
-                        </small>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label>Refund Reason</label>
-                        <textarea name="refund_reason" class="form-control" rows="3" 
-                                  placeholder="Please provide a reason for the refund..." required></textarea>
-                    </div>
-                    
                     <div class="alert alert-warning">
                         <i class="fas fa-exclamation-triangle mr-2"></i>
-                        <strong>Warning:</strong> This action cannot be undone. Please ensure the refund amount and reason are correct.
+                        <strong>Warning:</strong> This will refund the booking payment and update the booking status.
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Booking Reference</label>
+                        <input type="text" id="refundBookingRef" class="form-control" readonly>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Total Amount Paid</label>
+                        <input type="text" id="refundTotalPaid" class="form-control" readonly>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Refund Amount <span class="text-danger">*</span></label>
+                        <input type="number" 
+                               name="refund_amount" 
+                               id="refundAmount" 
+                               class="form-control" 
+                               step="0.01" 
+                               min="0" 
+                               required>
+                        <small class="form-text text-muted">Enter the amount to refund (max: <span id="maxRefundAmount"></span>)</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Refund Reason <span class="text-danger">*</span></label>
+                        <textarea name="refund_reason" 
+                                  class="form-control" 
+                                  rows="3" 
+                                  placeholder="Enter reason for refund"
+                                  required></textarea>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                        <i class="fas fa-times mr-1"></i>Cancel
+                    </button>
                     <button type="submit" class="btn btn-warning">
-                        <i class="fas fa-undo mr-2"></i>Process Refund
+                        <i class="fas fa-undo mr-1"></i>Process Refund
                     </button>
                 </div>
             </form>
@@ -518,25 +590,42 @@
     </div>
 </div>
 
+@push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-// Payment trends chart
-const ctx = document.getElementById('paymentTrendsChart').getContext('2d');
-const paymentTrendsChart = new Chart(ctx, {
+// Payment Trends Chart
+const ctx = document.getElementById('paymentTrendsChart');
+if (ctx) {
+    const trendsData = @json($payment_trends);
+    
+    new Chart(ctx, {
     type: 'line',
     data: {
-        labels: {!! json_encode(collect($payment_trends)->pluck('date')->toArray()) !!},
+            labels: trendsData.map(d => d.date),
         datasets: [{
-            label: 'Revenue (₱)',
-            data: {!! json_encode(collect($payment_trends)->pluck('amount')->toArray()) !!},
-            borderColor: 'rgb(75, 192, 192)',
-            backgroundColor: 'rgba(75, 192, 192, 0.2)',
-            tension: 0.1
+                label: 'Daily Revenue',
+                data: trendsData.map(d => d.amount),
+                borderColor: 'rgb(78, 115, 223)',
+                backgroundColor: 'rgba(78, 115, 223, 0.1)',
+                tension: 0.3,
+                fill: true
         }]
     },
     options: {
         responsive: true,
-        maintainAspectRatio: false,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return '₱' + context.parsed.y.toLocaleString();
+                        }
+                    }
+                }
+            },
         scales: {
             y: {
                 beginAtZero: true,
@@ -546,347 +635,213 @@ const paymentTrendsChart = new Chart(ctx, {
                     }
                 }
             }
-        },
-        plugins: {
-            legend: {
-                display: false
-            }
         }
     }
 });
+}
 
-// Add this to the existing script section:
-
-let paymentHistoryChart = null;
-let currentChartType = 'revenue';
-
-// Toggle payment history panel
 function togglePaymentHistory() {
-    const panel = document.getElementById('paymentHistoryPanel');
-    if (panel.classList.contains('hidden') || panel.style.display === 'none') {
-        panel.classList.remove('hidden');
-        panel.style.display = 'block';
-        loadPaymentHistory();
-    } else {
-        panel.classList.add('hidden');
-        panel.style.display = 'none';
-    }
+    // Implement payment history toggle functionality
+    alert('Payment history feature coming soon!');
 }
 
-// Load payment history data
-async function loadPaymentHistory() {
-    const period = document.getElementById('historyPeriod').value;
+// Show booking refund modal
+function showBookingRefundModal(bookingId, totalPaid, bookingRef) {
+    const modal = $('#bookingRefundModal');
+    const form = $('#bookingRefundForm');
     
-    try {
-        const response = await fetch(`/admin/payments/history?period=${period}`, {
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-                'Accept': 'application/json'
-            }
-        });
-        
-        if (!response.ok) throw new Error('Failed to fetch payment history');
-        
-        const data = await response.json();
-        updateHistoryDisplay(data);
-    } catch (error) {
-        console.error('Error loading payment history:', error);
-        showNotification('Error loading payment history', 'error');
-    }
+    // Set form action
+    form.attr('action', `/manager/bookings/${bookingId}/refund`);
+    
+    // Populate modal fields
+    $('#refundBookingRef').val(bookingRef);
+    $('#refundTotalPaid').val('₱' + parseFloat(totalPaid).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}));
+    $('#maxRefundAmount').text('₱' + parseFloat(totalPaid).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}));
+    $('#refundAmount').attr('max', totalPaid);
+    $('#refundAmount').val(totalPaid); // Default to full refund
+    
+    // Clear previous values
+    $('textarea[name="refund_reason"]').val('');
+    
+    // Show modal
+    modal.modal('show');
 }
 
-// Update payment history display
-function updateHistoryDisplay(data) {
-    // Update summary cards
-    document.getElementById('historyTotalReceived').textContent = `₱${numberFormat(data.summary.total_received)}`;
-    document.getElementById('historyTotalRefunded').textContent = `₱${numberFormat(data.summary.total_refunded)}`;
-    document.getElementById('historyTransactionCount').textContent = data.summary.transaction_count;
-    document.getElementById('historyAvgPayment').textContent = `₱${numberFormat(data.summary.avg_payment)}`;
+// Handle refund form submission
+$('#bookingRefundForm').on('submit', function(e) {
+    e.preventDefault();
     
-    // Update chart
-    updatePaymentChart(data.trends, currentChartType);
+    const form = $(this);
+    const submitBtn = form.find('button[type="submit"]');
+    const refundAmount = parseFloat($('#refundAmount').val());
+    const maxAmount = parseFloat($('#refundAmount').attr('max'));
     
-    // Update payment methods list
-    updatePaymentMethodsList(data.payment_methods);
-    
-    // Update top customers list
-    updateTopCustomersList(data.top_customers);
-    
-    // Update recent activities
-    updateRecentActivitiesList(data.recent_activities);
-}
-
-// Update payment history when period changes
-function updatePaymentHistory() {
-    loadPaymentHistory();
-}
-
-// Toggle chart type
-function toggleChartType(type) {
-    currentChartType = type;
-    
-    // Update button states
-    document.querySelectorAll('#revenueBtn, #countBtn, #methodsBtn').forEach(btn => {
-        btn.classList.remove('bg-green-600', 'text-white', 'active');
-        btn.classList.add('bg-gray-600', 'text-gray-300', 'btn-outline-secondary');
-    });
-    
-    const activeBtn = document.getElementById(type + 'Btn');
-    activeBtn.classList.remove('bg-gray-600', 'text-gray-300', 'btn-outline-secondary');
-    activeBtn.classList.add('bg-green-600', 'text-white', 'active');
-    
-    loadPaymentHistory(); // Reload with new chart type
-}
-
-// Update payment chart
-function updatePaymentChart(trends, type) {
-    const ctx = document.getElementById('paymentHistoryChart').getContext('2d');
-    
-    if (paymentHistoryChart) {
-        paymentHistoryChart.destroy();
+    // Validate refund amount
+    if (refundAmount <= 0) {
+        alert('Refund amount must be greater than zero.');
+        return;
     }
     
-    let datasets = [];
-    let options = {
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: {
-            y: {
-                beginAtZero: true
-            }
+    if (refundAmount > maxAmount) {
+        alert('Refund amount cannot exceed the total amount paid.');
+        return;
+    }
+    
+    // Confirm refund
+    if (!confirm('Are you sure you want to process this refund? This action cannot be undone.')) {
+        return;
+    }
+    
+    // Disable submit button
+    submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i>Processing...');
+    
+    // Submit form
+    $.ajax({
+        url: form.attr('action'),
+        method: 'POST',
+        data: form.serialize(),
+        success: function(response) {
+            $('#bookingRefundModal').modal('hide');
+            alert('Refund processed successfully!');
+            location.reload();
         },
-        plugins: {
-            legend: {
-                display: type === 'methods'
+        error: function(xhr) {
+            submitBtn.prop('disabled', false).html('<i class="fas fa-undo mr-1"></i>Process Refund');
+            
+            let errorMessage = 'An error occurred while processing the refund.';
+            if (xhr.responseJSON && xhr.responseJSON.message) {
+                errorMessage = xhr.responseJSON.message;
             }
+            alert(errorMessage);
         }
-    };
+    });
+});
+
+// Generate Invoice Modal Functions
+function openGenerateInvoiceModal() {
+    $('#generateInvoiceModal').modal('show');
+}
+
+function closeGenerateInvoiceModal() {
+    $('#generateInvoiceModal').modal('hide');
+    $('#generateInvoiceForm')[0].reset();
+    $('#generateInvoiceForm').attr('action', '');
+    updateButtonState();
+}
+
+function updateFormAction() {
+    const bookingId = $('#booking_id').val();
+    const form = $('#generateInvoiceForm');
     
-    switch (type) {
-        case 'revenue':
-            datasets = [{
-                label: 'Revenue (₱)',
-                data: trends.map(t => t.amount),
-                borderColor: 'rgb(34, 197, 94)',
-                backgroundColor: 'rgba(34, 197, 94, 0.1)',
-                tension: 0.1,
-                fill: true
-            }];
-            options.scales.y.ticks = {
-                callback: function(value) {
-                    return '₱' + numberFormat(value);
-                }
-            };
-            break;
-            
-        case 'count':
-            datasets = [{
-                label: 'Transaction Count',
-                data: trends.map(t => t.count),
-                borderColor: 'rgb(59, 130, 246)',
-                backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                tension: 0.1,
-                fill: true
-            }];
-            break;
-            
-        case 'methods':
-            // Group by payment methods
-            const methods = ['cash', 'card', 'gcash', 'paymaya', 'bank_transfer'];
-            const colors = ['#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6'];
-            
-            methods.forEach((method, index) => {
-                datasets.push({
-                    label: method.charAt(0).toUpperCase() + method.slice(1),
-                    data: trends.map(t => t.methods[method] || 0),
-                    borderColor: colors[index],
-                    backgroundColor: colors[index] + '20',
-                    tension: 0.1
-                });
-            });
-            break;
+    if (bookingId) {
+        form.attr('action', `/bookings/${bookingId}/invoice/generate`);
+    } else {
+        form.attr('action', '');
     }
-    
-    paymentHistoryChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: trends.map(t => t.date),
-            datasets: datasets
-        },
-        options: options
-    });
+    updateButtonState();
 }
 
-// Update payment methods list
-function updatePaymentMethodsList(methods) {
-    const container = document.getElementById('paymentMethodsList');
-    let html = '';
+function updateButtonState() {
+    const bookingId = $('#booking_id').val();
+    const button = $('#generateButton');
     
-    methods.forEach(method => {
-        const percentage = ((method.amount / methods.reduce((sum, m) => sum + m.amount, 0)) * 100).toFixed(1);
-        html += `
-            <div class="flex items-center justify-between py-2 border-b border-gray-700 last:border-b-0">
-                <div class="flex items-center">
-                    <div class="w-3 h-3 rounded-full mr-3" style="background-color: ${getMethodColor(method.method)}"></div>
-                    <span class="text-gray-300">${method.method_display}</span>
-                </div>
-                <div class="text-right">
-                    <div class="text-green-400 font-medium">₱${numberFormat(method.amount)}</div>
-                    <div class="text-xs text-gray-500">${method.count} payments (${percentage}%)</div>
-                </div>
-            </div>
-        `;
-    });
-    
-    container.innerHTML = html || '<p class="text-gray-500 text-center">No payment methods data</p>';
-}
-
-// Update top customers list
-function updateTopCustomersList(customers) {
-    const container = document.getElementById('topCustomersList');
-    let html = '';
-    
-    customers.forEach((customer, index) => {
-        html += `
-            <div class="flex items-center justify-between py-2 border-b border-gray-700 last:border-b-0">
-                <div class="flex items-center">
-                    <div class="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center mr-3 text-white text-sm">
-                        ${index + 1}
-                    </div>
-                    <div>
-                        <div class="text-gray-300 font-medium">${customer.name}</div>
-                        <div class="text-xs text-gray-500">${customer.email}</div>
-                    </div>
-                </div>
-                <div class="text-right">
-                    <div class="text-green-400 font-medium">₱${numberFormat(customer.total_amount)}</div>
-                    <div class="text-xs text-gray-500">${customer.payment_count} payments</div>
-                </div>
-            </div>
-        `;
-    });
-    
-    container.innerHTML = html || '<p class="text-gray-500 text-center">No customer data</p>';
-}
-
-// Update recent activities list
-function updateRecentActivitiesList(activities) {
-    const container = document.getElementById('recentActivitiesList');
-    let html = '';
-    
-    activities.forEach(activity => {
-        const statusIcon = getStatusIcon(activity.status);
-        const statusColor = getStatusColor(activity.status);
-        
-        html += `
-            <div class="flex items-center justify-between py-3 border-b border-gray-700 last:border-b-0">
-                <div class="flex items-center">
-                    <div class="w-8 h-8 ${statusColor} rounded-full flex items-center justify-center mr-3">
-                        <i class="fas ${statusIcon} text-white text-xs"></i>
-                    </div>
-                    <div>
-                        <div class="text-gray-300 font-medium">${activity.customer_name}</div>
-                        <div class="text-xs text-gray-500">
-                            ${activity.payment_reference} • ${activity.payment_method_display}
-                        </div>
-                        <div class="text-xs text-gray-600">${formatDate(activity.created_at)}</div>
-                    </div>
-                </div>
-                <div class="text-right">
-                    <div class="text-green-400 font-medium">₱${numberFormat(activity.amount)}</div>
-                    <span class="text-xs px-2 py-1 rounded ${statusColor} text-white">
-                        ${activity.status.charAt(0).toUpperCase() + activity.status.slice(1)}
-                    </span>
-                </div>
-            </div>
-        `;
-    });
-    
-    container.innerHTML = html || '<p class="text-gray-500 text-center">No recent activities</p>';
-}
-
-// Export payment history
-async function exportPaymentHistory() {
-    const period = document.getElementById('historyPeriod').value;
-    
-    try {
-        const response = await fetch(`/admin/payments/history/export?period=${period}`, {
-            method: 'GET',
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        });
-        
-        if (!response.ok) throw new Error('Export failed');
-        
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `payment-history-${period}-days.xlsx`;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-        
-        showNotification('Payment history exported successfully', 'success');
-    } catch (error) {
-        console.error('Error exporting payment history:', error);
-        showNotification('Error exporting payment history', 'error');
+    if (bookingId) {
+        button.prop('disabled', false);
+        button.removeClass('btn-secondary').addClass('btn-success');
+    } else {
+        button.prop('disabled', true);
+        button.removeClass('btn-success').addClass('btn-secondary');
     }
-}
-
-// Helper functions
-function numberFormat(num) {
-    return parseFloat(num).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-}
-
-function getMethodColor(method) {
-    const colors = {
-        'cash': '#ef4444',
-        'card': '#3b82f6',
-        'gcash': '#10b981',
-        'paymaya': '#f59e0b',
-        'bank_transfer': '#8b5cf6'
-    };
-    return colors[method] || '#6b7280';
-}
-
-function getStatusIcon(status) {
-    const icons = {
-        'completed': 'fa-check',
-        'pending': 'fa-clock',
-        'processing': 'fa-spinner',
-        'failed': 'fa-times',
-        'refunded': 'fa-undo'
-    };
-    return icons[status] || 'fa-question';
-}
-
-function getStatusColor(status) {
-    const colors = {
-        'completed': 'bg-green-600',
-        'pending': 'bg-yellow-600',
-        'processing': 'bg-blue-600',
-        'failed': 'bg-red-600',
-        'refunded': 'bg-gray-600'
-    };
-    return colors[status] || 'bg-gray-600';
-}
-
-function formatDate(dateString) {
-    return new Date(dateString).toLocaleString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true
-    });
-}
-
-function showNotification(message, type = 'info') {
-    // You can implement your preferred notification system here
-    alert(message);
 }
 </script>
+@endpush
+
+<!-- Generate Invoice Modal -->
+<div class="modal fade" id="generateInvoiceModal" tabindex="-1" role="dialog" aria-labelledby="generateInvoiceModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-purple text-white">
+                <h5 class="modal-title" id="generateInvoiceModalLabel">
+                    <i class="fas fa-file-invoice-dollar mr-2"></i>Generate Invoice
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+                    </div>
+            <form id="generateInvoiceForm" method="POST">
+                @csrf
+                <div class="modal-body">
+                    <!-- Booking Selection -->
+                    <div class="form-group">
+                        <label for="booking_id">Select Booking</label>
+                        <select 
+                            name="booking_id" 
+                            id="booking_id" 
+                            required 
+                            onchange="updateFormAction()"
+                            class="form-control"
+                        >
+                            <option value="">Select a booking...</option>
+                            @foreach(\App\Models\Booking::with('room', 'user')->whereDoesntHave('invoice')->whereHas('payments')->orderBy('created_at', 'desc')->get() as $booking)
+                            <option value="{{ $booking->id }}">
+                                {{ $booking->booking_reference }} - {{ $booking->room->name }} - {{ $booking->user->name }}
+                                ({{ $booking->check_in->format('M d') }} - {{ $booking->check_out->format('M d, Y') }})
+                            </option>
+                            @endforeach
+                        </select>
+                        <small class="form-text text-muted">Only bookings with payments and without invoices are shown</small>
+                    </div>
+                    
+                    <!-- Due Date -->
+                    <div class="form-group">
+                        <label for="due_date">Due Date</label>
+                        <input 
+                            type="date" 
+                            name="due_date" 
+                            id="due_date" 
+                            value="{{ now()->addDays(7)->format('Y-m-d') }}"
+                            min="{{ now()->format('Y-m-d') }}"
+                            required 
+                            class="form-control"
+                        >
+                </div>
+                    
+                    <!-- Tax Rate -->
+                    <div class="form-group">
+                        <label for="tax_rate">Tax Rate (%)</label>
+                        <input 
+                            type="number" 
+                            name="tax_rate" 
+                            id="tax_rate" 
+                            value="0" 
+                            min="0" 
+                            max="100" 
+                            step="0.01"
+                            class="form-control"
+                        >
+                        <small class="form-text text-muted">Enter tax rate (e.g., 12 for 12% VAT)</small>
+                    </div>
+                    
+                    <!-- Notes -->
+                    <div class="form-group">
+                        <label for="notes">Notes (Optional)</label>
+                        <textarea 
+                            name="notes" 
+                            id="notes" 
+                            rows="3" 
+                            class="form-control"
+                            placeholder="Additional notes for this invoice..."
+                        ></textarea>
+                    </div>
+                        </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="submit" id="generateButton" class="btn btn-secondary" disabled>
+                        <i class="fas fa-file-invoice mr-2"></i>Generate Invoice
+                    </button>
+                    </div>
+            </form>
+                </div>
+                </div>
+            </div>
 @endsection
