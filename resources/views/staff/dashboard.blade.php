@@ -38,9 +38,42 @@
                         <p class="text-green-100 text-sm lg:text-base mb-8 flex-grow">
                             Create, read, update, and delete food items available at the resort.
                         </p>
-                        <button class="w-full py-3 bg-green-50 text-black font-medium text-lg rounded-lg hover:bg-white transition-colors duration-200">
+                        <a href="{{ route('staff.menu.index') }}" 
+                           class="w-full py-3 bg-green-50 text-black font-medium text-lg rounded-lg hover:bg-white transition-colors duration-200 text-center">
                             Manage Menu
-                        </button>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Food Orders Management -->
+                <div class="bg-green-800 rounded-lg p-6 lg:p-8 hover:bg-green-700 transition-all duration-300 transform hover:scale-105 shadow-lg">
+                    <div class="text-center h-full flex flex-col">
+                        <h3 class="text-2xl lg:text-3xl font-bold text-white mb-6 leading-tight">
+                            Food Orders Management
+                        </h3>
+                        <p class="text-green-100 text-sm lg:text-base mb-8 flex-grow">
+                            Monitor and manage customer food orders and track order status.
+                        </p>
+                        <a href="{{ route('staff.orders.index') }}" 
+                           class="w-full py-3 bg-green-50 text-black font-medium text-lg rounded-lg hover:bg-white transition-colors duration-200 text-center">
+                            Manage Orders
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Payments Management -->
+                <div class="bg-green-800 rounded-lg p-6 lg:p-8 hover:bg-green-700 transition-all duration-300 transform hover:scale-105 shadow-lg">
+                    <div class="text-center h-full flex flex-col">
+                        <h3 class="text-2xl lg:text-3xl font-bold text-white mb-6 leading-tight">
+                            Payments Management
+                        </h3>
+                        <p class="text-green-100 text-sm lg:text-base mb-8 flex-grow">
+                            View and manage payment transactions, process refunds, and track billing.
+                        </p>
+                        <a href="{{ route('admin.payments.index') }}" 
+                           class="w-full py-3 bg-green-50 text-black font-medium text-lg rounded-lg hover:bg-white transition-colors duration-200 text-center">
+                            Manage Payments
+                        </a>
                     </div>
                 </div>
 
@@ -72,6 +105,22 @@
                         <a href="{{ route('admin.reservations') }}" 
                            class="w-full py-3 bg-green-50 text-black font-medium text-lg rounded-lg hover:bg-white transition-colors duration-200 text-center">
                             Manage Reservations
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Calendar -->
+                <div class="bg-green-800 rounded-lg p-6 lg:p-8 hover:bg-green-700 transition-all duration-300 transform hover:scale-105 shadow-lg">
+                    <div class="text-center h-full flex flex-col">
+                        <h3 class="text-2xl lg:text-3xl font-bold text-white mb-6 leading-tight">
+                            Calendar & Schedule
+                        </h3>
+                        <p class="text-green-100 text-sm lg:text-base mb-8 flex-grow">
+                            View booking calendar and manage reservation schedules.
+                        </p>
+                        <a href="{{ route('admin.calendar') }}" 
+                           class="w-full py-3 bg-green-50 text-black font-medium text-lg rounded-lg hover:bg-white transition-colors duration-200 text-center">
+                            View Calendar
                         </a>
                     </div>
                 </div>

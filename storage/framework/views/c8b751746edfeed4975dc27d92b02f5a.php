@@ -14,7 +14,7 @@
                 <i class="fas fa-history text-white text-2xl"></i>
             </div>
             <h1 class="text-3xl font-bold text-green-50 mb-2">Payment History</h1>
-            <p class="text-gray-400">View all your payment transactions grouped by booking</p>
+            <p class="text-gray-400">View all your payment transactions for bookings, services, and food orders</p>
         </div>
 
         <!-- Quick Actions -->
@@ -22,6 +22,14 @@
             <a href="<?php echo e(route('guest.bookings')); ?>"
                class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors">
                 <i class="fas fa-calendar mr-2"></i>My Bookings
+            </a>
+            <a href="<?php echo e(route('guest.services.history')); ?>"
+               class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors">
+                <i class="fas fa-concierge-bell mr-2"></i>My Services
+            </a>
+            <a href="<?php echo e(route('guest.food-orders.orders')); ?>"
+               class="inline-flex items-center px-4 py-2 bg-orange-600 text-white rounded-lg font-medium hover:bg-orange-700 transition-colors">
+                <i class="fas fa-utensils mr-2"></i>My Food Orders
             </a>
             <a href="<?php echo e(route('invoices.index')); ?>"
                class="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-colors">
@@ -33,7 +41,7 @@
             </a>
         </div>
 
-        <?php if($bookings->isEmpty() && $servicePayments->isEmpty()): ?>
+        <?php if($bookings->isEmpty() && $servicePayments->isEmpty() && $foodOrderPayments->isEmpty()): ?>
             <!-- Empty State -->
             <div class="bg-gray-800 rounded-lg p-8 text-center">
                 <i class="fas fa-receipt text-6xl text-gray-600 mb-4"></i>
@@ -263,8 +271,8 @@
                                     
                                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-sm">
                                         <div>
-                                            <span class="text-gray-400">Reference:</span>
-                                            <span class="text-green-50 ml-1"><?php echo e($payment->payment_reference); ?></span>
+                                            <span class="text-gray-400">Service:</span>
+                                            <span class="text-green-50 ml-1"><?php echo e($payment->serviceRequest->service->name ?? 'N/A'); ?></span>
                                         </div>
                                         <div>
                                             <span class="text-gray-400">Method:</span>
@@ -277,10 +285,130 @@
                                     </div>
                                 </div>
                                 
-                                <a href="<?php echo e(route('payments.show', $payment)); ?>" 
-                                   class="inline-flex items-center px-3 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors">
-                                    <i class="fas fa-eye mr-2"></i>View
+                                <a href="<?php echo e(route('guest.services.history')); ?>" 
+                                   class="inline-flex items-center px-3 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors">
+                                    <i class="fas fa-eye mr-2"></i>View Request
                                 </a>
+                            </div>
+                        </div>
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                    </div>
+                </div>
+                <?php endif; ?>
+
+                <!-- Food Order Payments (if any) -->
+                <?php if($foodOrderPayments->isNotEmpty()): ?>
+                <div class="bg-gray-800 rounded-lg p-6">
+                    <h2 class="text-xl font-bold text-green-50 mb-4 flex items-center">
+                        <i class="fas fa-utensils text-orange-400 mr-3"></i>
+                        Food Order Payments
+                    </h2>
+                    <div class="space-y-3">
+                        <?php $__currentLoopData = $foodOrderPayments; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $payment): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                        <div class="bg-gray-700/50 rounded-lg p-4 hover:bg-gray-700 transition-colors">
+                            <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                                <div class="flex-1">
+                                    <div class="flex items-center gap-3 mb-2">
+                                        <span class="text-orange-400 font-bold text-xl">₱<?php echo e(number_format($payment->amount, 2)); ?></span>
+                                        <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium
+                                            <?php echo e($payment->status === 'completed' ? 'bg-green-500 text-white' : 
+                                               ($payment->status === 'pending' ? 'bg-yellow-500 text-black' : 'bg-gray-500 text-white')); ?>">
+                                            <?php echo e(ucfirst($payment->status)); ?>
+
+                                        </span>
+                                        <?php if($payment->foodOrder): ?>
+                                        <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium
+                                            <?php echo e($payment->foodOrder->status === 'pending' ? 'bg-yellow-600 text-white' : 
+                                               ($payment->foodOrder->status === 'confirmed' ? 'bg-blue-600 text-white' : 
+                                                ($payment->foodOrder->status === 'preparing' ? 'bg-purple-600 text-white' :
+                                                 ($payment->foodOrder->status === 'ready' ? 'bg-green-600 text-white' :
+                                                  ($payment->foodOrder->status === 'delivered' ? 'bg-green-700 text-white' : 'bg-red-600 text-white'))))); ?>">
+                                            Order: <?php echo e(ucfirst($payment->foodOrder->status)); ?>
+
+                                        </span>
+                                        <?php endif; ?>
+                                    </div>
+                                    
+                                    <?php if($payment->foodOrder): ?>
+                                    <div class="mb-3">
+                                        <span class="text-gray-400 text-sm">Order #<?php echo e($payment->foodOrder->order_number); ?></span>
+                                        <span class="text-gray-500 mx-2">•</span>
+                                        <span class="text-gray-400 text-sm"><?php echo e($payment->foodOrder->orderItems->count()); ?> items</span>
+                                        <?php if($payment->foodOrder->delivery_type): ?>
+                                        <span class="text-gray-500 mx-2">•</span>
+                                        <span class="text-gray-300 text-sm">
+                                            <i class="fas fa-<?php echo e($payment->foodOrder->delivery_type === 'room_service' ? 'door-open' : ($payment->foodOrder->delivery_type === 'pickup' ? 'shopping-bag' : 'utensils')); ?> mr-1"></i>
+                                            <?php echo e(ucfirst(str_replace('_', ' ', $payment->foodOrder->delivery_type))); ?>
+
+                                        </span>
+                                        <?php endif; ?>
+                                    </div>
+                                    
+                                    <!-- Order Items Preview -->
+                                    <div class="bg-gray-800/50 rounded p-2 mb-2">
+                                        <p class="text-xs text-gray-400 mb-1">Items:</p>
+                                        <div class="space-y-1">
+                                            <?php $__currentLoopData = $payment->foodOrder->orderItems->take(3); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $item): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                            <div class="text-sm text-gray-300">
+                                                <span class="text-gray-400"><?php echo e($item->quantity); ?>x</span>
+                                                <span class="ml-1"><?php echo e($item->menuItem->name ?? 'Item'); ?></span>
+                                            </div>
+                                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                                            <?php if($payment->foodOrder->orderItems->count() > 3): ?>
+                                            <p class="text-xs text-gray-500 italic">+ <?php echo e($payment->foodOrder->orderItems->count() - 3); ?> more items</p>
+                                            <?php endif; ?>
+                                        </div>
+                                    </div>
+                                    <?php endif; ?>
+                                    
+                                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-sm">
+                                        <div>
+                                            <span class="text-gray-400">Reference:</span>
+                                            <span class="text-green-50 ml-1 font-medium"><?php echo e($payment->payment_reference ?? 'N/A'); ?></span>
+                                        </div>
+                                        <div>
+                                            <span class="text-gray-400">Method:</span>
+                                            <span class="text-green-50 ml-1">
+                                                <?php
+                                                    $methodIcons = [
+                                                        'cash' => 'money-bill-wave',
+                                                        'card' => 'credit-card',
+                                                        'gcash' => 'mobile-alt',
+                                                        'bank_transfer' => 'university',
+                                                        'paymaya' => 'mobile-alt',
+                                                        'online' => 'globe'
+                                                    ];
+                                                    $icon = $methodIcons[$payment->payment_method] ?? 'money-bill';
+                                                ?>
+                                                <i class="fas fa-<?php echo e($icon); ?> mr-1"></i>
+                                                <?php echo e($payment->payment_method_display); ?>
+
+                                            </span>
+                                        </div>
+                                        <div>
+                                            <span class="text-gray-400">Date:</span>
+                                            <span class="text-green-50 ml-1"><?php echo e($payment->created_at->format('M d, Y g:i A')); ?></span>
+                                        </div>
+                                    </div>
+
+                                    <?php if($payment->notes): ?>
+                                    <div class="mt-2 text-sm">
+                                        <span class="text-gray-400">Notes:</span>
+                                        <span class="text-gray-300 ml-1"><?php echo e($payment->notes); ?></span>
+                                    </div>
+                                    <?php endif; ?>
+                                </div>
+                                
+                                <!-- Payment Actions -->
+                                <div class="flex gap-2">
+                                    <?php if($payment->foodOrder): ?>
+                                    <a href="<?php echo e(route('guest.food-orders.show', $payment->foodOrder)); ?>" 
+                                       class="inline-flex items-center px-3 py-2 bg-orange-600 text-white text-sm rounded-lg hover:bg-orange-700 transition-colors"
+                                       title="View Order Details">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <?php endif; ?>
+                                </div>
                             </div>
                         </div>
                         <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
@@ -291,7 +419,9 @@
 
             <!-- Summary Stats -->
             <?php
-                $totalPaid = $bookings->sum('amount_paid') + $servicePayments->where('status', 'completed')->sum('amount');
+                $totalPaid = $bookings->sum('amount_paid') + 
+                             $servicePayments->where('status', 'completed')->sum('amount') + 
+                             $foodOrderPayments->where('status', 'completed')->sum('amount');
                 $totalBookings = $bookings->count();
                 $fullyPaidBookings = $bookings->where('remaining_balance', '<=', 0)->count();
             ?>

@@ -1,41 +1,40 @@
 @extends('layouts.guest')
 
 @section('content')
-<!-- Background decorative blur elements -->
-<div class="fixed inset-0 overflow-hidden pointer-events-none">
-    <div class="absolute w-96 h-96 bg-green-800 opacity-30 rounded-full blur-3xl -top-48 -left-48"></div>
-    <div class="absolute w-80 h-80 bg-green-700 opacity-20 rounded-full blur-3xl top-1/3 right-1/4"></div>
-    <div class="absolute w-72 h-72 bg-green-800 opacity-25 rounded-full blur-3xl bottom-1/4 left-1/3"></div>
-</div>
-
-<main class="relative z-10 py-8 lg:py-16">
-    <div class="container mx-auto px-4 lg:px-16 max-w-4xl">
+<div class="min-h-screen bg-gray-900 py-8">
+    <div class="container mx-auto px-4 lg:px-8 max-w-5xl">
         <!-- Page Header -->
-        <div class="text-center mb-12">
-            <h2 class="text-3xl md:text-4xl lg:text-5xl font-bold text-green-50 mb-4">
-                {{ $service->name }}
-            </h2>
-            <p class="text-green-50 opacity-80 text-lg">
-                {{ ucfirst(str_replace('_', ' ', $service->category)) }} Service
-            </p>
-            <div class="mt-6 space-x-4">
-                <a href="{{ route('guest.services.index') }}" 
-                   class="bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg transition-colors duration-200">
-                    <i class="fas fa-arrow-left mr-2"></i>Back to Services
-                </a>
-                @if($service->is_available)
-                <a href="{{ route('guest.services.request', $service) }}" 
-                   class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg transition-colors duration-200">
-                    <i class="fas fa-calendar-plus mr-2"></i>Book This Service
-                </a>
-                @endif
+        <div class="mb-8">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h1 class="text-4xl font-bold text-white mb-2">{{ $service->name }}</h1>
+                    <p class="text-gray-400">{{ ucfirst(str_replace('_', ' ', $service->category)) }} Service</p>
+                </div>
+                <div class="flex gap-3">
+                    <a href="{{ route('guest.services.index') }}" 
+                       class="inline-flex items-center px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white font-semibold rounded-lg transition-colors duration-200">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                        </svg>
+                        Back to Services
+                    </a>
+                    @if($service->is_available)
+                    <a href="{{ route('guest.services.request', $service) }}" 
+                       class="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition-colors duration-200">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                        </svg>
+                        Book This Service
+                    </a>
+                    @endif
+                </div>
             </div>
         </div>
 
-        <!-- Service Details Card -->
-        <div class="bg-green-900/50 backdrop-blur-sm rounded-lg border border-green-700/30 overflow-hidden mb-8">
+        <!-- Service Card -->
+        <div class="bg-gray-800 rounded-lg shadow-xl overflow-hidden mb-8">
             <!-- Service Image -->
-            <div class="h-64 md:h-80 bg-green-800/50 relative">
+            <div class="h-96 bg-gray-700 relative">
                 @if($service->image)
                 <img src="{{ asset('storage/' . $service->image) }}" 
                      alt="{{ $service->name }}" 
@@ -43,101 +42,144 @@
                 @else
                 <div class="flex items-center justify-center h-full">
                     @if($service->category === 'spa')
-                    <i class="fas fa-spa text-8xl text-green-400"></i>
+                    <svg class="w-32 h-32 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
                     @elseif($service->category === 'dining')
-                    <i class="fas fa-utensils text-8xl text-orange-400"></i>
+                    <svg class="w-32 h-32 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
+                    </svg>
                     @elseif($service->category === 'transportation')
-                    <i class="fas fa-car text-8xl text-blue-400"></i>
+                    <svg class="w-32 h-32 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"/>
+                    </svg>
                     @elseif($service->category === 'activities')
-                    <i class="fas fa-swimmer text-8xl text-purple-400"></i>
+                    <svg class="w-32 h-32 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
                     @else
-                    <i class="fas fa-concierge-bell text-8xl text-yellow-400"></i>
+                    <svg class="w-32 h-32 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                    </svg>
                     @endif
                 </div>
                 @endif
                 
-                <!-- Availability Badge -->
+                <!-- Status Badge -->
                 <div class="absolute top-4 left-4">
-                    @if($service->is_available)
-                    <span class="px-3 py-2 bg-green-500/20 text-green-400 border border-green-400/30 rounded-full text-sm font-medium">
-                        Available for Booking
+                    <span class="px-4 py-2 rounded-lg text-sm font-semibold shadow-lg {{ $service->is_available ? 'bg-green-600 text-white' : 'bg-red-600 text-white' }}">
+                        {{ $service->is_available ? '✓ Available' : '✗ Unavailable' }}
                     </span>
-                    @else
-                    <span class="px-3 py-2 bg-red-500/20 text-red-400 border border-red-400/30 rounded-full text-sm font-medium">
-                        Currently Unavailable
-                    </span>
-                    @endif
                 </div>
 
                 <!-- Category Badge -->
                 <div class="absolute top-4 right-4">
-                    <span class="px-3 py-2 bg-green-600/80 text-green-100 rounded-full text-sm font-medium">
+                    <span class="px-4 py-2 bg-gray-900/90 text-gray-200 rounded-lg text-sm font-semibold shadow-lg">
                         {{ ucfirst(str_replace('_', ' ', $service->category)) }}
                     </span>
                 </div>
 
                 <!-- Price Badge -->
                 <div class="absolute bottom-4 right-4">
-                    <span class="px-4 py-2 bg-black/70 text-white rounded-full text-2xl font-bold">
-                        ₱{{ number_format($service->price, 0) }}
+                    <span class="px-6 py-3 bg-green-600 text-white rounded-lg text-2xl font-bold shadow-lg">
+                        ₱{{ number_format($service->price, 2) }}
                     </span>
                 </div>
             </div>
 
             <!-- Service Information -->
             <div class="p-8">
-                <!-- Service Description -->
+                <!-- Description -->
                 <div class="mb-8">
-                    <h3 class="text-2xl font-semibold text-green-200 mb-4">About This Service</h3>
-                    <p class="text-green-300 leading-relaxed text-lg">{{ $service->description }}</p>
+                    <h3 class="text-2xl font-semibold text-white mb-4 flex items-center">
+                        <svg class="w-6 h-6 mr-2 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        About This Service
+                    </h3>
+                    <p class="text-gray-300 text-lg leading-relaxed">{{ $service->description }}</p>
                 </div>
 
                 <!-- Service Details Grid -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div class="bg-gray-700 rounded-lg p-6">
+                        <div class="flex items-center mb-3">
+                            <svg class="w-6 h-6 text-yellow-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                            <h4 class="text-gray-400 text-sm font-medium">Price</h4>
+                        </div>
+                        <p class="text-white text-2xl font-bold">₱{{ number_format($service->price, 2) }}</p>
+                    </div>
+
                     @if($service->duration)
-                    <div class="bg-green-800/30 rounded-lg p-6 text-center">
-                        <i class="fas fa-clock text-green-400 text-3xl mb-3"></i>
-                        <h4 class="text-green-400 text-sm font-medium mb-2">Duration</h4>
-                        <p class="text-green-50 text-xl font-semibold">
+                    <div class="bg-gray-700 rounded-lg p-6">
+                        <div class="flex items-center mb-3">
+                            <svg class="w-6 h-6 text-blue-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                            <h4 class="text-gray-400 text-sm font-medium">Duration</h4>
+                        </div>
+                        <p class="text-white text-2xl font-bold">
                             @if($service->duration >= 60)
                                 {{ floor($service->duration / 60) }}h {{ $service->duration % 60 > 0 ? ($service->duration % 60) . 'm' : '' }}
                             @else
-                                {{ $service->duration }} minutes
+                                {{ $service->duration }} min
                             @endif
                         </p>
                     </div>
                     @endif
 
                     @if($service->capacity)
-                    <div class="bg-green-800/30 rounded-lg p-6 text-center">
-                        <i class="fas fa-users text-green-400 text-3xl mb-3"></i>
-                        <h4 class="text-green-400 text-sm font-medium mb-2">Maximum Capacity</h4>
-                        <p class="text-green-50 text-xl font-semibold">{{ $service->capacity }} {{ $service->capacity === 1 ? 'person' : 'people' }}</p>
+                    <div class="bg-gray-700 rounded-lg p-6">
+                        <div class="flex items-center mb-3">
+                            <svg class="w-6 h-6 text-purple-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+                            </svg>
+                            <h4 class="text-gray-400 text-sm font-medium">Capacity</h4>
+                        </div>
+                        <p class="text-white text-2xl font-bold">{{ $service->capacity }} {{ $service->capacity === 1 ? 'person' : 'people' }}</p>
                     </div>
                     @endif
-
-                    <div class="bg-green-800/30 rounded-lg p-6 text-center">
-                        <i class="fas fa-peso-sign text-green-400 text-3xl mb-3"></i>
-                        <h4 class="text-green-400 text-sm font-medium mb-2">Price</h4>
-                        <p class="text-green-50 text-xl font-semibold">₱{{ number_format($service->price, 2) }}</p>
-                    </div>
                 </div>
 
                 <!-- Booking Information -->
                 @if($service->is_available)
-                <div class="bg-green-800/20 border border-green-600/30 rounded-lg p-6 mb-6">
+                <div class="bg-blue-500/10 border border-blue-500/30 rounded-lg p-6 mb-6">
                     <div class="flex items-start">
-                        <i class="fas fa-info-circle text-green-400 text-xl mt-1 mr-4"></i>
+                        <svg class="w-6 h-6 text-blue-400 mt-1 mr-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
                         <div>
-                            <h4 class="text-green-200 font-semibold mb-2">Booking Information</h4>
-                            <ul class="text-green-300 space-y-1">
-                                <li>• Book in advance to secure your preferred time slot</li>
-                                <li>• Cancellations must be made at least 24 hours in advance</li>
+                            <h4 class="text-blue-200 font-semibold text-lg mb-2">Booking Information</h4>
+                            <ul class="text-gray-300 space-y-2">
+                                <li class="flex items-start">
+                                    <svg class="w-5 h-5 text-green-400 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                    </svg>
+                                    Book in advance to secure your preferred time slot
+                                </li>
+                                <li class="flex items-start">
+                                    <svg class="w-5 h-5 text-green-400 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                    </svg>
+                                    Cancellations must be made at least 24 hours in advance
+                                </li>
                                 @if($service->duration)
-                                <li>• Service duration: {{ $service->duration >= 60 ? floor($service->duration / 60) . 'h ' . ($service->duration % 60 > 0 ? ($service->duration % 60) . 'm' : '') : $service->duration . ' minutes' }}</li>
+                                <li class="flex items-start">
+                                    <svg class="w-5 h-5 text-green-400 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                    </svg>
+                                    Service duration: {{ $service->duration >= 60 ? floor($service->duration / 60) . 'h ' . ($service->duration % 60 > 0 ? ($service->duration % 60) . 'm' : '') : $service->duration . ' minutes' }}
+                                </li>
                                 @endif
                                 @if($service->capacity)
-                                <li>• Maximum capacity: {{ $service->capacity }} {{ $service->capacity === 1 ? 'person' : 'people' }}</li>
+                                <li class="flex items-start">
+                                    <svg class="w-5 h-5 text-green-400 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                    </svg>
+                                    Maximum capacity: {{ $service->capacity }} {{ $service->capacity === 1 ? 'person' : 'people' }}
+                                </li>
                                 @endif
                             </ul>
                         </div>
@@ -146,66 +188,67 @@
                 @endif
 
                 <!-- Action Buttons -->
-                <div class="flex flex-wrap gap-4 justify-center">
+                <div class="flex flex-wrap gap-4 justify-center pt-6 border-t border-gray-700">
                     @if($service->is_available)
                     <a href="{{ route('guest.services.request', $service) }}" 
-                       class="bg-green-600 hover:bg-green-700 text-white px-8 py-4 rounded-lg transition-colors text-lg font-semibold">
-                        <i class="fas fa-calendar-plus mr-2"></i>Book This Service
+                       class="inline-flex items-center px-8 py-4 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg shadow-lg transition-all duration-200 transform hover:scale-105">
+                        <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                        </svg>
+                        Book This Service
                     </a>
                     @else
-                    <div class="bg-gray-600 text-gray-300 px-8 py-4 rounded-lg text-lg font-semibold">
-                        <i class="fas fa-times-circle mr-2"></i>Currently Unavailable
+                    <div class="inline-flex items-center px-8 py-4 bg-gray-600 text-gray-300 font-semibold rounded-lg shadow-lg">
+                        <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/>
+                        </svg>
+                        Currently Unavailable
                     </div>
                     @endif
                     
                     <a href="{{ route('guest.services.index') }}" 
-                       class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-lg transition-colors text-lg font-semibold">
-                        <i class="fas fa-list mr-2"></i>Browse All Services
+                       class="inline-flex items-center px-8 py-4 bg-gray-700 hover:bg-gray-600 text-white font-semibold rounded-lg shadow-lg transition-all duration-200">
+                        <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                        </svg>
+                        Browse All Services
                     </a>
                 </div>
             </div>
         </div>
 
         <!-- Related Services -->
-        @if($relatedServices && $relatedServices->count() > 0)
-        <div class="mb-8">
-            <h3 class="text-2xl font-bold text-green-50 mb-6 text-center">Other {{ ucfirst($service->category) }} Services</h3>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        @if(isset($relatedServices) && $relatedServices && $relatedServices->count() > 0)
+        <div>
+            <h3 class="text-2xl font-bold text-white mb-6">More {{ ucfirst($service->category) }} Services</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 @foreach($relatedServices as $relatedService)
-                <div class="bg-green-900/50 backdrop-blur-sm rounded-lg border border-green-700/30 overflow-hidden hover:border-green-500/50 transition-all duration-300">
-                    <div class="h-32 bg-green-800/50 relative">
+                <div class="bg-gray-800 rounded-lg shadow-xl overflow-hidden hover:shadow-2xl hover:transform hover:scale-105 transition-all duration-300">
+                    <div class="h-40 bg-gray-700 relative">
                         @if($relatedService->image)
                         <img src="{{ asset('storage/' . $relatedService->image) }}" 
                              alt="{{ $relatedService->name }}" 
                              class="w-full h-full object-cover">
                         @else
                         <div class="flex items-center justify-center h-full">
-                            @if($relatedService->category === 'spa')
-                            <i class="fas fa-spa text-2xl text-green-400"></i>
-                            @elseif($relatedService->category === 'dining')
-                            <i class="fas fa-utensils text-2xl text-orange-400"></i>
-                            @elseif($relatedService->category === 'transportation')
-                            <i class="fas fa-car text-2xl text-blue-400"></i>
-                            @elseif($relatedService->category === 'activities')
-                            <i class="fas fa-swimmer text-2xl text-purple-400"></i>
-                            @else
-                            <i class="fas fa-concierge-bell text-2xl text-yellow-400"></i>
-                            @endif
+                            <svg class="w-16 h-16 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                            </svg>
                         </div>
                         @endif
                         
-                        <div class="absolute top-2 right-2">
-                            <span class="px-2 py-1 bg-black/60 text-white rounded-full text-sm font-bold">
+                        <div class="absolute top-3 right-3">
+                            <span class="px-3 py-1 bg-green-600 text-white rounded-lg text-sm font-bold shadow-lg">
                                 ₱{{ number_format($relatedService->price, 0) }}
                             </span>
                         </div>
                     </div>
                     
-                    <div class="p-4">
-                        <h4 class="text-green-50 font-semibold mb-2">{{ $relatedService->name }}</h4>
-                        <p class="text-green-300 text-sm mb-3 line-clamp-2">{{ $relatedService->description }}</p>
+                    <div class="p-5">
+                        <h4 class="text-lg font-bold text-white mb-2">{{ $relatedService->name }}</h4>
+                        <p class="text-gray-400 text-sm mb-4 line-clamp-2">{{ $relatedService->description }}</p>
                         <a href="{{ route('guest.services.show', $relatedService) }}" 
-                           class="block w-full bg-blue-600 hover:bg-blue-700 text-white text-center py-2 px-3 rounded text-sm transition-colors">
+                           class="block w-full bg-gray-700 hover:bg-gray-600 text-white text-center py-2 px-4 rounded-lg text-sm font-semibold transition-colors">
                             View Details
                         </a>
                     </div>
@@ -215,5 +258,5 @@
         </div>
         @endif
     </div>
-</main>
+</div>
 @endsection

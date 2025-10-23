@@ -84,6 +84,30 @@ class FoodOrderController extends Controller
         if ($validated['status'] === 'completed') {
             $foodOrder->update(['completed_at' => now()]);
         }
+        
+        // If order is preparing, update prepared_at timestamp
+        if ($validated['status'] === 'preparing' && !$foodOrder->prepared_at) {
+            $foodOrder->update(['prepared_at' => now()]);
+        }
+        
+        // If order is ready, update ready timestamp
+        if ($validated['status'] === 'ready') {
+            $foodOrder->update(['prepared_at' => $foodOrder->prepared_at ?? now()]);
+        }
+        
+        // If order is delivered/completed, update delivered_at timestamp
+        if ($validated['status'] === 'completed' && !$foodOrder->delivered_at) {
+            $foodOrder->update(['delivered_at' => now()]);
+        }
+
+        // Return JSON for AJAX requests
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Order status updated successfully!',
+                'status' => $validated['status']
+            ]);
+        }
 
         return redirect()->back()->with('success', 'Order status updated successfully!');
     }
@@ -154,5 +178,27 @@ class FoodOrderController extends Controller
             ->get();
 
         return view('staff.orders.statistics', compact('stats', 'popularItems', 'recentOrders'));
+    }
+
+    /**
+     * Delete a cancelled food order permanently.
+     */
+    public function destroy(FoodOrder $foodOrder)
+    {
+        // Only allow deletion of cancelled orders
+        if ($foodOrder->status !== 'cancelled') {
+            return redirect()->back()->with('error', 'Only cancelled orders can be deleted.');
+        }
+
+        try {
+            // Delete the order (cascade will handle order_items and payments)
+            $orderNumber = $foodOrder->order_number;
+            $foodOrder->delete();
+
+            return redirect()->route('staff.orders.index')->with('success', "Order {$orderNumber} has been permanently deleted.");
+        } catch (\Exception $e) {
+            \Log::error('Failed to delete food order: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Failed to delete order. Please try again.');
+        }
     }
 }

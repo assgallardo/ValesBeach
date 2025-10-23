@@ -3,148 +3,159 @@
 @section('title', 'My Food Orders - ValesBeach Resort')
 
 @section('content')
-<div class="container mx-auto px-4 py-8">
-    <!-- Header -->
-    <div class="flex justify-between items-center mb-8">
-        <div>
-            <h1 class="text-3xl font-bold text-gray-900">My Food Orders</h1>
-            <p class="text-gray-600 mt-2">Track your current and past food orders</p>
-        </div>
-        
-        <a href="{{ route('guest.food-orders.menu') }}" 
-           class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold flex items-center space-x-2 transition duration-200">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                      d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
-            </svg>
-            <span>Browse Menu</span>
-        </a>
-    </div>
-
-    @if($orders->count() > 0)
-    <!-- Orders List -->
-    <div class="space-y-6">
-        @foreach($orders as $order)
-        <div class="bg-white rounded-lg shadow-md overflow-hidden">
-            <!-- Order Header -->
-            <div class="p-6 border-b border-gray-200">
-                <div class="flex justify-between items-start">
-                    <div>
-                        <div class="flex items-center space-x-3">
-                            <h2 class="text-xl font-semibold text-gray-900">
-                                Order #{{ $order->order_number }}
-                            </h2>
-                            
-                            <!-- Status Badge -->
-                            <span class="px-3 py-1 text-sm rounded-full font-medium
-                                @switch($order->status)
-                                    @case('pending') bg-yellow-100 text-yellow-800 @break
-                                    @case('confirmed') bg-blue-100 text-blue-800 @break
-                                    @case('preparing') bg-orange-100 text-orange-800 @break
-                                    @case('ready') bg-green-100 text-green-800 @break
-                                    @case('delivered') bg-green-100 text-green-800 @break
-                                    @case('cancelled') bg-red-100 text-red-800 @break
-                                @endswitch">
-                                {{ str_replace('_', ' ', ucfirst($order->status)) }}
-                            </span>
-                        </div>
-                        
-                        <div class="mt-2 text-sm text-gray-600 space-y-1">
-                            <p><strong>Placed:</strong> {{ $order->created_at->format('M j, Y \a\t g:i A') }}</p>
-                            <p><strong>Delivery:</strong> {{ str_replace('_', ' ', ucfirst($order->delivery_type)) }}
-                                @if($order->delivery_location) - {{ $order->delivery_location }} @endif
-                            </p>
-                            @if($order->requested_delivery_time)
-                            <p><strong>Requested Time:</strong> {{ $order->requested_delivery_time->format('M j \a\t g:i A') }}</p>
-                            @endif
-                        </div>
-                    </div>
-                    
-                    <div class="text-right">
-                        <div class="text-2xl font-bold text-gray-900">
-                            {{ $order->formatted_total_amount }}
-                        </div>
-                        <div class="text-sm text-gray-600">
-                            {{ $order->orderItems->sum('quantity') }} item{{ $order->orderItems->sum('quantity') !== 1 ? 's' : '' }}
-                        </div>
-                    </div>
-                </div>
+<div class="min-h-screen bg-gray-900 py-8">
+    <div class="container mx-auto px-4 lg:px-8 max-w-7xl">
+        <!-- Header -->
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+            <div>
+                <h1 class="text-4xl font-bold text-white mb-2">My Food Orders</h1>
+                <p class="text-gray-400">Track your current and past food orders</p>
             </div>
             
-            <!-- Order Items -->
-            <div class="p-6">
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
-                    @foreach($order->orderItems->take(6) as $item)
-                    <div class="flex items-center space-x-3">
-                        @if($item->menuItem->image)
-                        <img src="{{ asset('storage/' . $item->menuItem->image) }}" 
-                             alt="{{ $item->menuItem->name }}" 
-                             class="w-12 h-12 object-cover rounded">
-                        @else
-                        <div class="w-12 h-12 bg-gray-200 rounded flex items-center justify-center">
-                            <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                      d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                            </svg>
+            <a href="{{ route('guest.food-orders.menu') }}" 
+               class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white rounded-lg font-bold shadow-lg transition-all duration-200 transform hover:scale-105">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                          d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                </svg>
+                <span>Browse Menu</span>
+            </a>
+        </div>
+
+        @if($orders->count() > 0)
+        <!-- Orders List -->
+        <div class="space-y-6" id="orders-list">
+            @foreach($orders as $order)
+            <div id="order-{{ $order->id }}" class="bg-gray-800 rounded-xl shadow-2xl overflow-hidden hover:shadow-green-500/10 transition-all duration-300">
+                <!-- Order Header -->
+                <div class="p-6 border-b border-gray-700 bg-gradient-to-r from-gray-800 to-gray-900">
+                    <div class="flex flex-col sm:flex-row justify-between items-start gap-4">
+                        <div class="flex-1">
+                            <div class="flex flex-wrap items-center gap-3 mb-3">
+                                <h2 class="text-2xl font-bold text-white">
+                                    Order #{{ $order->order_number }}
+                                </h2>
+                                
+                                <!-- Status Badge -->
+                                <span class="px-3 py-1.5 text-sm rounded-full font-bold
+                                    @switch($order->status)
+                                        @case('pending') bg-yellow-600 text-white @break
+                                        @case('confirmed') bg-blue-500 text-white @break
+                                        @case('preparing') bg-blue-600 text-white @break
+                                        @case('ready') bg-purple-600 text-white @break
+                                        @case('delivered') bg-green-600 text-white @break
+                                        @case('completed') bg-green-600 text-white @break
+                                        @case('cancelled') bg-red-600 text-white @break
+                                    @endswitch">
+                                    {{ str_replace('_', ' ', ucfirst($order->status)) }}
+                                </span>
+                            </div>
+                            
+                            <div class="text-sm text-gray-300 space-y-1">
+                                <p><strong class="text-gray-200">Placed:</strong> {{ $order->created_at->format('M j, Y \a\t g:i A') }}</p>
+                                <p><strong class="text-gray-200">Delivery:</strong> {{ str_replace('_', ' ', ucfirst($order->delivery_type)) }}
+                                    @if($order->delivery_location) - {{ $order->delivery_location }} @endif
+                                </p>
+                                @if($order->requested_delivery_time)
+                                <p><strong class="text-gray-200">Requested Time:</strong> {{ $order->requested_delivery_time->format('M j \a\t g:i A') }}</p>
+                                @endif
+                            </div>
                         </div>
-                        @endif
                         
-                        <div class="flex-1 min-w-0">
-                            <p class="font-medium text-gray-900 truncate">{{ $item->menuItem->name }}</p>
-                            <p class="text-sm text-gray-600">
-                                Qty: {{ $item->quantity }} × {{ $item->formatted_price }}
-                            </p>
+                        <div class="text-right">
+                            <div class="text-3xl font-bold text-green-400">
+                                {{ $order->formatted_total_amount }}
+                            </div>
+                            <div class="text-sm text-gray-400">
+                                {{ $order->orderItems->sum('quantity') }} item{{ $order->orderItems->sum('quantity') !== 1 ? 's' : '' }}
+                            </div>
                         </div>
                     </div>
-                    @endforeach
                 </div>
                 
-                @if($order->orderItems->count() > 6)
-                <p class="text-sm text-gray-600 mb-4">
-                    ... and {{ $order->orderItems->count() - 6 }} more item{{ $order->orderItems->count() - 6 !== 1 ? 's' : '' }}
-                </p>
-                @endif
-                
-                @if($order->special_instructions)
-                <div class="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
-                    <p class="text-sm text-yellow-800">
-                        <strong>Special Instructions:</strong> {{ $order->special_instructions }}
-                    </p>
-                </div>
-                @endif
-                
-                <!-- Action Buttons -->
-                <div class="flex justify-between items-center">
-                    <div class="flex space-x-3">
-                        <a href="{{ route('guest.food-orders.show', $order) }}" 
-                           class="text-blue-600 hover:text-blue-800 font-semibold text-sm">
-                            View Details
-                        </a>
-                        
-                        @if($order->status === 'delivered')
-                        <button class="text-green-600 hover:text-green-800 font-semibold text-sm"
-                                onclick="showReorderModal('{{ $order->id }}')">
-                            Reorder
-                        </button>
-                        @endif
+                <!-- Order Items -->
+                <div class="p-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+                        @foreach($order->orderItems->take(6) as $item)
+                        <div class="flex items-center space-x-3 p-3 bg-gray-700/30 rounded-lg">
+                            @if($item->menuItem->image)
+                            <img src="{{ asset('storage/' . $item->menuItem->image) }}" 
+                                 alt="{{ $item->menuItem->name }}" 
+                                 class="w-14 h-14 object-cover rounded-lg shadow-lg">
+                            @else
+                            <div class="w-14 h-14 bg-gray-700 rounded-lg flex items-center justify-center shadow-lg">
+                                <svg class="w-7 h-7 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                          d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                </svg>
+                            </div>
+                            @endif
+                            
+                            <div class="flex-1 min-w-0">
+                                <p class="font-medium text-white truncate">{{ $item->menuItem->name }}</p>
+                                <p class="text-sm text-gray-400">
+                                    Qty: {{ $item->quantity }} × {{ $item->formatted_price }}
+                                </p>
+                            </div>
+                        </div>
+                        @endforeach
                     </div>
                     
-                    @if($order->status === 'pending')
-                    <form action="{{ route('guest.food-orders.cancel', $order) }}" method="POST" 
-                          onsubmit="return confirm('Are you sure you want to cancel this order?')" 
-                          class="inline">
-                        @csrf
-                        <button type="submit" 
-                                class="text-red-600 hover:text-red-800 font-semibold text-sm">
+                    @if($order->orderItems->count() > 6)
+                    <p class="text-sm text-gray-400 mb-4">
+                        ... and {{ $order->orderItems->count() - 6 }} more item{{ $order->orderItems->count() - 6 !== 1 ? 's' : '' }}
+                    </p>
+                    @endif
+                    
+                    @if($order->special_instructions)
+                    <div class="mb-4 p-4 bg-yellow-900/30 border border-yellow-600/50 rounded-lg">
+                        <p class="text-sm text-yellow-200">
+                            <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                            <strong>Special Instructions:</strong> {{ $order->special_instructions }}
+                        </p>
+                    </div>
+                    @endif
+                    
+                    <!-- Action Buttons -->
+                    <div class="flex flex-wrap justify-between items-center gap-3">
+                        <div class="flex flex-wrap gap-3">
+                            <a href="{{ route('guest.food-orders.show', $order) }}" 
+                               class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold text-sm transition-all">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                </svg>
+                                View Details
+                            </a>
+                            
+                            @if(in_array($order->status, ['delivered', 'completed']))
+                            <button class="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold text-sm transition-all"
+                                    onclick="showReorderModal('{{ $order->id }}')">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                                </svg>
+                                Reorder
+                            </button>
+                            @endif
+                        </div>
+                        
+                        @if($order->status === 'pending')
+                        <button type="button"
+                                onclick="cancelOrder('{{ $order->id }}', '{{ route('guest.food-orders.cancel', $order) }}')"
+                                class="inline-flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold text-sm transition-all">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
                             Cancel Order
                         </button>
-                    </form>
-                    @endif
+                        @endif
+                    </div>
                 </div>
             </div>
+            @endforeach
         </div>
-        @endforeach
-    </div>
     
     <!-- Pagination -->
     @if($orders->hasPages())
@@ -152,43 +163,53 @@
         {{ $orders->links() }}
     </div>
     @endif
-    
-    @else
-    <!-- Empty State -->
-    <div class="text-center py-12">
-        <svg class="w-24 h-24 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                  d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
-        </svg>
-        <h2 class="text-2xl font-bold text-gray-500 mb-2">No orders yet</h2>
-        <p class="text-gray-400 mb-6">Start by exploring our delicious menu</p>
-        <a href="{{ route('guest.food-orders.menu') }}" 
-           class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold inline-flex items-center space-x-2">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                      d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
-            </svg>
-            <span>Browse Menu</span>
-        </a>
+        
+        @else
+        <!-- Empty State -->
+        <div class="bg-gray-800 rounded-2xl shadow-2xl p-12 text-center">
+            <div class="max-w-md mx-auto">
+                <div class="mb-6">
+                    <svg class="w-32 h-32 text-gray-600 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                              d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                    </svg>
+                </div>
+                <h2 class="text-3xl font-bold text-white mb-3">No orders yet</h2>
+                <p class="text-gray-400 mb-8 text-lg">Start by exploring our delicious menu</p>
+                <a href="{{ route('guest.food-orders.menu') }}" 
+                   class="inline-flex items-center px-8 py-4 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white rounded-lg font-bold text-lg shadow-xl transition-all duration-200 transform hover:scale-105">
+                    <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                              d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                    </svg>
+                    <span>Browse Menu</span>
+                </a>
+            </div>
+        </div>
+        @endif
     </div>
-    @endif
 </div>
 
 <!-- Reorder Modal -->
-<div id="reorderModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50">
+<div id="reorderModal" class="fixed inset-0 bg-black bg-opacity-75 hidden z-50">
     <div class="flex items-center justify-center min-h-screen p-4">
-        <div class="bg-white rounded-lg shadow-xl max-w-md w-full">
+        <div class="bg-gray-800 rounded-xl shadow-2xl max-w-md w-full border border-gray-700">
             <div class="p-6">
-                <h3 class="text-lg font-semibold text-gray-900 mb-4">Reorder Items</h3>
-                <p class="text-gray-600 mb-6">This will add all items from this order to your current cart.</p>
+                <h3 class="text-2xl font-bold text-white mb-4 flex items-center">
+                    <svg class="w-6 h-6 text-green-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                    </svg>
+                    Reorder Items
+                </h3>
+                <p class="text-gray-300 mb-6">This will add all items from this order to your current cart.</p>
                 
                 <div class="flex justify-end space-x-3">
                     <button onclick="closeReorderModal()" 
-                            class="px-4 py-2 text-gray-600 hover:text-gray-800">
+                            class="px-6 py-2 text-gray-300 hover:text-white border border-gray-600 hover:border-gray-500 rounded-lg font-semibold transition-all">
                         Cancel
                     </button>
                     <button onclick="confirmReorder()" 
-                            class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold">
+                            class="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-all">
                         Add to Cart
                     </button>
                 </div>
@@ -224,5 +245,175 @@ document.getElementById('reorderModal').addEventListener('click', function(e) {
         closeReorderModal();
     }
 });
+
+// Cancel Order Function
+function cancelOrder(orderId, cancelUrl) {
+    if (!confirm('Are you sure you want to cancel this order?')) {
+        return;
+    }
+    
+    const orderCard = document.getElementById('order-' + orderId);
+    const cancelButton = event.target.closest('button');
+    
+    // Disable button and show loading state
+    if (cancelButton) {
+        cancelButton.disabled = true;
+        cancelButton.innerHTML = `
+            <svg class="w-4 h-4 mr-2 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+            </svg>
+            Cancelling...
+        `;
+    }
+    
+    // Get CSRF token
+    const csrfToken = document.querySelector('meta[name="csrf-token"]');
+    const token = csrfToken ? csrfToken.getAttribute('content') : '';
+    
+    // Create form data
+    const formData = new FormData();
+    formData.append('_token', token);
+    
+    // Send cancel request
+    fetch(cancelUrl, {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': token,
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: formData
+    })
+    .then(response => {
+        // Check if response is ok
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        
+        // Try to parse as JSON, if it fails, just return success
+        return response.text().then(text => {
+            try {
+                return JSON.parse(text);
+            } catch (e) {
+                // If not JSON, assume success if status is 200
+                return { success: true };
+            }
+        });
+    })
+    .then(data => {
+        // Show success notification
+        showNotification('Order cancelled successfully', 'success');
+        
+        // Remove all cancelled order cards (including this one)
+        removeAllCancelledOrders(orderId);
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Failed to cancel order. Please try again.', 'error');
+        
+        // Re-enable button
+        if (cancelButton) {
+            cancelButton.disabled = false;
+            cancelButton.innerHTML = `
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+                Cancel Order
+            `;
+        }
+    });
+}
+
+// Remove all cancelled orders from the DOM
+function removeAllCancelledOrders(currentOrderId) {
+    // First, remove the current order
+    const currentOrderCard = document.getElementById('order-' + currentOrderId);
+    
+    if (currentOrderCard) {
+        currentOrderCard.style.transition = 'all 0.5s ease-out';
+        currentOrderCard.style.opacity = '0';
+        currentOrderCard.style.transform = 'translateX(-100%)';
+        
+        setTimeout(() => {
+            currentOrderCard.remove();
+            
+            // Also remove any other cancelled orders
+            const allOrders = document.querySelectorAll('[id^="order-"]');
+            let removedCount = 0;
+            
+            allOrders.forEach(order => {
+                const statusBadge = order.querySelector('.px-3.py-1\\.5');
+                if (statusBadge && statusBadge.textContent.trim().toLowerCase() === 'cancelled') {
+                    order.style.transition = 'all 0.3s ease-out';
+                    order.style.opacity = '0';
+                    order.style.transform = 'translateX(-100%)';
+                    
+                    setTimeout(() => {
+                        order.remove();
+                        removedCount++;
+                        
+                        // Check if there are no more orders
+                        checkIfEmpty();
+                    }, 300);
+                }
+            });
+            
+            // Check if there are no more orders
+            checkIfEmpty();
+        }, 500);
+    }
+}
+
+// Check if orders list is empty
+function checkIfEmpty() {
+    setTimeout(() => {
+        const ordersList = document.getElementById('orders-list');
+        if (ordersList && ordersList.children.length === 0) {
+            // Reload page to show empty state
+            location.reload();
+        }
+    }, 600);
+}
+
+// Notification function
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `fixed top-4 right-4 px-6 py-4 rounded-lg text-white z-50 shadow-2xl transition-all duration-300 transform ${
+        type === 'success' ? 'bg-green-600' : 
+        type === 'error' ? 'bg-red-600' : 'bg-blue-600'
+    }`;
+    
+    notification.innerHTML = `
+        <div class="flex items-center space-x-3">
+            ${type === 'success' ? `
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                </svg>
+            ` : type === 'error' ? `
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            ` : `
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+            `}
+            <span class="font-semibold">${message}</span>
+        </div>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Trigger animation
+    setTimeout(() => {
+        notification.style.transform = 'translateY(0)';
+    }, 10);
+    
+    // Remove after 3 seconds
+    setTimeout(() => {
+        notification.style.opacity = '0';
+        notification.style.transform = 'translateY(-20px)';
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
+}
 </script>
 @endsection

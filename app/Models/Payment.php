@@ -16,6 +16,7 @@ class Payment extends Model
     protected $fillable = [
         'booking_id',
         'service_request_id',
+        'food_order_id',
         'user_id',
         'payment_reference',
         'amount',
@@ -70,6 +71,14 @@ class Payment extends Model
     public function serviceRequest()
     {
         return $this->belongsTo(ServiceRequest::class);
+    }
+
+    /**
+     * Get the food order associated with the payment.
+     */
+    public function foodOrder()
+    {
+        return $this->belongsTo(FoodOrder::class);
     }
 
     /**
@@ -137,11 +146,13 @@ class Payment extends Model
     }
 
     /**
-     * Get payment type (booking or service)
+     * Get payment type (booking, service, or food order)
      */
     public function getPaymentTypeAttribute()
     {
-        if ($this->service_request_id) {
+        if ($this->food_order_id) {
+            return 'food_order';
+        } elseif ($this->service_request_id) {
             return 'service';
         } elseif ($this->booking_id) {
             return 'booking';
@@ -154,7 +165,9 @@ class Payment extends Model
      */
     public function getPaymentCategoryAttribute()
     {
-        if ($this->booking_id) {
+        if ($this->food_order_id) {
+            return 'Food Order';
+        } elseif ($this->booking_id) {
             return 'Room Booking';
         } elseif ($this->service_request_id) {
             return 'Service Request';
@@ -241,7 +254,12 @@ class Payment extends Model
      */
     public function getDetailedDescriptionAttribute()
     {
-        if ($this->booking) {
+        if ($this->foodOrder) {
+            $itemCount = $this->foodOrder->orderItems->count();
+            $totalQuantity = $this->foodOrder->orderItems->sum('quantity');
+            
+            return "Food Order #{$this->foodOrder->order_number} ({$itemCount} items, {$totalQuantity} total)";
+        } elseif ($this->booking) {
             $checkIn = \Carbon\Carbon::parse($this->booking->check_in_date);
             $checkOut = \Carbon\Carbon::parse($this->booking->check_out_date);
             $nights = $checkIn->diffInDays($checkOut);
@@ -258,11 +276,13 @@ class Payment extends Model
     }
 
     /**
-     * Get the calculated amount based on service/booking
+     * Get the calculated amount based on service/booking/food order
      */
     public function getCalculatedAmountAttribute()
     {
-        if ($this->serviceRequest && $this->serviceRequest->service) {
+        if ($this->foodOrder) {
+            return $this->foodOrder->total_amount;
+        } elseif ($this->serviceRequest && $this->serviceRequest->service) {
             $service = $this->serviceRequest->service;
             $quantity = $this->serviceRequest->quantity ?? 1;
             return $service->price * $quantity;

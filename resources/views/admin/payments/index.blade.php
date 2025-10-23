@@ -32,136 +32,104 @@
             </div>
         </div>
 
-        <!-- Statistics Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <!-- Statistics Cards - Single Line Compact View -->
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-9 gap-3 mb-6">
             <!-- Total Revenue -->
-            <div class="bg-gray-800 rounded-lg p-6 border border-gray-700 hover:border-green-500 transition-colors">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <div class="w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center">
-                            <i class="fas fa-dollar-sign text-white text-xl"></i>
-                        </div>
+            <div class="bg-gray-800 rounded-lg p-3 border border-gray-700 hover:border-green-500 transition-colors">
+                <div class="flex flex-col items-center text-center">
+                    <div class="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center mb-2">
+                        <i class="fas fa-dollar-sign text-white text-sm"></i>
                     </div>
-                    <div class="ml-4">
-                        <p class="text-sm text-gray-400">Total Revenue</p>
-                        <p class="text-2xl font-bold text-green-50">₱{{ number_format($stats['total_payments'], 2) }}</p>
-                        <p class="text-xs text-green-400">Completed payments</p>
-                    </div>
+                    <p class="text-[10px] text-gray-400 mb-1">Total Revenue</p>
+                    <p class="text-sm font-bold text-green-50">₱{{ number_format($stats['total_payments'], 2) }}</p>
                 </div>
             </div>
 
             <!-- Pending Payments -->
-            <div class="bg-gray-800 rounded-lg p-6 border border-gray-700 hover:border-yellow-500 transition-colors">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <div class="w-12 h-12 bg-yellow-600 rounded-lg flex items-center justify-center">
-                            <i class="fas fa-clock text-white text-xl"></i>
-                        </div>
+            <div class="bg-gray-800 rounded-lg p-3 border border-gray-700 hover:border-yellow-500 transition-colors">
+                <div class="flex flex-col items-center text-center">
+                    <div class="w-8 h-8 bg-yellow-600 rounded-lg flex items-center justify-center mb-2">
+                        <i class="fas fa-clock text-white text-sm"></i>
                     </div>
-                    <div class="ml-4">
-                        <p class="text-sm text-gray-400">Pending Payments</p>
-                        <p class="text-2xl font-bold text-green-50">₱{{ number_format($stats['pending_payments'], 2) }}</p>
-                        <p class="text-xs text-yellow-400">{{ $stats['pending_count'] }} transactions</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Booking Payments -->
-            <div class="bg-gray-800 rounded-lg p-6 border border-gray-700 hover:border-blue-500 transition-colors">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <div class="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center">
-                            <i class="fas fa-bed text-white text-xl"></i>
-                        </div>
-                    </div>
-                    <div class="ml-4">
-                        <p class="text-sm text-gray-400">Room Bookings</p>
-                        <p class="text-2xl font-bold text-green-50">₱{{ number_format($stats['booking_payments'], 2) }}</p>
-                        <p class="text-xs text-blue-400">{{ $stats['booking_count'] }} payments</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Service Payments -->
-            <div class="bg-gray-800 rounded-lg p-6 border border-gray-700 hover:border-purple-500 transition-colors">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <div class="w-12 h-12 bg-purple-600 rounded-lg flex items-center justify-center">
-                            <i class="fas fa-concierge-bell text-white text-xl"></i>
-                        </div>
-                    </div>
-                    <div class="ml-4">
-                        <p class="text-sm text-gray-400">Services</p>
-                        <p class="text-2xl font-bold text-green-50">₱{{ number_format($stats['service_payments'], 2) }}</p>
-                        <p class="text-xs text-purple-400">{{ $stats['service_count'] }} payments</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Secondary Stats Row -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <!-- Total Refunds -->
-            <div class="bg-gray-800 rounded-lg p-6 border border-gray-700 hover:border-red-500 transition-colors">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <div class="w-12 h-12 bg-red-600 rounded-lg flex items-center justify-center">
-                            <i class="fas fa-undo text-white text-xl"></i>
-                        </div>
-                    </div>
-                    <div class="ml-4">
-                        <p class="text-sm text-gray-400">Total Refunds</p>
-                        <p class="text-2xl font-bold text-green-50">₱{{ number_format($stats['total_refunds'], 2) }}</p>
-                        <p class="text-xs text-red-400">{{ $stats['refunded_count'] }} refunded</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Refundable Payments -->
-            <div class="bg-gray-800 rounded-lg p-6 border border-gray-700 hover:border-indigo-500 transition-colors">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <div class="w-12 h-12 bg-indigo-600 rounded-lg flex items-center justify-center">
-                            <i class="fas fa-coins text-white text-xl"></i>
-                        </div>
-                    </div>
-                    <div class="ml-4">
-                        <p class="text-sm text-gray-400">Refundable</p>
-                        <p class="text-2xl font-bold text-green-50">{{ $stats['refundable_payments'] }}</p>
-                        <p class="text-xs text-indigo-400">Can be refunded</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Failed Payments -->
-            <div class="bg-gray-800 rounded-lg p-6 border border-gray-700 hover:border-gray-500 transition-colors">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <div class="w-12 h-12 bg-gray-600 rounded-lg flex items-center justify-center">
-                            <i class="fas fa-times-circle text-white text-xl"></i>
-                        </div>
-                    </div>
-                    <div class="ml-4">
-                        <p class="text-sm text-gray-400">Failed</p>
-                        <p class="text-2xl font-bold text-green-50">₱{{ number_format($stats['failed_payments'], 2) }}</p>
-                        <p class="text-xs text-gray-400">Failed payments</p>
-                    </div>
+                    <p class="text-[10px] text-gray-400 mb-1">Pending</p>
+                    <p class="text-sm font-bold text-green-50">₱{{ number_format($stats['pending_payments'], 2) }}</p>
                 </div>
             </div>
 
             <!-- Total Transactions -->
-            <div class="bg-gray-800 rounded-lg p-6 border border-gray-700 hover:border-teal-500 transition-colors">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <div class="w-12 h-12 bg-teal-600 rounded-lg flex items-center justify-center">
-                            <i class="fas fa-receipt text-white text-xl"></i>
-                        </div>
+            <div class="bg-gray-800 rounded-lg p-3 border border-gray-700 hover:border-teal-500 transition-colors">
+                <div class="flex flex-col items-center text-center">
+                    <div class="w-8 h-8 bg-teal-600 rounded-lg flex items-center justify-center mb-2">
+                        <i class="fas fa-receipt text-white text-sm"></i>
                     </div>
-                    <div class="ml-4">
-                        <p class="text-sm text-gray-400">Total Transactions</p>
-                        <p class="text-2xl font-bold text-green-50">{{ number_format($stats['total_count']) }}</p>
-                        <p class="text-xs text-teal-400">All time</p>
+                    <p class="text-[10px] text-gray-400 mb-1">Transactions</p>
+                    <p class="text-sm font-bold text-green-50">{{ number_format($stats['total_count']) }}</p>
+                </div>
+            </div>
+
+            <!-- Room Bookings -->
+            <div class="bg-gray-800 rounded-lg p-3 border border-gray-700 hover:border-blue-500 transition-colors">
+                <div class="flex flex-col items-center text-center">
+                    <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center mb-2">
+                        <i class="fas fa-bed text-white text-sm"></i>
                     </div>
+                    <p class="text-[10px] text-gray-400 mb-1">Room Bookings</p>
+                    <p class="text-sm font-bold text-green-50">₱{{ number_format($stats['booking_payments'], 2) }}</p>
+                </div>
+            </div>
+
+            <!-- Services -->
+            <div class="bg-gray-800 rounded-lg p-3 border border-gray-700 hover:border-purple-500 transition-colors">
+                <div class="flex flex-col items-center text-center">
+                    <div class="w-8 h-8 bg-purple-600 rounded-lg flex items-center justify-center mb-2">
+                        <i class="fas fa-concierge-bell text-white text-sm"></i>
+                    </div>
+                    <p class="text-[10px] text-gray-400 mb-1">Services</p>
+                    <p class="text-sm font-bold text-green-50">₱{{ number_format($stats['service_payments'], 2) }}</p>
+                </div>
+            </div>
+
+            <!-- Food & Beverage -->
+            <div class="bg-gray-800 rounded-lg p-3 border border-gray-700 hover:border-orange-500 transition-colors">
+                <div class="flex flex-col items-center text-center">
+                    <div class="w-8 h-8 bg-orange-600 rounded-lg flex items-center justify-center mb-2">
+                        <i class="fas fa-utensils text-white text-sm"></i>
+                    </div>
+                    <p class="text-[10px] text-gray-400 mb-1">Food & Beverage</p>
+                    <p class="text-sm font-bold text-green-50">₱{{ number_format($stats['food_order_payments'] ?? 0, 2) }}</p>
+                </div>
+            </div>
+
+            <!-- Total Refunds -->
+            <div class="bg-gray-800 rounded-lg p-3 border border-gray-700 hover:border-red-500 transition-colors">
+                <div class="flex flex-col items-center text-center">
+                    <div class="w-8 h-8 bg-red-600 rounded-lg flex items-center justify-center mb-2">
+                        <i class="fas fa-undo text-white text-sm"></i>
+                    </div>
+                    <p class="text-[10px] text-gray-400 mb-1">Refunds</p>
+                    <p class="text-sm font-bold text-green-50">₱{{ number_format($stats['total_refunds'], 2) }}</p>
+                </div>
+            </div>
+
+            <!-- Refundable -->
+            <div class="bg-gray-800 rounded-lg p-3 border border-gray-700 hover:border-indigo-500 transition-colors">
+                <div class="flex flex-col items-center text-center">
+                    <div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center mb-2">
+                        <i class="fas fa-coins text-white text-sm"></i>
+                    </div>
+                    <p class="text-[10px] text-gray-400 mb-1">Refundable</p>
+                    <p class="text-sm font-bold text-green-50">{{ $stats['refundable_payments'] }}</p>
+                </div>
+            </div>
+
+            <!-- Failed -->
+            <div class="bg-gray-800 rounded-lg p-3 border border-gray-700 hover:border-gray-500 transition-colors">
+                <div class="flex flex-col items-center text-center">
+                    <div class="w-8 h-8 bg-gray-600 rounded-lg flex items-center justify-center mb-2">
+                        <i class="fas fa-times-circle text-white text-sm"></i>
+                    </div>
+                    <p class="text-[10px] text-gray-400 mb-1">Failed</p>
+                    <p class="text-sm font-bold text-green-50">₱{{ number_format($stats['failed_payments'], 2) }}</p>
                 </div>
             </div>
         </div>
@@ -201,6 +169,7 @@
                         <option value="">All Types</option>
                         <option value="booking" {{ request('payment_type') === 'booking' ? 'selected' : '' }}>Room Bookings</option>
                         <option value="service" {{ request('payment_type') === 'service' ? 'selected' : '' }}>Services</option>
+                        <option value="food_order" {{ request('payment_type') === 'food_order' ? 'selected' : '' }}>Food & Beverage</option>
                     </select>
                 </div>
 
@@ -307,37 +276,49 @@
                                 <!-- Type & Service -->
                                 <td class="px-6 py-4">
                                     @if($payment->booking)
-                                        <div class="flex items-center mb-2">
-                                            <div class="w-6 h-6 bg-blue-600 rounded flex items-center justify-center mr-2">
-                                                <i class="fas fa-bed text-white text-xs"></i>
+                                        <div class="inline-flex items-start bg-blue-600 text-white px-3 py-2 rounded-lg">
+                                            <div class="flex-shrink-0 mr-2">
+                                                <i class="fas fa-bed text-white"></i>
                                             </div>
-                                            <span class="text-xs bg-blue-600 text-white px-2 py-1 rounded">Room Booking</span>
-                                        </div>
-                                        <div class="text-sm">
-                                            <div class="font-medium text-green-50">{{ $payment->booking->room->name ?? 'N/A' }}</div>
-                                            <div class="text-gray-400">{{ $payment->booking->booking_reference }}</div>
-                                            <div class="text-gray-500 text-xs">
-                                                {{ $payment->booking->check_in ? $payment->booking->check_in->format('M d') : 'N/A' }} - 
-                                                {{ $payment->booking->check_out ? $payment->booking->check_out->format('M d, Y') : 'N/A' }}
+                                            <div class="text-xs">
+                                                <div class="font-bold mb-1">Room Booking</div>
+                                                <div class="opacity-90">{{ $payment->booking->room->name ?? 'N/A' }}</div>
+                                                <div class="opacity-75 mt-0.5">{{ $payment->booking->booking_reference }}</div>
+                                                <div class="opacity-75 text-[10px] mt-0.5">
+                                                    {{ $payment->booking->check_in ? $payment->booking->check_in->format('M d') : 'N/A' }} - 
+                                                    {{ $payment->booking->check_out ? $payment->booking->check_out->format('M d, Y') : 'N/A' }}
+                                                </div>
                                             </div>
                                         </div>
                                     @elseif($payment->serviceRequest)
-                                        <div class="flex items-center mb-2">
-                                            <div class="w-6 h-6 bg-purple-600 rounded flex items-center justify-center mr-2">
-                                                <i class="fas fa-concierge-bell text-white text-xs"></i>
+                                        <div class="inline-flex items-start bg-purple-600 text-white px-3 py-2 rounded-lg">
+                                            <div class="flex-shrink-0 mr-2">
+                                                <i class="fas fa-concierge-bell text-white"></i>
                                             </div>
-                                            <span class="text-xs bg-purple-600 text-white px-2 py-1 rounded">Service</span>
+                                            <div class="text-xs">
+                                                <div class="font-bold mb-1">Service</div>
+                                                <div class="opacity-90">{{ $payment->serviceRequest->service->name ?? 'Service Request' }}</div>
+                                                <div class="opacity-75 mt-0.5">{{ $payment->serviceRequest->service->category ?? 'N/A' }}</div>
+                                            </div>
                                         </div>
-                                        <div class="text-sm">
-                                            <div class="font-medium text-green-50">{{ $payment->serviceRequest->service->name ?? 'Service Request' }}</div>
-                                            <div class="text-gray-400">{{ $payment->serviceRequest->service->category ?? 'N/A' }}</div>
+                                    @elseif($payment->foodOrder)
+                                        <div class="inline-flex items-start bg-orange-600 text-white px-3 py-2 rounded-lg">
+                                            <div class="flex-shrink-0 mr-2">
+                                                <i class="fas fa-utensils text-white"></i>
+                                            </div>
+                                            <div class="text-xs">
+                                                <div class="font-bold mb-1">Food & Beverage</div>
+                                                <div class="opacity-90">Food Order #{{ $payment->foodOrder->order_number }}</div>
+                                                <div class="opacity-75 mt-0.5">{{ $payment->foodOrder->orderItems->count() }} item(s)</div>
+                                                <div class="opacity-75 text-[10px] mt-0.5">
+                                                    {{ ucfirst(str_replace('_', ' ', $payment->foodOrder->delivery_type)) }}
+                                                </div>
+                                            </div>
                                         </div>
                                     @else
-                                        <div class="flex items-center">
-                                            <div class="w-6 h-6 bg-gray-600 rounded flex items-center justify-center mr-2">
-                                                <i class="fas fa-question-circle text-white text-xs"></i>
-                                            </div>
-                                            <span class="text-xs bg-gray-600 text-white px-2 py-1 rounded">Other</span>
+                                        <div class="inline-flex items-center bg-gray-600 text-white px-3 py-2 rounded-lg">
+                                            <i class="fas fa-question-circle text-white mr-2"></i>
+                                            <span class="text-xs font-bold">Other</span>
                                         </div>
                                     @endif
                                 </td>
@@ -393,6 +374,28 @@
                                         @if($payment->serviceRequest->service->duration)
                                             <div class="text-xs text-gray-500">
                                                 Duration: {{ $payment->serviceRequest->service->duration }} min
+                                            </div>
+                                        @endif
+                                    @endif
+                                    
+                                    <!-- Show breakdown for food orders -->
+                                    @if($payment->foodOrder)
+                                        <div class="text-xs text-gray-400 mt-1">
+                                            {{ $payment->foodOrder->orderItems->count() }} item(s)
+                                        </div>
+                                        @if($payment->foodOrder->subtotal)
+                                            <div class="text-xs text-orange-400">
+                                                Subtotal: ₱{{ number_format($payment->foodOrder->subtotal, 2) }}
+                                            </div>
+                                        @endif
+                                        @if($payment->foodOrder->delivery_fee > 0)
+                                            <div class="text-xs text-blue-400">
+                                                + ₱{{ number_format($payment->foodOrder->delivery_fee, 2) }} delivery
+                                            </div>
+                                        @endif
+                                        @if($payment->foodOrder->tax_amount > 0)
+                                            <div class="text-xs text-gray-500">
+                                                + ₱{{ number_format($payment->foodOrder->tax_amount, 2) }} tax
                                             </div>
                                         @endif
                                     @endif
@@ -504,10 +507,16 @@
                                                 </form>
                                             @endif
                                         @elseif($payment->serviceRequest)
-                                            <a href="{{ route('admin.service-requests.show', $payment->serviceRequest) }}" 
+                                            <a href="{{ route('manager.service-requests.show', $payment->serviceRequest) }}" 
                                                class="inline-flex items-center px-2 py-1 text-xs bg-purple-600 text-white rounded hover:bg-purple-700 transition-colors" 
                                                title="View Service Request Details">
                                                 <i class="fas fa-concierge-bell mr-1"></i>Service
+                                            </a>
+                                        @elseif($payment->foodOrder)
+                                            <a href="{{ route('staff.orders.show', $payment->foodOrder) }}" 
+                                               class="inline-flex items-center px-2 py-1 text-xs bg-orange-600 text-white rounded hover:bg-orange-700 transition-colors" 
+                                               title="View Food Order Details">
+                                                <i class="fas fa-utensils mr-1"></i>Food Order
                                             </a>
                                         @endif
 

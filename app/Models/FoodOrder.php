@@ -26,18 +26,23 @@ class FoodOrder extends Model
         'status',
         'payment_status',
         'delivery_type',
+        'delivery_location',
         'delivery_address',
         'special_instructions',
         'subtotal',
         'tax_amount',
         'delivery_fee',
         'total_amount',
+        'requested_delivery_time',
         'estimated_delivery_time',
         'actual_delivery_time',
+        'confirmed_at',
         'prepared_at',
         'delivered_at',
+        'completed_at',
         'cancelled_at',
         'cancellation_reason',
+        'staff_notes',
     ];
 
     /**
@@ -50,10 +55,13 @@ class FoodOrder extends Model
         'tax_amount' => 'decimal:2',
         'delivery_fee' => 'decimal:2',
         'total_amount' => 'decimal:2',
+        'requested_delivery_time' => 'datetime',
         'estimated_delivery_time' => 'datetime',
         'actual_delivery_time' => 'datetime',
+        'confirmed_at' => 'datetime',
         'prepared_at' => 'datetime',
         'delivered_at' => 'datetime',
+        'completed_at' => 'datetime',
         'cancelled_at' => 'datetime',
     ];
 
@@ -86,6 +94,14 @@ class FoodOrder extends Model
     public function orderItems()
     {
         return $this->hasMany(OrderItem::class);
+    }
+
+    /**
+     * Get the payments for this food order.
+     */
+    public function payments()
+    {
+        return $this->hasMany(Payment::class);
     }
 
     /**

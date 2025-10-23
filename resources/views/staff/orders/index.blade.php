@@ -180,36 +180,54 @@
                                 <span class="text-white font-bold text-lg">₱{{ number_format($order->total_amount, 2) }}</span>
                             </td>
                             <td class="px-6 py-4 text-center">
-                                @php
-                                    $statusConfig = [
-                                        'pending' => ['color' => 'yellow', 'icon' => 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z'],
-                                        'preparing' => ['color' => 'blue', 'icon' => 'M13 10V3L4 14h7v7l9-11h-7z'],
-                                        'ready' => ['color' => 'purple', 'icon' => 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'],
-                                        'completed' => ['color' => 'green', 'icon' => 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'],
-                                        'cancelled' => ['color' => 'red', 'icon' => 'M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z']
-                                    ];
-                                    $config = $statusConfig[$order->status] ?? ['color' => 'gray', 'icon' => ''];
-                                @endphp
-                                <span class="inline-flex items-center px-4 py-2 rounded-full text-sm font-bold bg-{{ $config['color'] }}-600 text-white">
-                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $config['icon'] }}"/>
-                                    </svg>
-                                    {{ ucfirst($order->status) }}
-                                </span>
+                                @if($order->status === 'cancelled')
+                                    <!-- Cancelled orders cannot be changed -->
+                                    <span class="inline-flex items-center px-4 py-2 rounded-full text-sm font-bold bg-red-600 text-white">
+                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                        </svg>
+                                        Cancelled
+                                    </span>
+                                @else
+                                    <!-- Status Dropdown -->
+                                    <select onchange="updateOrderStatus('{{ $order->id }}', this.value, '{{ $order->order_number }}')"
+                                            class="px-4 py-2 rounded-lg text-sm font-bold text-white border-2 transition-all duration-200 cursor-pointer
+                                                   {{ $order->status === 'pending' ? 'bg-yellow-600 border-yellow-500 hover:bg-yellow-700' : 
+                                                      ($order->status === 'preparing' ? 'bg-blue-600 border-blue-500 hover:bg-blue-700' : 
+                                                       ($order->status === 'ready' ? 'bg-purple-600 border-purple-500 hover:bg-purple-700' : 
+                                                        ($order->status === 'completed' ? 'bg-green-600 border-green-500 hover:bg-green-700' : 'bg-gray-600 border-gray-500 hover:bg-gray-700'))) }}">
+                                        <option value="pending" {{ $order->status === 'pending' ? 'selected' : '' }}>Pending</option>
+                                        <option value="preparing" {{ $order->status === 'preparing' ? 'selected' : '' }}>Preparing</option>
+                                        <option value="ready" {{ $order->status === 'ready' ? 'selected' : '' }}>Ready</option>
+                                        <option value="completed" {{ $order->status === 'completed' ? 'selected' : '' }}>Completed</option>
+                                    </select>
+                                @endif
                             </td>
                             <td class="px-6 py-4">
                                 <div class="text-white font-medium">{{ $order->created_at->format('M d, Y') }}</div>
                                 <div class="text-gray-400 text-sm mt-1">{{ $order->created_at->format('h:i A') }}</div>
                             </td>
                             <td class="px-6 py-4 text-center">
-                                <a href="{{ route('staff.orders.show', $order) }}" 
-                                   class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors duration-200">
-                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-                                    </svg>
-                                    View Details
-                                </a>
+                                <div class="flex items-center justify-center gap-2">
+                                    <a href="{{ route('staff.orders.show', $order) }}" 
+                                       class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors duration-200">
+                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                        </svg>
+                                        View Details
+                                    </a>
+                                    
+                                    @if($order->status === 'cancelled')
+                                    <button onclick="deleteOrder('{{ $order->id }}', '{{ $order->order_number }}')"
+                                            class="inline-flex items-center px-3 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition-all duration-200 transform hover:scale-105"
+                                            title="Delete this cancelled order">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                        </svg>
+                                    </button>
+                                    @endif
+                                </div>
                             </td>
                         </tr>
                     @empty
@@ -236,4 +254,126 @@
         @endif
     </div>
 </div>
+
+<!-- Hidden form for deletion -->
+<form id="delete-order-form" method="POST" style="display: none;">
+    @csrf
+    @method('DELETE')
+</form>
+
+<script>
+function updateOrderStatus(orderId, newStatus, orderNumber) {
+    if (!confirm(`Change order ${orderNumber} status to "${newStatus.toUpperCase()}"?`)) {
+        // Reset the dropdown to original value if cancelled
+        location.reload();
+        return;
+    }
+    
+    // Get CSRF token
+    const csrfToken = document.querySelector('meta[name="csrf-token"]');
+    const token = csrfToken ? csrfToken.getAttribute('content') : '';
+    
+    // Show loading indicator
+    const statusSelect = event.target;
+    const originalBg = statusSelect.className;
+    statusSelect.disabled = true;
+    statusSelect.style.opacity = '0.6';
+    
+    // Send AJAX request
+    fetch(`/staff/orders/${orderId}/status`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': token,
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+            status: newStatus
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Show success notification
+            showNotification('Order status updated successfully!', 'success');
+            
+            // Update dropdown styling based on new status
+            statusSelect.className = 'px-4 py-2 rounded-lg text-sm font-bold text-white border-2 transition-all duration-200 cursor-pointer ';
+            switch(newStatus) {
+                case 'pending':
+                    statusSelect.className += 'bg-yellow-600 border-yellow-500 hover:bg-yellow-700';
+                    break;
+                case 'preparing':
+                    statusSelect.className += 'bg-blue-600 border-blue-500 hover:bg-blue-700';
+                    break;
+                case 'ready':
+                    statusSelect.className += 'bg-purple-600 border-purple-500 hover:bg-purple-700';
+                    break;
+                case 'completed':
+                    statusSelect.className += 'bg-green-600 border-green-500 hover:bg-green-700';
+                    break;
+                default:
+                    statusSelect.className += 'bg-gray-600 border-gray-500 hover:bg-gray-700';
+            }
+            
+            statusSelect.disabled = false;
+            statusSelect.style.opacity = '1';
+        } else {
+            showNotification('Failed to update order status', 'error');
+            location.reload();
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('An error occurred. Please try again.', 'error');
+        location.reload();
+    });
+}
+
+function deleteOrder(orderId, orderNumber) {
+    if (!confirm(`Are you sure you want to permanently delete order ${orderNumber}?\n\nThis action cannot be undone and will also delete all related order items and payment records.`)) {
+        return;
+    }
+    
+    const form = document.getElementById('delete-order-form');
+    form.action = `/staff/orders/${orderId}/delete`;
+    form.submit();
+}
+
+function showNotification(message, type = 'success') {
+    const notification = document.createElement('div');
+    notification.className = `fixed top-4 right-4 px-6 py-4 rounded-lg shadow-2xl z-50 flex items-center gap-3 transform transition-all duration-300 ${
+        type === 'success' ? 'bg-green-600' : 'bg-red-600'
+    } text-white`;
+    
+    notification.innerHTML = `
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            ${type === 'success' 
+                ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>'
+                : '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>'
+            }
+        </svg>
+        <span class="font-semibold">${message}</span>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Fade out and remove after 3 seconds
+    setTimeout(() => {
+        notification.style.opacity = '0';
+        notification.style.transform = 'translateX(100%)';
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
+}
+
+// Auto-hide success message after 5 seconds
+setTimeout(() => {
+    const successAlert = document.querySelector('.bg-green-500');
+    if (successAlert) {
+        successAlert.style.transition = 'opacity 0.5s ease-out';
+        successAlert.style.opacity = '0';
+        setTimeout(() => successAlert.remove(), 500);
+    }
+}, 5000);
+</script>
 @endsection

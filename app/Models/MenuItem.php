@@ -49,6 +49,8 @@ class MenuItem extends Model
         'is_vegetarian' => 'boolean',
         'is_vegan' => 'boolean',
         'is_gluten_free' => 'boolean',
+        'ingredients' => 'array',
+        'allergens' => 'array',
     ];
 
     /**

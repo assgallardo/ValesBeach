@@ -3,189 +3,231 @@
 @section('title', 'Checkout - ValesBeach Resort')
 
 @section('content')
-<div class="container mx-auto px-4 py-8">
-    <div class="flex items-center mb-8">
-        <a href="{{ route('guest.food-orders.cart') }}"
-           class="text-blue-600 hover:text-blue-800 mr-4">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+<div class="min-h-screen bg-gray-900 py-8">
+    <div class="container mx-auto px-4 lg:px-8 max-w-7xl">
+        <!-- Header -->
+        <div class="flex items-center mb-8">
+            <a href="{{ route('guest.food-orders.cart') }}"
+               class="inline-flex items-center px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg font-semibold transition-all duration-200 mr-4">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                </svg>
+            </a>
+            <div>
+                <h1 class="text-4xl font-bold text-white">Checkout</h1>
+                <p class="text-gray-400 mt-1">Complete your order and enjoy your meal</p>
+            </div>
+        </div>
+
+        <!-- Error Messages -->
+        @if($errors->any())
+        <div class="bg-red-900/50 border border-red-600 text-red-200 px-6 py-4 rounded-lg mb-6">
+            <div class="flex items-start">
+                <svg class="w-6 h-6 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <div>
+                    <strong class="font-bold">Please fix the following errors:</strong>
+                    <ul class="list-disc list-inside mt-2">
+                        @foreach($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            </div>
+        </div>
+        @endif
+
+        @if(session('error'))
+        <div class="bg-red-900/50 border border-red-600 text-red-200 px-6 py-4 rounded-lg mb-6 flex items-start">
+            <svg class="w-6 h-6 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
             </svg>
-        </a>
-        <h1 class="text-3xl font-bold text-gray-900">Checkout</h1>
-    </div>
+            {{ session('error') }}
+        </div>
+        @endif
 
-    <!-- Error Messages -->
-    @if($errors->any())
-    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
-        <strong class="font-bold">Please fix the following errors:</strong>
-        <ul class="list-disc list-inside mt-2">
-            @foreach($errors->all() as $error)
-                <li>{{ $error }}</li>
-            @endforeach
-        </ul>
-    </div>
-    @endif
-
-    @if(session('error'))
-    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
-        {{ session('error') }}
-    </div>
-    @endif
-
-    <form action="{{ route('guest.food-orders.place-order') }}" method="POST" class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        @csrf        <!-- Order Details Form -->
-        <div class="lg:col-span-2 space-y-6">
-            <!-- Delivery Information -->
-            <div class="bg-white rounded-lg shadow-md p-6">
-                <h2 class="text-xl font-semibold text-gray-900 mb-4">Delivery Information</h2>
-                
-                <!-- Delivery Type -->
-                <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Delivery Type</label>
-                    <div class="space-y-2">
-                        <label class="flex items-center">
-                            <input type="radio" name="delivery_type" value="room_service"
-                                   class="mr-2" {{ old('delivery_type', 'room_service') == 'room_service' ? 'checked' : '' }}
-                                   onchange="toggleDeliveryLocation()">
-                            <span class="font-medium">Room Service</span>
-                            <span class="text-sm text-gray-600 ml-2">(+₱5.00 delivery fee)</span>
-                        </label>
-                        <label class="flex items-center">
-                            <input type="radio" name="delivery_type" value="pickup" 
-                                   class="mr-2" {{ old('delivery_type') == 'pickup' ? 'checked' : '' }}
-                                   onchange="toggleDeliveryLocation()">
-                            <span class="font-medium">Pickup at Restaurant</span>
-                            <span class="text-sm text-gray-600 ml-2">(No delivery fee)</span>
-                        </label>
-                        <label class="flex items-center">
-                            <input type="radio" name="delivery_type" value="dining_room" 
-                                   class="mr-2" {{ old('delivery_type') == 'dining_room' ? 'checked' : '' }}
-                                   onchange="toggleDeliveryLocation()">
-                            <span class="font-medium">Serve in Dining Room</span>
-                            <span class="text-sm text-gray-600 ml-2">(No delivery fee)</span>
-                        </label>
+        <form action="{{ route('guest.food-orders.place-order') }}" method="POST" class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            @csrf
+            <!-- Order Details Form -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Delivery Information -->
+                <div class="bg-gray-800 rounded-xl shadow-2xl p-6">
+                    <h2 class="text-2xl font-bold text-white mb-6 flex items-center">
+                        <svg class="w-6 h-6 text-green-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        </svg>
+                        Delivery Information
+                    </h2>
+                    
+                    <!-- Delivery Type -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-300 mb-3">Delivery Type</label>
+                        <div class="space-y-3">
+                            <label class="flex items-center p-4 bg-gray-700/50 rounded-lg cursor-pointer hover:bg-gray-700 transition-colors">
+                                <input type="radio" name="delivery_type" value="room_service"
+                                       class="mr-3 w-4 h-4 text-green-600 focus:ring-green-500" {{ old('delivery_type', 'room_service') == 'room_service' ? 'checked' : '' }}
+                                       onchange="toggleDeliveryLocation()">
+                                <div class="flex-1">
+                                    <span class="font-medium text-white">Room Service</span>
+                                    <span class="text-sm text-green-400 ml-2">(+₱5.00 delivery fee)</span>
+                                </div>
+                            </label>
+                            <label class="flex items-center p-4 bg-gray-700/50 rounded-lg cursor-pointer hover:bg-gray-700 transition-colors">
+                                <input type="radio" name="delivery_type" value="pickup" 
+                                       class="mr-3 w-4 h-4 text-green-600 focus:ring-green-500" {{ old('delivery_type') == 'pickup' ? 'checked' : '' }}
+                                       onchange="toggleDeliveryLocation()">
+                                <div class="flex-1">
+                                    <span class="font-medium text-white">Pickup at Restaurant</span>
+                                    <span class="text-sm text-gray-400 ml-2">(No delivery fee)</span>
+                                </div>
+                            </label>
+                            <label class="flex items-center p-4 bg-gray-700/50 rounded-lg cursor-pointer hover:bg-gray-700 transition-colors">
+                                <input type="radio" name="delivery_type" value="dining_room" 
+                                       class="mr-3 w-4 h-4 text-green-600 focus:ring-green-500" {{ old('delivery_type') == 'dining_room' ? 'checked' : '' }}
+                                       onchange="toggleDeliveryLocation()">
+                                <div class="flex-1">
+                                    <span class="font-medium text-white">Serve in Dining Room</span>
+                                    <span class="text-sm text-gray-400 ml-2">(No delivery fee)</span>
+                                </div>
+                            </label>
+                        </div>
+                        @error('delivery_type')
+                        <p class="text-red-400 text-sm mt-2">{{ $message }}</p>
+                        @enderror
                     </div>
-                    @error('delivery_type')
-                    <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
-                    @enderror
+                    
+                    <!-- Delivery Location -->
+                    <div class="mb-6" id="delivery-location-section">
+                        <label for="delivery_location" class="block text-sm font-medium text-gray-300 mb-2">
+                            <span id="location-label">Room Number</span>
+                        </label>
+                        <input type="text" name="delivery_location" id="delivery_location" 
+                               value="{{ old('delivery_location', $currentBooking ? $currentBooking->room->room_number ?? '' : '') }}"
+                               class="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:ring-2 focus:ring-green-500 focus:border-transparent placeholder-gray-400" 
+                               placeholder="Enter room number">
+                        @error('delivery_location')
+                        <p class="text-red-400 text-sm mt-2">{{ $message }}</p>
+                        @enderror
+                    </div>
+                    
+                    <!-- Requested Delivery Time -->
+                    <div class="mb-6">
+                        <label for="requested_delivery_time" class="block text-sm font-medium text-gray-300 mb-2">
+                            Preferred Delivery Time (Optional)
+                        </label>
+                        <input type="datetime-local" name="requested_delivery_time" id="requested_delivery_time" 
+                               value="{{ old('requested_delivery_time') }}"
+                               min="{{ now()->addMinutes(30)->format('Y-m-d\TH:i') }}"
+                               class="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                        <p class="text-sm text-gray-400 mt-2">Leave blank for ASAP delivery (estimated 30-45 minutes)</p>
+                        @error('requested_delivery_time')
+                        <p class="text-red-400 text-sm mt-2">{{ $message }}</p>
+                        @enderror
+                    </div>
+                    
+                    <!-- Special Instructions -->
+                    <div class="mb-4">
+                        <label for="special_instructions" class="block text-sm font-medium text-gray-300 mb-2">
+                            Special Instructions (Optional)
+                        </label>
+                        <textarea name="special_instructions" id="special_instructions" rows="3"
+                                  class="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:ring-2 focus:ring-green-500 focus:border-transparent placeholder-gray-400"
+                                  placeholder="Any special requests or dietary considerations...">{{ old('special_instructions') }}</textarea>
+                        @error('special_instructions')
+                        <p class="text-red-400 text-sm mt-2">{{ $message }}</p>
+                        @enderror
+                    </div>
                 </div>
                 
-                <!-- Delivery Location -->
-                <div class="mb-4" id="delivery-location-section">
-                    <label for="delivery_location" class="block text-sm font-medium text-gray-700 mb-2">
-                        <span id="location-label">Room Number</span>
-                    </label>
-                    <input type="text" name="delivery_location" id="delivery_location" 
-                           value="{{ old('delivery_location', $currentBooking ? $currentBooking->room->room_number ?? '' : '') }}"
-                           class="w-full border border-gray-300 rounded-lg px-3 py-2" 
-                           placeholder="Enter room number">
-                    @error('delivery_location')
-                    <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
-                    @enderror
+                @if($currentBooking)
+                <!-- Booking Information -->
+                <div class="bg-blue-900/30 border border-blue-600/50 rounded-lg p-5">
+                    <h3 class="font-semibold text-blue-200 mb-3 flex items-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                        </svg>
+                        Current Booking
+                    </h3>
+                    <p class="text-blue-100 text-sm space-y-1">
+                        <span class="block"><strong>Booking:</strong> {{ $currentBooking->booking_number }}</span>
+                        @if($currentBooking->room)
+                        <span class="block"><strong>Room:</strong> {{ $currentBooking->room->room_number }} - {{ $currentBooking->room->room_type }}</span>
+                        @endif
+                        <span class="block"><strong>Dates:</strong> {{ $currentBooking->check_in_date->format('M j') }} - {{ $currentBooking->check_out_date->format('M j, Y') }}</span>
+                    </p>
                 </div>
-                
-                <!-- Requested Delivery Time -->
-                <div class="mb-4">
-                    <label for="requested_delivery_time" class="block text-sm font-medium text-gray-700 mb-2">
-                        Preferred Delivery Time (Optional)
-                    </label>
-                    <input type="datetime-local" name="requested_delivery_time" id="requested_delivery_time" 
-                           value="{{ old('requested_delivery_time') }}"
-                           min="{{ now()->addMinutes(30)->format('Y-m-d\TH:i') }}"
-                           class="w-full border border-gray-300 rounded-lg px-3 py-2">
-                    <p class="text-sm text-gray-600 mt-1">Leave blank for ASAP delivery (estimated 30-45 minutes)</p>
-                    @error('requested_delivery_time')
-                    <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
-                    @enderror
-                </div>
-                
-                <!-- Special Instructions -->
-                <div class="mb-4">
-                    <label for="special_instructions" class="block text-sm font-medium text-gray-700 mb-2">
-                        Special Instructions (Optional)
-                    </label>
-                    <textarea name="special_instructions" id="special_instructions" rows="3"
-                              class="w-full border border-gray-300 rounded-lg px-3 py-2"
-                              placeholder="Any special requests or dietary considerations...">{{ old('special_instructions') }}</textarea>
-                    @error('special_instructions')
-                    <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
-                    @enderror
-                </div>
+                @endif
             </div>
             
-            @if($currentBooking)
-            <!-- Booking Information -->
-            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <h3 class="font-semibold text-blue-900 mb-2">Current Booking</h3>
-                <p class="text-blue-800 text-sm">
-                    <strong>Booking:</strong> {{ $currentBooking->booking_number }}<br>
-                    @if($currentBooking->room)
-                    <strong>Room:</strong> {{ $currentBooking->room->room_number }} - {{ $currentBooking->room->room_type }}<br>
-                    @endif
-                    <strong>Dates:</strong> {{ $currentBooking->check_in_date->format('M j') }} - {{ $currentBooking->check_out_date->format('M j, Y') }}
-                </p>
-            </div>
-            @endif
-        </div>
-        
-        <!-- Order Summary -->
-        <div class="lg:col-span-1">
-            <div class="bg-white rounded-lg shadow-md p-6 sticky top-4">
-                <h2 class="text-xl font-semibold text-gray-900 mb-4">Order Summary</h2>
-                
-                <!-- Order Items -->
-                <div class="space-y-3 mb-6">
-                    @foreach($cartItems as $item)
-                    <div class="flex justify-between items-start">
-                        <div class="flex-1">
-                            <h4 class="font-medium text-gray-900">{{ $item['menu_item']->name }}</h4>
-                            <p class="text-sm text-gray-600">Qty: {{ $item['quantity'] }}</p>
-                            @if($item['special_instructions'])
-                            <p class="text-xs text-gray-500 italic">{{ $item['special_instructions'] }}</p>
-                            @endif
+            <!-- Order Summary -->
+            <div class="lg:col-span-1">
+                <div class="bg-gray-800 rounded-xl shadow-2xl p-6 sticky top-4 border border-gray-700">
+                    <h2 class="text-2xl font-bold text-white mb-6 flex items-center">
+                        <svg class="w-6 h-6 text-green-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/>
+                        </svg>
+                        Order Summary
+                    </h2>
+                    
+                    <!-- Order Items -->
+                    <div class="space-y-3 mb-6 max-h-64 overflow-y-auto">
+                        @foreach($cartItems as $item)
+                        <div class="flex justify-between items-start p-3 bg-gray-700/50 rounded-lg">
+                            <div class="flex-1">
+                                <h4 class="font-medium text-white">{{ $item['menu_item']->name }}</h4>
+                                <p class="text-sm text-gray-400">Qty: {{ $item['quantity'] }}</p>
+                                @if($item['special_instructions'])
+                                <p class="text-xs text-gray-500 italic mt-1">{{ $item['special_instructions'] }}</p>
+                                @endif
+                            </div>
+                            <span class="font-semibold text-green-400 ml-2">
+                                ₱{{ number_format($item['total'], 2) }}
+                            </span>
                         </div>
-                        <span class="font-semibold text-gray-900 ml-2">
-                            ₱{{ number_format($item['total'], 2) }}
-                        </span>
+                        @endforeach
                     </div>
-                    @endforeach
-                </div>
-                
-                <!-- Pricing Breakdown -->
-                <div class="border-t border-gray-200 pt-4 space-y-2">
-                    <div class="flex justify-between">
-                        <span class="text-gray-600">Subtotal</span>
-                        <span class="font-semibold">₱{{ number_format($subtotal, 2) }}</span>
-                    </div>
-                    <div class="flex justify-between">
-                        <span class="text-gray-600">Delivery Fee</span>
-                        <span class="font-semibold" id="delivery-fee">₱0.00</span>
-                    </div>
-                    <div class="flex justify-between">
-                        <span class="text-gray-600">Tax (8%)</span>
-                        <span class="font-semibold" id="tax-amount">₱0.00</span>
-                    </div>
-                    <div class="border-t border-gray-200 pt-2">
-                        <div class="flex justify-between text-lg font-bold">
-                            <span>Total</span>
-                            <span id="final-total">₱0.00</span>
+                    
+                    <!-- Pricing Breakdown -->
+                    <div class="border-t border-gray-700 pt-4 space-y-3">
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-300">Subtotal</span>
+                            <span class="font-semibold text-white">₱{{ number_format($subtotal, 2) }}</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-300">Delivery Fee</span>
+                            <span class="font-semibold text-white" id="delivery-fee">₱0.00</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-300">Tax (8%)</span>
+                            <span class="font-semibold text-white" id="tax-amount">₱0.00</span>
+                        </div>
+                        <div class="border-t border-gray-700 pt-3">
+                            <div class="flex justify-between items-center p-4 bg-gradient-to-r from-green-900/50 to-green-800/50 rounded-lg">
+                                <span class="text-lg font-bold text-white">Total</span>
+                                <span class="text-2xl font-bold text-green-400" id="final-total">₱0.00</span>
+                            </div>
                         </div>
                     </div>
+                    
+                    <!-- Place Order Button -->
+                    <button type="submit" 
+                            class="w-full mt-6 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white py-4 px-4 rounded-lg font-bold transition-all duration-200 shadow-lg transform hover:scale-105 flex items-center justify-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        Place Order
+                    </button>
+                    
+                    <p class="text-xs text-gray-400 mt-4 text-center">
+                        By placing this order, you agree to our terms and conditions. 
+                        Payment will be processed upon delivery.
+                    </p>
                 </div>
-                
-                <!-- Place Order Button -->
-                <button type="submit" 
-                        class="w-full mt-6 bg-green-600 hover:bg-green-700 text-white py-3 px-4 rounded-lg font-semibold transition duration-200">
-                    Place Order
-                </button>
-                
-                <p class="text-xs text-gray-500 mt-3 text-center">
-                    By placing this order, you agree to our terms and conditions. 
-                    Payment will be processed upon delivery.
-                </p>
             </div>
-        </div>
-    </form>
+        </form>
+    </div>
 </div>
 
 <!-- Checkout JavaScript -->

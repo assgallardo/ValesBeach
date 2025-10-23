@@ -298,11 +298,18 @@ class PaymentController extends Controller
         // Get service payments (not related to bookings)
         $servicePayments = auth()->user()->payments()
             ->whereNotNull('service_request_id')
-            ->with('serviceRequest')
+            ->with('serviceRequest.service')
             ->orderBy('created_at', 'desc')
             ->get();
 
-        return view('payments.history', compact('bookings', 'servicePayments'));
+        // Get food order payments
+        $foodOrderPayments = auth()->user()->payments()
+            ->whereNotNull('food_order_id')
+            ->with('foodOrder.orderItems.menuItem')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return view('payments.history', compact('bookings', 'servicePayments', 'foodOrderPayments'));
     }
 
     /**
@@ -315,6 +322,7 @@ class PaymentController extends Controller
             'user',
             'booking.room',
             'serviceRequest.service',
+            'foodOrder.orderItems.menuItem',
             'refundedBy'
         ]);
         
@@ -349,7 +357,7 @@ class PaymentController extends Controller
         $dateTo = $request->get('date_to');
         $search = $request->get('search');
 
-        $query = Payment::with(['booking.room', 'user', 'refundedBy']);
+        $query = Payment::with(['booking.room', 'serviceRequest.service', 'foodOrder.orderItems.menuItem', 'user', 'refundedBy']);
 
         if ($status) {
             $query->where('status', $status);
@@ -533,7 +541,7 @@ class PaymentController extends Controller
             abort(403, 'Only administrators, managers, and staff can access this page.');
         }
 
-        $query = Payment::with(['booking', 'user', 'booking.room', 'booking.invoice', 'serviceRequest', 'refundedBy']);
+        $query = Payment::with(['booking', 'user', 'booking.room', 'booking.invoice', 'serviceRequest', 'foodOrder.orderItems.menuItem', 'refundedBy']);
 
         // Filter by status
         if ($request->filled('status')) {
@@ -576,8 +584,10 @@ class PaymentController extends Controller
             'refundable_payments' => Payment::refundable()->count(),
             'booking_payments' => Payment::whereNotNull('booking_id')->where('status', 'completed')->sum('amount'),
             'service_payments' => Payment::whereNotNull('service_request_id')->where('status', 'completed')->sum('amount'),
+            'food_order_payments' => Payment::whereNotNull('food_order_id')->where('status', 'completed')->sum('amount'),
             'booking_count' => Payment::whereNotNull('booking_id')->count(),
             'service_count' => Payment::whereNotNull('service_request_id')->count(),
+            'food_order_count' => Payment::whereNotNull('food_order_id')->count(),
         ];
 
         return view('admin.payments.index', compact('payments', 'stats'));
@@ -593,7 +603,7 @@ class PaymentController extends Controller
             abort(403, 'Unauthorized access.');
         }
 
-        $payment->load(['booking', 'user', 'booking.room', 'serviceRequest', 'refundedBy']);
+        $payment->load(['booking', 'user', 'booking.room', 'serviceRequest.service', 'foodOrder.orderItems.menuItem', 'refundedBy']);
 
         $routePrefix = request()->route()->getPrefix();
     
@@ -680,6 +690,7 @@ class PaymentController extends Controller
         $query = Payment::with([
             'booking.room', 
             'serviceRequest.service', 
+            'foodOrder.orderItems.menuItem',
             'user'
         ]);
 
@@ -697,6 +708,8 @@ class PaymentController extends Controller
                 $query->whereNotNull('booking_id');
             } elseif ($paymentType === 'service') {
                 $query->whereNotNull('service_request_id');
+            } elseif ($paymentType === 'food_order') {
+                $query->whereNotNull('food_order_id');
             }
         }
 
@@ -732,6 +745,7 @@ class PaymentController extends Controller
             'total_refunds' => Payment::whereNotNull('refund_amount')->sum('refund_amount'),
             'booking_payments' => Payment::whereNotNull('booking_id')->where('status', 'completed')->sum('amount'),
             'service_payments' => Payment::whereNotNull('service_request_id')->where('status', 'completed')->sum('amount'),
+            'food_order_payments' => Payment::whereNotNull('food_order_id')->where('status', 'completed')->sum('amount'),
             'total_count' => Payment::count(),
             'completed_count' => Payment::where('status', 'completed')->count(),
             'pending_count' => Payment::where('status', 'pending')->count(),
@@ -744,6 +758,7 @@ class PaymentController extends Controller
                 ->count(),
             'booking_count' => Payment::whereNotNull('booking_id')->count(),
             'service_count' => Payment::whereNotNull('service_request_id')->count(),
+            'food_order_count' => Payment::whereNotNull('food_order_id')->count(),
         ];
 
         // Return appropriate view based on route prefix

@@ -1,62 +1,73 @@
 @extends('layouts.guest')
 
 @section('content')
-<!-- Background decorative blur elements -->
-<div class="fixed inset-0 overflow-hidden pointer-events-none">
-    <div class="absolute w-96 h-96 bg-green-800 opacity-30 rounded-full blur-3xl -top-48 -left-48"></div>
-    <div class="absolute w-80 h-80 bg-green-700 opacity-20 rounded-full blur-3xl top-1/3 right-1/4"></div>
-    <div class="absolute w-72 h-72 bg-green-800 opacity-25 rounded-full blur-3xl bottom-1/4 left-1/3"></div>
-</div>
-
-<main class="relative z-10 py-8 lg:py-16">
-    <div class="container mx-auto px-4 lg:px-16">
+<div class="min-h-screen bg-gray-900 py-8">
+    <div class="container mx-auto px-4 lg:px-8 max-w-7xl">
         <!-- Page Header -->
-        <div class="text-center mb-12">
-            <h2 class="text-3xl md:text-4xl lg:text-5xl font-bold text-green-50 mb-4">
-                Resort Services
-            </h2>
-            <p class="text-green-50 opacity-80 text-lg">
-                Discover our exclusive spa, dining, transportation, and activity services
-            </p>
-            <div class="mt-6">
+        <div class="mb-8">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h1 class="text-4xl font-bold text-white mb-2">Resort Services</h1>
+                    <p class="text-gray-400">Discover our exclusive spa, dining, transportation, and activity services</p>
+                </div>
                 <a href="{{ route('guest.dashboard') }}" 
-                   class="bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg transition-colors duration-200">
-                    <i class="fas fa-arrow-left mr-2"></i>Back to Dashboard
+                   class="inline-flex items-center px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white font-semibold rounded-lg transition-colors duration-200">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                    </svg>
+                    Back to Dashboard
                 </a>
             </div>
         </div>
 
         <!-- Service Categories Filter -->
-        <div class="flex flex-wrap justify-center gap-4 mb-8">
-            <a href="{{ route('guest.services.index') }}" 
-               class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200">
-                All Services
-            </a>
-            <a href="{{ route('guest.services.index', ['category' => 'spa']) }}" 
-               class="px-4 py-2 bg-green-900/50 text-green-200 rounded-lg hover:bg-green-600 hover:text-white transition-colors duration-200">
-                Spa & Wellness
-            </a>
-            <a href="{{ route('guest.services.index', ['category' => 'dining']) }}" 
-               class="px-4 py-2 bg-green-900/50 text-green-200 rounded-lg hover:bg-green-600 hover:text-white transition-colors duration-200">
-                Dining
-            </a>
-            <a href="{{ route('guest.services.index', ['category' => 'transportation']) }}" 
-               class="px-4 py-2 bg-green-900/50 text-green-200 rounded-lg hover:bg-green-600 hover:text-white transition-colors duration-200">
-                Transportation
-            </a>
-            <a href="{{ route('guest.services.index', ['category' => 'activities']) }}" 
-               class="px-4 py-2 bg-green-900/50 text-green-200 rounded-lg hover:bg-green-600 hover:text-white transition-colors duration-200">
-                Activities
-            </a>
+        <div class="bg-gray-800 rounded-lg p-4 mb-8">
+            <div class="flex flex-wrap gap-3">
+                <a href="{{ route('guest.services.index') }}" 
+                   class="px-4 py-2 {{ !request('category') ? 'bg-green-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600' }} rounded-lg transition-colors duration-200 font-medium">
+                    <svg class="w-4 h-4 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                    </svg>
+                    All Services
+                </a>
+                <a href="{{ route('guest.services.index', ['category' => 'spa']) }}" 
+                   class="px-4 py-2 {{ request('category') === 'spa' ? 'bg-green-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600' }} rounded-lg transition-colors duration-200 font-medium">
+                    <svg class="w-4 h-4 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    Spa & Wellness
+                </a>
+                <a href="{{ route('guest.services.index', ['category' => 'dining']) }}" 
+                   class="px-4 py-2 {{ request('category') === 'dining' ? 'bg-green-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600' }} rounded-lg transition-colors duration-200 font-medium">
+                    <svg class="w-4 h-4 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
+                    </svg>
+                    Dining
+                </a>
+                <a href="{{ route('guest.services.index', ['category' => 'transportation']) }}" 
+                   class="px-4 py-2 {{ request('category') === 'transportation' ? 'bg-green-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600' }} rounded-lg transition-colors duration-200 font-medium">
+                    <svg class="w-4 h-4 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"/>
+                    </svg>
+                    Transportation
+                </a>
+                <a href="{{ route('guest.services.index', ['category' => 'activities']) }}" 
+                   class="px-4 py-2 {{ request('category') === 'activities' ? 'bg-green-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600' }} rounded-lg transition-colors duration-200 font-medium">
+                    <svg class="w-4 h-4 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    Activities
+                </a>
+            </div>
         </div>
 
         <!-- Services Grid -->
         @if($services->count() > 0)
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
             @foreach($services as $service)
-            <div class="bg-green-900/50 backdrop-blur-sm rounded-lg border border-green-700/30 overflow-hidden hover:border-green-500/50 transition-all duration-300">
+            <div class="bg-gray-800 rounded-lg shadow-xl overflow-hidden hover:shadow-2xl hover:transform hover:scale-105 transition-all duration-300">
                 <!-- Service Image -->
-                <div class="h-48 bg-green-800/50 relative">
+                <div class="h-56 bg-gray-700 relative">
                     @if($service->image)
                     <img src="{{ asset('storage/' . $service->image) }}" 
                          alt="{{ $service->name }}" 
@@ -64,74 +75,108 @@
                     @else
                     <div class="flex items-center justify-center h-full">
                         @if($service->category === 'spa')
-                        <i class="fas fa-spa text-4xl text-green-400"></i>
+                        <svg class="w-20 h-20 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
                         @elseif($service->category === 'dining')
-                        <i class="fas fa-utensils text-4xl text-orange-400"></i>
+                        <svg class="w-20 h-20 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
+                        </svg>
                         @elseif($service->category === 'transportation')
-                        <i class="fas fa-car text-4xl text-blue-400"></i>
+                        <svg class="w-20 h-20 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"/>
+                        </svg>
                         @elseif($service->category === 'activities')
-                        <i class="fas fa-swimmer text-4xl text-purple-400"></i>
+                        <svg class="w-20 h-20 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
                         @else
-                        <i class="fas fa-concierge-bell text-4xl text-yellow-400"></i>
+                        <svg class="w-20 h-20 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                        </svg>
                         @endif
                     </div>
                     @endif
                     
-                    <!-- Category Badge -->
-                    <div class="absolute top-3 left-3">
-                        <span class="px-2 py-1 bg-green-600/80 text-green-100 rounded-full text-xs font-medium">
+                    <!-- Status & Category Badges -->
+                    <div class="absolute top-4 left-4">
+                        <span class="px-3 py-1 bg-gray-900/80 text-gray-200 rounded-lg text-xs font-semibold shadow-lg">
                             {{ ucfirst(str_replace('_', ' ', $service->category)) }}
                         </span>
                     </div>
 
                     <!-- Price Badge -->
-                    <div class="absolute top-3 right-3">
-                        <span class="px-2 py-1 bg-black/60 text-white rounded-full text-sm font-bold">
+                    <div class="absolute top-4 right-4">
+                        <span class="px-4 py-2 bg-green-600 text-white rounded-lg text-lg font-bold shadow-lg">
                             ₱{{ number_format($service->price, 0) }}
                         </span>
                     </div>
+
+                    @if(!$service->is_available)
+                    <div class="absolute bottom-4 left-4">
+                        <span class="px-3 py-1 bg-red-600 text-white rounded-lg text-xs font-semibold shadow-lg">
+                            Unavailable
+                        </span>
+                    </div>
+                    @endif
                 </div>
 
                 <!-- Service Details -->
                 <div class="p-6">
-                    <h3 class="text-lg font-bold text-green-50 mb-2">{{ $service->name }}</h3>
+                    <h3 class="text-xl font-bold text-white mb-2">{{ $service->name }}</h3>
                     
-                    <p class="text-green-300 text-sm mb-4 line-clamp-3">{{ $service->description }}</p>
+                    <p class="text-gray-400 text-sm mb-4 line-clamp-2">{{ $service->description }}</p>
                     
-                    <div class="space-y-2 mb-4">
+                    @if($service->duration || $service->capacity)
+                    <div class="space-y-2 mb-4 pb-4 border-b border-gray-700">
                         @if($service->duration)
-                        <div class="flex justify-between text-sm">
-                            <span class="text-green-400">Duration:</span>
-                            <span class="text-green-50">
+                        <div class="flex items-center text-sm">
+                            <svg class="w-4 h-4 text-green-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                            <span class="text-gray-300">
                                 @if($service->duration >= 60)
                                     {{ floor($service->duration / 60) }}h {{ $service->duration % 60 > 0 ? ($service->duration % 60) . 'm' : '' }}
                                 @else
-                                    {{ $service->duration }}m
+                                    {{ $service->duration }} min
                                 @endif
                             </span>
                         </div>
                         @endif
                         @if($service->capacity)
-                        <div class="flex justify-between text-sm">
-                            <span class="text-green-400">Capacity:</span>
-                            <span class="text-green-50">{{ $service->capacity }} {{ $service->capacity === 1 ? 'person' : 'people' }}</span>
+                        <div class="flex items-center text-sm">
+                            <svg class="w-4 h-4 text-green-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+                            </svg>
+                            <span class="text-gray-300">Up to {{ $service->capacity }} {{ $service->capacity === 1 ? 'person' : 'people' }}</span>
                         </div>
                         @endif
                     </div>
+                    @endif
                     
                     <!-- Actions -->
                     <div class="flex gap-2">
                         <a href="{{ route('guest.services.show', $service) }}" 
-                           class="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-center py-2 px-3 rounded text-sm transition-colors">
-                            View Details
+                           class="flex-1 inline-flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white text-center py-2.5 px-4 rounded-lg text-sm font-semibold transition-colors">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                            </svg>
+                            View
                         </a>
                         @if($service->is_available)
                         <a href="{{ route('guest.services.request', $service) }}" 
-                           class="flex-1 bg-green-600 hover:bg-green-700 text-white text-center py-2 px-3 rounded text-sm transition-colors">
-                            Book Now
+                           class="flex-1 inline-flex items-center justify-center bg-green-600 hover:bg-green-700 text-white text-center py-2.5 px-4 rounded-lg text-sm font-semibold transition-colors">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                            </svg>
+                            Book
                         </a>
                         @else
-                        <span class="flex-1 bg-gray-600 text-gray-300 text-center py-2 px-3 rounded text-sm">
+                        <span class="flex-1 flex items-center justify-center bg-gray-600 text-gray-400 text-center py-2.5 px-4 rounded-lg text-sm font-semibold">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/>
+                            </svg>
                             Unavailable
                         </span>
                         @endif
@@ -142,18 +187,29 @@
         </div>
 
         <!-- Pagination -->
+        @if($services->hasPages())
         <div class="flex justify-center">
             {{ $services->links() }}
         </div>
+        @endif
         @else
-        <div class="text-center py-12">
-            <svg class="w-16 h-16 text-green-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+        <div class="bg-gray-800 rounded-lg p-12 text-center">
+            <svg class="w-20 h-20 text-gray-600 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
             </svg>
-            <h3 class="text-xl font-medium text-green-200 mb-2">No Services Available</h3>
-            <p class="text-green-400 mb-6">Check back later for available services.</p>
+            <h3 class="text-2xl font-bold text-white mb-2">No Services Available</h3>
+            <p class="text-gray-400 mb-6">We don't have any services matching your criteria at the moment.</p>
+            @if(request('category'))
+            <a href="{{ route('guest.services.index') }}" 
+               class="inline-flex items-center px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition-colors">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                </svg>
+                View All Services
+            </a>
+            @endif
         </div>
         @endif
     </div>
-</main>
+</div>
 @endsection

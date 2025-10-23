@@ -22,7 +22,7 @@ class Service extends Model
         'category',
         'image',
         'is_available', // Use this, not 'availability'
-        'max_guests'
+        'capacity'
     ];
 
     /**
@@ -33,7 +33,7 @@ class Service extends Model
     protected $casts = [
         'price' => 'decimal:2',
         'duration' => 'integer',
-        'max_guests' => 'integer',
+        'capacity' => 'integer',
         'is_available' => 'boolean', // Use this
     ];
 

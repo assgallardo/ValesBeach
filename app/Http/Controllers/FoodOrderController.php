@@ -6,6 +6,7 @@ use App\Models\MenuCategory;
 use App\Models\MenuItem;
 use App\Models\FoodOrder;
 use App\Models\OrderItem;
+use App\Models\Payment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -256,6 +257,17 @@ class FoodOrderController extends Controller
                 ]);
             }
 
+            // Create payment record
+            Payment::create([
+                'food_order_id' => $foodOrder->id,
+                'user_id' => Auth::id(),
+                'amount' => $totalAmount,
+                'payment_method' => 'cash', // Default to cash, will be updated when payment is processed
+                'status' => 'pending',
+                'payment_date' => now(),
+                'notes' => 'Food Order #' . $foodOrder->order_number . ' - Payment upon delivery'
+            ]);
+
             DB::commit();
 
             // Clear cart
@@ -266,6 +278,13 @@ class FoodOrderController extends Controller
         } catch (\Exception $e) {
             DB::rollback();
             Log::error('Food order creation failed: ' . $e->getMessage());
+            Log::error('Stack trace: ' . $e->getTraceAsString());
+            
+            // Return more detailed error in development
+            if (config('app.debug')) {
+                return back()->with('error', 'Failed to place order: ' . $e->getMessage());
+            }
+            
             return back()->with('error', 'Failed to place order. Please try again.');
         }
     }
@@ -291,6 +310,7 @@ class FoodOrderController extends Controller
     public function orders()
     {
         $orders = Auth::user()->foodOrders()
+            ->where('status', '!=', 'cancelled')
             ->with(['orderItems.menuItem'])
             ->orderBy('created_at', 'desc')
             ->paginate(10);
@@ -304,14 +324,27 @@ class FoodOrderController extends Controller
     public function cancel(FoodOrder $foodOrder)
     {
         if ($foodOrder->user_id !== Auth::id()) {
+            if (request()->wantsJson() || request()->ajax()) {
+                return response()->json(['error' => 'Unauthorized'], 403);
+            }
             abort(403);
         }
 
         if ($foodOrder->status !== 'pending') {
+            if (request()->wantsJson() || request()->ajax()) {
+                return response()->json(['error' => 'This order cannot be cancelled'], 400);
+            }
             return back()->with('error', 'This order cannot be cancelled');
         }
 
         $foodOrder->update(['status' => 'cancelled']);
+
+        if (request()->wantsJson() || request()->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Order cancelled successfully'
+            ]);
+        }
 
         return back()->with('success', 'Order cancelled successfully');
     }

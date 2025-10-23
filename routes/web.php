@@ -256,7 +256,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'user.status', 'role
 });
 
 // Staff Routes - Redirect to admin dashboard since staff now has access to admin features
-Route::prefix('staff')->name('staff.')->middleware(['auth', 'user.status', 'role:staff'])->group(function () {
+Route::prefix('staff')->name('staff.')->middleware(['auth', 'user.status', 'role:staff,manager,admin'])->group(function () {
     // Staff dashboard - redirect to admin dashboard
     Route::get('/dashboard', function() {
         return redirect()->route('admin.dashboard');
@@ -402,8 +402,8 @@ Route::prefix('manager')->name('manager.')->middleware(['auth', 'user.status', '
     });
 });
 
-// Staff Routes - Task Management
-Route::prefix('staff')->name('staff.')->middleware(['auth', 'user.status', 'role:staff'])->group(function () {
+// Staff Routes - Task Management (accessible by staff, manager, and admin)
+Route::prefix('staff')->name('staff.')->middleware(['auth', 'user.status', 'role:staff,manager,admin'])->group(function () {
     Route::prefix('tasks')->name('tasks.')->group(function () {
         Route::get('/', [App\Http\Controllers\StaffTaskController::class, 'index'])->name('index');
         Route::patch('/{task}/status', [App\Http\Controllers\StaffTaskController::class, 'updateStatus'])->name('update-status');
@@ -435,6 +435,7 @@ Route::prefix('staff')->name('staff.')->middleware(['auth', 'user.status', 'role
         Route::get('/statistics', [StaffFoodOrderController::class, 'statistics'])->name('statistics');
         Route::get('/{foodOrder}', [StaffFoodOrderController::class, 'show'])->name('show');
         Route::post('/{foodOrder}/status', [StaffFoodOrderController::class, 'updateStatus'])->name('update-status');
+        Route::delete('/{foodOrder}/delete', [StaffFoodOrderController::class, 'destroy'])->name('delete');
     });
 });
 // ADD THIS EXPLICIT ROUTE RIGHT HERE
