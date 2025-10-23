@@ -6,6 +6,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\GuestController;
 use App\Http\Controllers\RoomController;
 use App\Http\Controllers\BookingController;
+use App\Http\Controllers\CottageBookingController;
 use App\Http\Controllers\Admin\BookingController as AdminBookingController;
 use App\Http\Controllers\ManagerController;
 use App\Http\Controllers\PaymentController;
@@ -94,7 +95,19 @@ Route::prefix('guest')->name('guest.')->middleware(['auth', 'user.status', 'role
     Route::get('/rooms/{room}/book', [BookingController::class, 'showBookingForm'])->name('rooms.book');
     Route::post('/rooms/{room}/book', [BookingController::class, 'store'])->name('rooms.book.store');
     
-    // Bookings Management
+    // Cottages (Bahay Kubo) and Booking Routes
+    Route::get('/cottages', [CottageBookingController::class, 'index'])->name('cottages.index');
+    Route::get('/cottages/{cottage}', [CottageBookingController::class, 'show'])->name('cottages.show');
+    Route::get('/cottages/{cottage}/book', [CottageBookingController::class, 'showBookingForm'])->name('cottages.book');
+    Route::post('/cottages/{cottage}/book', [CottageBookingController::class, 'store'])->name('cottages.book.store');
+    Route::post('/cottages/{cottage}/check-availability', [CottageBookingController::class, 'checkAvailability'])->name('cottages.check-availability');
+    
+    // Cottage Bookings Management
+    Route::get('/cottage-bookings', [CottageBookingController::class, 'myBookings'])->name('cottage-bookings.index');
+    Route::get('/cottage-bookings/{booking}', [CottageBookingController::class, 'showBooking'])->name('cottage-bookings.show');
+    Route::post('/cottage-bookings/{booking}/cancel', [CottageBookingController::class, 'cancel'])->name('cottage-bookings.cancel');
+    
+    // Bookings Management (Rooms)
     Route::get('/bookings', [BookingController::class, 'myBookings'])->name('bookings');
     
     // Booking History (must come before parameterized routes)

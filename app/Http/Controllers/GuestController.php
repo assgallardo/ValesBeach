@@ -104,9 +104,17 @@ class GuestController extends Controller
         try {
             // Start query with images relationship
             $query = Room::with('images');
+            
+            // Exclude cottage types (they should use the cottages booking system)
+            $cottageTypes = ['Umbrella Cottage', 'Bahay Kubo'];
+            $query->whereNotIn('type', $cottageTypes);
 
-            // Get room types from your actual database
-            $types = Room::distinct()->pluck('type')->filter()->values();
+            // Get room types from your actual database (excluding cottages)
+            $types = Room::whereNotIn('type', $cottageTypes)
+                        ->distinct()
+                        ->pluck('type')
+                        ->filter()
+                        ->values();
             if ($types->isEmpty()) {
                 $types = collect(['Standard', 'suite', 'villa', 'standard', 'Suite']);
             }

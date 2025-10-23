@@ -58,11 +58,14 @@
                             </button>
 
                             <div x-show="open" @click.away="open = false" 
-                                 class="absolute right-0 mt-2 w-48 bg-green-800 rounded-lg shadow-xl py-1 border border-green-700">
+                                 class="absolute right-0 mt-2 w-56 bg-green-800 rounded-lg shadow-xl py-2 border border-green-700">
                                 <form method="POST" action="{{ route('logout') }}">
                                     @csrf
                                     <button type="submit" 
-                                            class="block w-full text-left px-4 py-2 text-sm text-gray-200 hover:bg-green-700 transition-colors duration-200">
+                                            class="flex items-center w-full text-left px-5 py-3 text-base font-semibold text-white bg-red-600 hover:bg-red-700 transition-all duration-200 rounded-md mx-2 shadow-lg hover:shadow-xl transform hover:scale-105">
+                                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                                        </svg>
                                         Logout
                                     </button>
                                 </form>

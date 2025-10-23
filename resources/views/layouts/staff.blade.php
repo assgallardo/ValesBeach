@@ -66,17 +66,18 @@
                                  x-transition:leave="transition ease-in duration-75"
                                  x-transition:leave-start="opacity-100 scale-100"
                                  x-transition:leave-end="opacity-0 scale-95"
-                                 class="absolute right-0 mt-2 w-48 bg-green-800 rounded-lg shadow-xl border border-green-700 z-50">
+                                 class="absolute right-0 mt-2 w-52 bg-green-800 rounded-lg shadow-xl border border-green-700 z-50">
                                 
-                                <!-- Logout link -->
-                                <a href="#" 
-                                   onclick="event.preventDefault(); document.getElementById('logout-form').submit();"
-                                   class="block px-4 py-3 text-sm text-gray-200 hover:bg-green-700 hover:text-white transition-colors duration-100 font-medium">
-                                    <svg class="w-4 h-4 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
-                                    </svg>
-                                    Logout
-                                </a>
+                                <!-- Enhanced Logout button -->
+                                <div class="p-2">
+                                    <button onclick="event.preventDefault(); document.getElementById('logout-form').submit();"
+                                       class="flex items-center justify-center w-full px-5 py-3 text-base font-bold text-white bg-red-600 hover:bg-red-700 transition-all duration-200 rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 cursor-pointer">
+                                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                                        </svg>
+                                        Logout
+                                    </button>
+                                </div>
                                 
                                 <!-- Hidden logout form -->
                                 <form id="logout-form" action="{{ route('logout') }}" method="POST" class="hidden">

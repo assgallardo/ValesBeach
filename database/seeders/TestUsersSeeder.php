@@ -14,50 +14,57 @@ class TestUsersSeeder extends Seeder
      */
     public function run(): void
     {
-        // Clear existing users (optional - comment out if you want to keep existing users)
-        // User::truncate();
+        // Use updateOrCreate to make this idempotent (can run multiple times)
+        
+        // Create or Update Admin User
+        User::updateOrCreate(
+            ['email' => 'admin@valesbeach.com'],
+            [
+                'name' => 'Admin User',
+                'password' => Hash::make('admin123'),
+                'role' => 'admin',
+                'status' => 'active',
+                'email_verified_at' => now(),
+            ]
+        );
 
-        // Create Admin User
-        User::create([
-            'name' => 'Admin User',
-            'email' => 'admin@valesbeach.com',
-            'password' => Hash::make('admin123'),
-            'role' => 'admin',
-            'status' => 'active',
-            'email_verified_at' => now(),
-        ]);
+        // Create or Update Manager User
+        User::updateOrCreate(
+            ['email' => 'manager@valesbeach.com'],
+            [
+                'name' => 'Manager User',
+                'password' => Hash::make('manager123'),
+                'role' => 'manager',
+                'status' => 'active',
+                'email_verified_at' => now(),
+            ]
+        );
 
-        // Create Manager User
-        User::create([
-            'name' => 'Manager User',
-            'email' => 'manager@valesbeach.com',
-            'password' => Hash::make('manager123'),
-            'role' => 'manager',
-            'status' => 'active',
-            'email_verified_at' => now(),
-        ]);
+        // Create or Update Staff User
+        User::updateOrCreate(
+            ['email' => 'staff@valesbeach.com'],
+            [
+                'name' => 'Staff User',
+                'password' => Hash::make('staff123'),
+                'role' => 'staff',
+                'status' => 'active',
+                'email_verified_at' => now(),
+            ]
+        );
 
-        // Create Staff User
-        User::create([
-            'name' => 'Staff User',
-            'email' => 'staff@valesbeach.com',
-            'password' => Hash::make('staff123'),
-            'role' => 'staff',
-            'status' => 'active',
-            'email_verified_at' => now(),
-        ]);
+        // Create or Update Guest User
+        User::updateOrCreate(
+            ['email' => 'guest@valesbeach.com'],
+            [
+                'name' => 'Guest User',
+                'password' => Hash::make('guest123'),
+                'role' => 'guest',
+                'status' => 'active',
+                'email_verified_at' => now(),
+            ]
+        );
 
-        // Create Guest User
-        User::create([
-            'name' => 'Guest User',
-            'email' => 'guest@valesbeach.com',
-            'password' => Hash::make('guest123'),
-            'role' => 'guest',
-            'status' => 'active',
-            'email_verified_at' => now(),
-        ]);
-
-        $this->command->info('Test users created successfully!');
+        $this->command->info('✓ Test users created/updated successfully!');
         $this->command->table(
             ['Role', 'Email', 'Password'],
             [
