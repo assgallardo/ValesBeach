@@ -289,6 +289,11 @@ Route::prefix('manager')->name('manager.')->middleware(['auth', 'user.status', '
     Route::get('/reports/staff-performance', [ManagerReportsController::class, 'staffPerformance'])->name('reports.staff-performance');
     Route::get('/reports/export', [ManagerReportsController::class, 'export'])->name('reports.export');
     
+    // Sales Reports routes
+    Route::get('/reports/room-sales', [ManagerReportsController::class, 'roomSales'])->name('reports.room-sales');
+    Route::get('/reports/food-sales', [ManagerReportsController::class, 'foodSales'])->name('reports.food-sales');
+    Route::get('/reports/service-sales', [ManagerReportsController::class, 'serviceSales'])->name('reports.service-sales');
+    
     // Other manager routes...
     Route::get('/dashboard', [App\Http\Controllers\ManagerController::class, 'dashboard'])->name('dashboard');
     Route::get('/bookings', [App\Http\Controllers\ManagerController::class, 'bookings'])->name('bookings.index');

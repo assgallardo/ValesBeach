@@ -238,23 +238,47 @@
         </div>
     </div>
 
-    <!-- Reservations Table -->
-    <div class="bg-gray-800 rounded-lg shadow-xl overflow-hidden">
-        <div class="overflow-x-auto">
-            <table class="w-full text-left">
-                <thead class="bg-gray-900">
-                    <tr>
-                        <th class="px-6 py-4 text-xs font-medium text-gray-300 uppercase tracking-wider">ID</th>
-                        <th class="px-6 py-4 text-xs font-medium text-gray-300 uppercase tracking-wider">Guest</th>
-                        <th class="px-6 py-4 text-xs font-medium text-gray-300 uppercase tracking-wider">Room</th>
-                        <th class="px-6 py-4 text-xs font-medium text-gray-300 uppercase tracking-wider">Dates</th>
-                        <th class="px-6 py-4 text-xs font-medium text-gray-300 uppercase tracking-wider">Total</th>
-                        <th class="px-6 py-4 text-xs font-medium text-gray-300 uppercase tracking-wider">Status</th>
-                        <th class="px-6 py-4 text-xs font-medium text-gray-300 uppercase tracking-wider">Actions</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-700">
-                    @forelse($bookings as $booking)
+    <!-- Tabs for Room/Cottage Bookings -->
+    <div x-data="{ activeTab: '{{ request('type', 'room') }}' }" class="mb-8">
+        <!-- Tab Navigation -->
+        <div class="bg-gray-800 rounded-t-lg">
+            <div class="flex border-b border-gray-700">
+                <button @click="activeTab = 'room'; window.location.href = '{{ route('manager.bookings.index', ['type' => 'room'] + request()->except('type')) }}'" 
+                        :class="activeTab === 'room' ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700'"
+                        class="px-6 py-4 font-medium transition-colors duration-200 rounded-tl-lg flex items-center space-x-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                    </svg>
+                    <span>Room Bookings ({{ $bookings->total() }})</span>
+                </button>
+                <button @click="activeTab = 'cottage'; window.location.href = '{{ route('manager.bookings.index', ['type' => 'cottage'] + request()->except('type')) }}'" 
+                        :class="activeTab === 'cottage' ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700'"
+                        class="px-6 py-4 font-medium transition-colors duration-200 flex items-center space-x-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                    </svg>
+                    <span>Cottage Bookings ({{ $cottageBookings->total() }})</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Room Bookings Tab Content -->
+        <div x-show="activeTab === 'room'" class="bg-gray-800 rounded-b-lg shadow-xl overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left">
+                    <thead class="bg-gray-900">
+                        <tr>
+                            <th class="px-6 py-4 text-xs font-medium text-gray-300 uppercase tracking-wider">ID</th>
+                            <th class="px-6 py-4 text-xs font-medium text-gray-300 uppercase tracking-wider">Guest</th>
+                            <th class="px-6 py-4 text-xs font-medium text-gray-300 uppercase tracking-wider">Room</th>
+                            <th class="px-6 py-4 text-xs font-medium text-gray-300 uppercase tracking-wider">Dates</th>
+                            <th class="px-6 py-4 text-xs font-medium text-gray-300 uppercase tracking-wider">Total</th>
+                            <th class="px-6 py-4 text-xs font-medium text-gray-300 uppercase tracking-wider">Status</th>
+                            <th class="px-6 py-4 text-xs font-medium text-gray-300 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-700">
+                        @forelse($bookings as $booking)
                     <tr class="hover:bg-gray-700 transition-colors" id="booking-row-{{ $booking->id }}">
                         <td class="px-6 py-4">
                             <div class="text-white font-medium">#{{ $booking->id }}</div>
@@ -330,20 +354,134 @@
                             </div>
                         </td>
                     </tr>
-                    @empty
-                    <tr>
-                        <td colspan="7" class="px-6 py-8 text-center text-gray-400">
-                            No reservations found.
-                        </td>
-                    </tr>
-                    @endforelse
-                </tbody>
-            </table>
+                        @empty
+                        <tr>
+                            <td colspan="7" class="px-6 py-8 text-center text-gray-400">
+                                No room bookings found.
+                            </td>
+                        </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination for Room Bookings -->
+            <div class="px-6 py-3 bg-gray-900">
+                {{ $bookings->appends(request()->query())->links() }}
+            </div>
         </div>
 
-        <!-- Pagination -->
-        <div class="px-6 py-3 bg-gray-900">
-            {{ $bookings->appends(request()->query())->links() }}
+        <!-- Cottage Bookings Tab Content -->
+        <div x-show="activeTab === 'cottage'" class="bg-gray-800 rounded-b-lg shadow-xl overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left">
+                    <thead class="bg-gray-900">
+                        <tr>
+                            <th class="px-6 py-4 text-xs font-medium text-gray-300 uppercase tracking-wider">ID</th>
+                            <th class="px-6 py-4 text-xs font-medium text-gray-300 uppercase tracking-wider">Guest</th>
+                            <th class="px-6 py-4 text-xs font-medium text-gray-300 uppercase tracking-wider">Cottage</th>
+                            <th class="px-6 py-4 text-xs font-medium text-gray-300 uppercase tracking-wider">Type</th>
+                            <th class="px-6 py-4 text-xs font-medium text-gray-300 uppercase tracking-wider">Dates</th>
+                            <th class="px-6 py-4 text-xs font-medium text-gray-300 uppercase tracking-wider">Total</th>
+                            <th class="px-6 py-4 text-xs font-medium text-gray-300 uppercase tracking-wider">Status</th>
+                            <th class="px-6 py-4 text-xs font-medium text-gray-300 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-700">
+                        @forelse($cottageBookings as $cottageBooking)
+                        <tr class="hover:bg-gray-700 transition-colors" id="cottage-booking-row-{{ $cottageBooking->id }}">
+                            <td class="px-6 py-4">
+                                <div class="text-white font-medium">#C{{ $cottageBooking->id }}</div>
+                                <div class="text-xs text-gray-400">{{ $cottageBooking->created_at->format('M d, Y') }}</div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="text-white">{{ $cottageBooking->user->name }}</div>
+                                <div class="text-sm text-gray-400">{{ $cottageBooking->user->email }}</div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="text-white">{{ $cottageBooking->cottage->name }}</div>
+                                <div class="text-sm text-gray-400">{{ $cottageBooking->guests }} guests</div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <span class="px-2 py-1 text-xs font-medium rounded-full bg-purple-900 text-purple-200">
+                                    {{ ucfirst(str_replace('_', ' ', $cottageBooking->booking_type)) }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="text-white">{{ $cottageBooking->check_in_date->format('M d, Y') }}</div>
+                                @if($cottageBooking->check_in_time)
+                                    <div class="text-sm text-gray-400">{{ date('g:i A', strtotime($cottageBooking->check_in_time)) }}</div>
+                                @endif
+                                <div class="text-white mt-1">{{ $cottageBooking->check_out_date->format('M d, Y') }}</div>
+                                @if($cottageBooking->check_out_time)
+                                    <div class="text-sm text-gray-400">{{ date('g:i A', strtotime($cottageBooking->check_out_time)) }}</div>
+                                @endif
+                                @if($cottageBooking->hours)
+                                    <div class="text-xs text-blue-400 mt-1">{{ $cottageBooking->hours }} hours</div>
+                                @endif
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="text-green-400 font-bold text-lg">₱{{ number_format($cottageBooking->total_price, 2) }}</div>
+                                @if($cottageBooking->nights > 0)
+                                    <div class="text-sm text-gray-400">{{ $cottageBooking->nights }} night(s)</div>
+                                @endif
+                            </td>
+                            <td class="px-6 py-4">
+                                <span @class([
+                                    'px-3 py-1 rounded-full text-xs font-medium',
+                                    'bg-yellow-100 text-yellow-800' => $cottageBooking->status === 'pending',
+                                    'bg-green-100 text-green-800' => $cottageBooking->status === 'confirmed',
+                                    'bg-blue-100 text-blue-800' => $cottageBooking->status === 'checked_in',
+                                    'bg-gray-100 text-gray-800' => $cottageBooking->status === 'checked_out',
+                                    'bg-red-100 text-red-800' => $cottageBooking->status === 'cancelled',
+                                    'bg-purple-100 text-purple-800' => $cottageBooking->status === 'completed',
+                                    'bg-orange-100 text-orange-800' => $cottageBooking->status === 'no_show',
+                                ])>
+                                    {{ ucfirst(str_replace('_', ' ', $cottageBooking->status)) }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex items-center space-x-3">
+                                    <button type="button"
+                                            onclick="viewCottageBooking({{ $cottageBooking->id }})"
+                                            class="text-blue-400 hover:text-blue-300 transition-colors"
+                                            title="View Details">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                                  d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                        </svg>
+                                    </button>
+                                    @if(in_array(auth()->user()->role, ['admin', 'manager', 'staff']))
+                                    <button type="button"
+                                            onclick="updateCottageStatus('{{ $cottageBooking->id }}')"
+                                            class="text-yellow-400 hover:text-yellow-300 transition-colors"
+                                            title="Update Status">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                                        </svg>
+                                    </button>
+                                    @endif
+                                </div>
+                            </td>
+                        </tr>
+                        @empty
+                        <tr>
+                            <td colspan="8" class="px-6 py-8 text-center text-gray-400">
+                                No cottage bookings found.
+                            </td>
+                        </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination for Cottage Bookings -->
+            <div class="px-6 py-3 bg-gray-900">
+                {{ $cottageBookings->appends(request()->query())->links() }}
+            </div>
         </div>
     </div>
 

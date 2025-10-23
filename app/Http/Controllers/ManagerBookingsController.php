@@ -43,7 +43,33 @@ class ManagerBookingsController extends Controller
 
         $bookings = $query->orderBy('created_at', 'desc')->paginate(15);
 
-        return view('manager.bookings.index', compact('bookings'));
+        // Fetch Cottage Bookings with similar filters
+        $cottageQuery = \App\Models\CottageBooking::with(['user', 'cottage']);
+
+        // Apply similar filters for cottage bookings
+        if ($request->filled('search')) {
+            $search = $request->get('search');
+            $cottageQuery->whereHas('user', function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('status')) {
+            $cottageQuery->where('status', $request->get('status'));
+        }
+
+        if ($request->filled('date_from')) {
+            $cottageQuery->whereDate('check_in_date', '>=', $request->get('date_from'));
+        }
+
+        if ($request->filled('date_to')) {
+            $cottageQuery->whereDate('check_out_date', '<=', $request->get('date_to'));
+        }
+
+        $cottageBookings = $cottageQuery->orderBy('created_at', 'desc')->paginate(15);
+
+        return view('manager.bookings.index', compact('bookings', 'cottageBookings'));
     }
 
     /**

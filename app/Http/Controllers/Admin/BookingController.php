@@ -905,10 +905,42 @@ class BookingController extends Controller
         $query->orderBy('check_in', 'desc');
 
         $bookings = $query->paginate(20);
+
+        // Fetch Cottage Bookings with similar filters
+        $cottageQuery = \App\Models\CottageBooking::with(['user', 'cottage', 'payments']);
+
+        // Apply similar filters for cottage bookings
+        if ($request->filled('status')) {
+            $cottageQuery->where('status', $request->status);
+        }
+
+        if ($request->filled('date_from')) {
+            $cottageQuery->where('check_in_date', '>=', $request->date_from);
+        }
+
+        if ($request->filled('date_to')) {
+            $cottageQuery->where('check_out_date', '<=', $request->date_to);
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $cottageQuery->whereHas('user', function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%");
+            })->orWhereHas('cottage', function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%");
+            });
+        }
+
+        // Order by check-in date (newest first)
+        $cottageQuery->orderBy('check_in_date', 'desc');
+
+        $cottageBookings = $cottageQuery->paginate(20);
+
         $rooms = \App\Models\Room::all();
         $statuses = ['pending', 'confirmed', 'checked_in', 'checked_out', 'cancelled', 'completed'];
 
-        return view('admin.reservations.index', compact('bookings', 'rooms', 'statuses'));
+        return view('admin.reservations.index', compact('bookings', 'cottageBookings', 'rooms', 'statuses'));
     }
 
     /**

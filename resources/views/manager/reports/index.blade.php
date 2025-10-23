@@ -48,6 +48,50 @@
             </div>
         </div>
 
+        <!-- Quick Access to Sales Reports -->
+        <div class="mb-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <a href="{{ route('manager.reports.room-sales', request()->query()) }}" 
+                   class="bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg p-6 hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-lg">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-white font-bold text-lg mb-1">Room Sales Report</h3>
+                            <p class="text-blue-100 text-sm">View booking revenue & analytics</p>
+                        </div>
+                        <div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+                            <i class="fas fa-door-open text-white text-xl"></i>
+                        </div>
+                    </div>
+                </a>
+
+                <a href="{{ route('manager.reports.food-sales', request()->query()) }}" 
+                   class="bg-gradient-to-r from-green-600 to-green-700 rounded-lg p-6 hover:from-green-700 hover:to-green-800 transition-all duration-200 shadow-lg">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-white font-bold text-lg mb-1">Food Sales Report</h3>
+                            <p class="text-green-100 text-sm">View F&B revenue & analytics</p>
+                        </div>
+                        <div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+                            <i class="fas fa-utensils text-white text-xl"></i>
+                        </div>
+                    </div>
+                </a>
+
+                <a href="{{ route('manager.reports.service-sales', request()->query()) }}" 
+                   class="bg-gradient-to-r from-purple-600 to-purple-700 rounded-lg p-6 hover:from-purple-700 hover:to-purple-800 transition-all duration-200 shadow-lg">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-white font-bold text-lg mb-1">Service Revenue Report</h3>
+                            <p class="text-purple-100 text-sm">View service revenue & analytics</p>
+                        </div>
+                        <div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+                            <i class="fas fa-concierge-bell text-white text-xl"></i>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
+
         <!-- Date Range Display -->
         <div class="mb-8">
             <div class="bg-blue-900/30 border border-blue-600/30 rounded-lg p-4">

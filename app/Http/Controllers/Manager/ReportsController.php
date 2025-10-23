@@ -6,8 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Models\Service;
 use App\Models\ServiceRequest;
 use App\Models\User;
-use App\Models\Booking; // Add this import
-use App\Models\Room;    // Add this import
+use App\Models\Booking;
+use App\Models\Room;
+use App\Models\Payment;
+use App\Models\FoodOrder;
+use App\Models\MenuItem;
+use App\Models\MenuCategory;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -475,5 +479,253 @@ class ReportsController extends Controller
             'pending_requests' => $pendingRequests,
             'avg_response_time' => round($avgResponseTime, 1)
         ];
+    }
+
+    /**
+     * Room Booking Sales Report
+     */
+    public function roomSales(Request $request)
+    {
+        $dateRange = $this->getDateRange($request);
+        $startDate = $dateRange['start'];
+        $endDate = $dateRange['end'];
+
+        // Room booking statistics
+        $stats = [
+            'total_bookings' => Booking::whereBetween('created_at', [$startDate, $endDate])->count(),
+            'completed_bookings' => Booking::where('status', 'completed')
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->count(),
+            'cancelled_bookings' => Booking::where('status', 'cancelled')
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->count(),
+            'total_revenue' => Booking::whereIn('status', ['completed', 'checked_out'])
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->sum('total_price'),
+            'avg_booking_value' => Booking::whereIn('status', ['completed', 'checked_out'])
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->avg('total_price'),
+        ];
+
+        // Revenue by room
+        $revenueByRoom = Room::withSum([
+            'bookings as total_revenue' => function ($query) use ($startDate, $endDate) {
+                $query->whereIn('status', ['completed', 'checked_out'])
+                    ->whereBetween('created_at', [$startDate, $endDate]);
+            }
+        ], 'total_price')
+        ->withCount([
+            'bookings as booking_count' => function ($query) use ($startDate, $endDate) {
+                $query->whereBetween('created_at', [$startDate, $endDate]);
+            }
+        ])
+        ->having('booking_count', '>', 0)
+        ->orderByDesc('total_revenue')
+        ->get();
+
+        // Daily revenue trends
+        $dailyRevenue = Booking::whereIn('status', ['completed', 'checked_out'])
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->selectRaw('DATE(created_at) as date, SUM(total_price) as revenue, COUNT(*) as bookings')
+            ->groupBy('date')
+            ->orderBy('date')
+            ->get();
+
+        // Booking status breakdown
+        $statusBreakdown = Booking::whereBetween('created_at', [$startDate, $endDate])
+            ->selectRaw('status, COUNT(*) as count, SUM(total_price) as revenue')
+            ->groupBy('status')
+            ->get();
+
+        // Monthly comparison (if date range is large enough)
+        $monthlyData = collect();
+        if ($startDate->diffInMonths($endDate) >= 1) {
+            $monthlyData = Booking::whereBetween('created_at', [$startDate, $endDate])
+                ->selectRaw('
+                    YEAR(created_at) as year,
+                    MONTH(created_at) as month,
+                    COUNT(*) as total_bookings,
+                    SUM(CASE WHEN status IN ("completed", "checked_out") THEN total_price ELSE 0 END) as revenue
+                ')
+                ->groupByRaw('YEAR(created_at), MONTH(created_at)')
+                ->orderByRaw('year, month')
+                ->get();
+        }
+
+        return view('manager.reports.room-sales', compact(
+            'stats',
+            'revenueByRoom',
+            'dailyRevenue',
+            'statusBreakdown',
+            'monthlyData',
+            'startDate',
+            'endDate'
+        ));
+    }
+
+    /**
+     * Food Order Sales Report
+     */
+    public function foodSales(Request $request)
+    {
+        $dateRange = $this->getDateRange($request);
+        $startDate = $dateRange['start'];
+        $endDate = $dateRange['end'];
+
+        // Food order statistics
+        $stats = [
+            'total_orders' => \App\Models\FoodOrder::whereBetween('created_at', [$startDate, $endDate])->count(),
+            'completed_orders' => \App\Models\FoodOrder::where('status', 'completed')
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->count(),
+            'cancelled_orders' => \App\Models\FoodOrder::where('status', 'cancelled')
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->count(),
+            'total_revenue' => \App\Models\FoodOrder::where('status', 'completed')
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->sum('total_amount'),
+            'avg_order_value' => \App\Models\FoodOrder::where('status', 'completed')
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->avg('total_amount'),
+        ];
+
+        // Revenue by menu item
+        $revenueByItem = \App\Models\MenuItem::join('order_items', 'menu_items.id', '=', 'order_items.menu_item_id')
+            ->join('food_orders', 'order_items.food_order_id', '=', 'food_orders.id')
+            ->where('food_orders.status', 'completed')
+            ->whereBetween('food_orders.created_at', [$startDate, $endDate])
+            ->selectRaw('
+                menu_items.id,
+                menu_items.name,
+                menu_items.price,
+                SUM(order_items.quantity) as total_quantity,
+                SUM(order_items.subtotal) as total_revenue
+            ')
+            ->groupBy('menu_items.id', 'menu_items.name', 'menu_items.price')
+            ->orderByDesc('total_revenue')
+            ->get();
+
+        // Revenue by category
+        $revenueByCategory = \App\Models\MenuCategory::join('menu_items', 'menu_categories.id', '=', 'menu_items.category_id')
+            ->join('order_items', 'menu_items.id', '=', 'order_items.menu_item_id')
+            ->join('food_orders', 'order_items.food_order_id', '=', 'food_orders.id')
+            ->where('food_orders.status', 'completed')
+            ->whereBetween('food_orders.created_at', [$startDate, $endDate])
+            ->selectRaw('
+                menu_categories.name as category,
+                COUNT(DISTINCT food_orders.id) as order_count,
+                SUM(order_items.subtotal) as total_revenue
+            ')
+            ->groupBy('menu_categories.id', 'menu_categories.name')
+            ->orderByDesc('total_revenue')
+            ->get();
+
+        // Daily revenue trends
+        $dailyRevenue = \App\Models\FoodOrder::where('status', 'completed')
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->selectRaw('DATE(created_at) as date, SUM(total_amount) as revenue, COUNT(*) as orders')
+            ->groupBy('date')
+            ->orderBy('date')
+            ->get();
+
+        // Order status breakdown
+        $statusBreakdown = \App\Models\FoodOrder::whereBetween('created_at', [$startDate, $endDate])
+            ->selectRaw('status, COUNT(*) as count, SUM(total_amount) as revenue')
+            ->groupBy('status')
+            ->get();
+
+        return view('manager.reports.food-sales', compact(
+            'stats',
+            'revenueByItem',
+            'revenueByCategory',
+            'dailyRevenue',
+            'statusBreakdown',
+            'startDate',
+            'endDate'
+        ));
+    }
+
+    /**
+     * Service Revenue Report
+     */
+    public function serviceSales(Request $request)
+    {
+        $dateRange = $this->getDateRange($request);
+        $startDate = $dateRange['start'];
+        $endDate = $dateRange['end'];
+
+        // Get payments related to service requests
+        $stats = [
+            'total_requests' => ServiceRequest::whereBetween('created_at', [$startDate, $endDate])->count(),
+            'completed_requests' => ServiceRequest::where('status', 'completed')
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->count(),
+            'cancelled_requests' => ServiceRequest::where('status', 'cancelled')
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->count(),
+            'total_revenue' => \App\Models\Payment::whereNotNull('service_request_id')
+                ->where('status', 'completed')
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->sum('amount'),
+            'avg_service_value' => \App\Models\Payment::whereNotNull('service_request_id')
+                ->where('status', 'completed')
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->avg('amount'),
+        ];
+
+        // Revenue by service type
+        $revenueByService = Service::join('service_requests', 'services.id', '=', 'service_requests.service_id')
+            ->join('payments', 'service_requests.id', '=', 'payments.service_request_id')
+            ->where('payments.status', 'completed')
+            ->whereBetween('payments.created_at', [$startDate, $endDate])
+            ->selectRaw('
+                services.id,
+                services.name,
+                services.price,
+                COUNT(DISTINCT service_requests.id) as request_count,
+                SUM(payments.amount) as total_revenue
+            ')
+            ->groupBy('services.id', 'services.name', 'services.price')
+            ->orderByDesc('total_revenue')
+            ->get();
+
+        // Revenue by category
+        $revenueByCategory = Service::join('service_requests', 'services.id', '=', 'service_requests.service_id')
+            ->join('payments', 'service_requests.id', '=', 'payments.service_request_id')
+            ->where('payments.status', 'completed')
+            ->whereBetween('payments.created_at', [$startDate, $endDate])
+            ->selectRaw('
+                services.category,
+                COUNT(DISTINCT service_requests.id) as request_count,
+                SUM(payments.amount) as total_revenue
+            ')
+            ->groupBy('services.category')
+            ->orderByDesc('total_revenue')
+            ->get();
+
+        // Daily revenue trends
+        $dailyRevenue = \App\Models\Payment::whereNotNull('service_request_id')
+            ->where('status', 'completed')
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->selectRaw('DATE(created_at) as date, SUM(amount) as revenue, COUNT(*) as payments')
+            ->groupBy('date')
+            ->orderBy('date')
+            ->get();
+
+        // Status breakdown
+        $statusBreakdown = ServiceRequest::whereBetween('created_at', [$startDate, $endDate])
+            ->selectRaw('status, COUNT(*) as count')
+            ->groupBy('status')
+            ->get();
+
+        return view('manager.reports.service-sales', compact(
+            'stats',
+            'revenueByService',
+            'revenueByCategory',
+            'dailyRevenue',
+            'statusBreakdown',
+            'startDate',
+            'endDate'
+        ));
     }
 }
