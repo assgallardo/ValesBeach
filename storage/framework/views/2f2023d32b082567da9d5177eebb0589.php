@@ -96,20 +96,20 @@
     <div class="mb-12">
                     <div class="mb-6 text-center">
                         <div class="inline-flex items-center justify-center mb-4">
-                            <svg class="w-10 h-10 text-yellow-400 mr-3" fill="currentColor" viewBox="0 0 20 20">
+                            <svg class="w-8 h-8 text-yellow-400 mr-3" fill="currentColor" viewBox="0 0 20 20">
                                 <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
                             </svg>
-                            <h2 class="text-4xl font-bold text-white">Featured Items</h2>
+                            <h2 class="text-3xl font-bold text-white">Featured Items</h2>
                         </div>
-                        <p class="text-gray-400 text-lg">Try our chef's special recommendations</p>
+                        <p class="text-gray-400">Try our chef's special recommendations</p>
                     </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <?php $__currentLoopData = $featuredItems; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $item): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                         <div class="bg-gradient-to-br from-yellow-900/30 to-orange-900/30 backdrop-blur-sm border-2 border-yellow-500/50 rounded-xl shadow-2xl overflow-hidden hover:shadow-yellow-500/20 hover:border-yellow-400 transition-all duration-300 transform hover:scale-105 relative">
                             <!-- Featured Badge -->
-                            <div class="absolute top-3 right-3 z-10">
-                                <div class="bg-yellow-500 text-gray-900 px-3 py-1 rounded-full text-xs font-bold flex items-center shadow-lg">
+                            <div class="absolute top-2 right-2 z-10">
+                                <div class="bg-yellow-500 text-gray-900 px-2 py-0.5 rounded-full text-xs font-bold flex items-center shadow-lg">
                                     <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
                                         <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
                                     </svg>
@@ -118,44 +118,44 @@
                             </div>
 
                 <?php if($item->image): ?>
-                            <div class="relative h-48 overflow-hidden">
+                            <div class="relative h-40 overflow-hidden">
                                 <img src="<?php echo e(asset('storage/' . $item->image)); ?>" alt="<?php echo e($item->name); ?>" class="w-full h-full object-cover transform hover:scale-110 transition-transform duration-500">
                                 <div class="absolute inset-0 bg-gradient-to-t from-gray-900 via-transparent to-transparent"></div>
                             </div>
                 <?php else: ?>
-                            <div class="h-48 bg-gradient-to-br from-gray-700 to-gray-800 flex items-center justify-center relative overflow-hidden">
+                            <div class="h-40 bg-gradient-to-br from-gray-700 to-gray-800 flex items-center justify-center relative overflow-hidden">
                                 <div class="absolute inset-0 opacity-10" style="background-image: radial-gradient(circle, white 1px, transparent 1px); background-size: 20px 20px;"></div>
-                                <svg class="w-20 h-20 text-gray-600 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="w-16 h-16 text-gray-600 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                     </svg>
                 </div>
                 <?php endif; ?>
                 
-                            <div class="p-5 bg-gray-800/90 backdrop-blur-sm">
-                                <div class="flex justify-between items-start mb-3">
-                                    <h3 class="font-bold text-xl text-white"><?php echo e($item->name); ?></h3>
-                                    <span class="text-2xl font-bold text-yellow-400 ml-2">₱<?php echo e(number_format($item->price, 2)); ?></span>
+                            <div class="p-4 bg-gray-800/90 backdrop-blur-sm">
+                                <div class="flex justify-between items-start mb-2">
+                                    <h3 class="font-bold text-lg text-white"><?php echo e($item->name); ?></h3>
+                                    <span class="text-xl font-bold text-yellow-400 ml-2">₱<?php echo e(number_format($item->price, 2)); ?></span>
                     </div>
 
                     <?php if($item->description): ?>
-                                <p class="text-gray-300 text-sm mb-3 line-clamp-2"><?php echo e($item->description); ?></p>
+                                <p class="text-gray-300 text-xs mb-2 line-clamp-2"><?php echo e($item->description); ?></p>
                     <?php endif; ?>
                     
                     <!-- Dietary Badges -->
-                                <div class="flex flex-wrap gap-2 mb-4">
+                                <div class="flex flex-wrap gap-1.5 mb-3">
                         <?php $__currentLoopData = $item->dietary_badges; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $badge): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                        <span class="px-2 py-1 text-xs rounded-full <?php echo e($badge['class']); ?>">
+                        <span class="px-2 py-0.5 text-xs rounded-full <?php echo e($badge['class']); ?>">
                             <?php echo e($badge['label']); ?>
 
                         </span>
                         <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                     <?php if($item->calories): ?>
-                                    <span class="px-2 py-1 text-xs rounded-full bg-gray-700 text-gray-300">
+                                    <span class="px-2 py-0.5 text-xs rounded-full bg-gray-700 text-gray-300">
                                         <?php echo e($item->calories); ?> cal
                                     </span>
                                     <?php endif; ?>
                                     <?php if($item->preparation_time): ?>
-                                    <span class="px-2 py-1 text-xs rounded-full bg-blue-600 text-blue-100">
+                                    <span class="px-2 py-0.5 text-xs rounded-full bg-blue-600 text-blue-100">
                                         <?php echo e($item->preparation_time); ?> min
                                     </span>
                                     <?php endif; ?>
@@ -165,19 +165,19 @@
                     <form class="add-to-cart-form" data-item-id="<?php echo e($item->id); ?>">
                         <?php echo csrf_field(); ?>
                         <input type="hidden" name="menu_item_id" value="<?php echo e($item->id); ?>">
-                                    <div class="flex items-center gap-2 mb-2">
-                                        <label class="text-sm font-medium text-gray-300">Qty:</label>
-                                        <select name="quantity" class="bg-gray-700 border border-gray-600 text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-yellow-500 flex-shrink-0">
+                                    <div class="flex items-center gap-2">
+                                        <label class="text-xs font-medium text-gray-300">Qty:</label>
+                                        <select name="quantity" class="bg-gray-700 border border-gray-600 text-white rounded-lg px-2 py-1.5 text-sm focus:ring-2 focus:ring-yellow-500 flex-shrink-0">
                                 <?php for($i = 1; $i <= 10; $i++): ?>
                                 <option value="<?php echo e($i); ?>"><?php echo e($i); ?></option>
                                 <?php endfor; ?>
                             </select>
-                                        <button type="submit" class="flex-1 bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-gray-900 py-2 px-4 rounded-lg font-bold shadow-lg transition-all duration-200 transform hover:scale-105">
+                                        <button type="submit" class="flex-1 bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-gray-900 py-1.5 px-3 rounded-lg text-sm font-bold shadow-lg transition-all duration-200 transform hover:scale-105">
                             Add to Cart
                         </button>
                                     </div>
                                     <input type="text" name="special_instructions" placeholder="Special instructions (optional)" 
-                                        class="w-full bg-gray-700 border border-gray-600 text-white placeholder-gray-500 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-yellow-500 focus:border-transparent">
+                                        class="w-full mt-2 bg-gray-700 border border-gray-600 text-white placeholder-gray-500 rounded-lg px-2 py-1.5 text-xs focus:ring-2 focus:ring-yellow-500 focus:border-transparent">
                     </form>
                 </div>
             </div>
@@ -300,9 +300,9 @@
                     <input type="hidden" name="item_price" value="<?php echo e($item->price); ?>">
                     <input type="hidden" name="item_calories" value="<?php echo e($item->calories ?? ''); ?>">
                     <input type="hidden" name="item_prep_time" value="<?php echo e($item->preparation_time ?? ''); ?>">
-                    <input type="hidden" name="item_ingredients" value="<?php echo e($item->ingredients ? implode(', ', $item->ingredients) : ''); ?>">
-                    <input type="hidden" name="item_allergens" value="<?php echo e($item->allergens ? implode(', ', $item->allergens) : ''); ?>">
-                    <input type="hidden" name="item_badges" value="<?php echo e(json_encode($item->dietary_badges)); ?>">
+                    <input type="hidden" name="item_ingredients" value="<?php echo e(is_array($item->ingredients) ? implode(', ', $item->ingredients) : ''); ?>">
+                    <input type="hidden" name="item_allergens" value="<?php echo e(is_array($item->allergens) ? implode(', ', $item->allergens) : ''); ?>">
+                    <input type="hidden" name="item_badges" value="<?php echo e(json_encode($item->dietary_badges ?? [])); ?>">
                 </div>
                 <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
             </div>

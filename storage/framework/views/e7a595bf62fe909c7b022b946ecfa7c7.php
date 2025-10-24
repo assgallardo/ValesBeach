@@ -7,6 +7,8 @@
     <title>Manager Dashboard - Vales Beach Resort</title>
     <?php echo app('Illuminate\Foundation\Vite')(['resources/css/app.css', 'resources/js/app.js']); ?>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Alpine.js for interactive components -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
@@ -55,12 +57,10 @@
                         </div>
                     </div>
 
-                    <!-- User Menu - LOGOUT ONLY -->
+                    <!-- User Menu -->
                     <div class="flex items-center">
                         <div class="relative" x-data="{ open: false }">
                             <button @click="open = !open" 
-                                    @mouseenter="open = true"
-                                    @mouseleave="setTimeout(() => { if (!$refs.dropdown.matches(':hover')) open = false }, 100)"
                                     class="flex items-center space-x-2 text-gray-200 hover:text-white transition-colors duration-200 font-medium">
                                 <span><?php echo e(Auth::user()->name); ?></span>
                                 <!-- Role Indicator Badge -->
@@ -73,31 +73,28 @@
                                 </svg>
                             </button>
 
-                            <!-- Dropdown - LOGOUT ONLY -->
+                            <!-- Dropdown Menu -->
                             <div x-show="open" 
-                                 x-ref="dropdown"
-                                 @mouseenter="open = true"
-                                 @mouseleave="open = false"
+                                 @click.away="open = false"
                                  x-transition:enter="transition ease-out duration-100"
                                  x-transition:enter-start="opacity-0 scale-95"
                                  x-transition:enter-end="opacity-100 scale-100"
                                  x-transition:leave="transition ease-in duration-75"
                                  x-transition:leave-start="opacity-100 scale-100"
                                  x-transition:leave-end="opacity-0 scale-95"
-                                 @click.away="open = false"
-                                 class="absolute right-0 mt-2 w-40 bg-green-800 rounded-lg shadow-xl border border-green-700 z-50">
+                                 style="display: none;"
+                                 class="absolute right-0 mt-3 w-40 rounded-lg shadow-2xl z-50 overflow-hidden">
                                 
-                                <!-- Logout link ONLY -->
-                                <a href="#" onclick="event.preventDefault(); document.getElementById('logout-form').submit();"
-                                   class="block px-4 py-3 text-sm text-gray-200 hover:bg-green-700 hover:text-white transition-colors duration-100 font-medium rounded-lg">
-                                    <svg class="w-4 h-4 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
-                                    </svg>
-                                    Logout
-                                </a>
-                                
-                                <form id="logout-form" action="<?php echo e(route('logout')); ?>" method="POST" class="hidden">
+                                <!-- Logout Button -->
+                                <form method="POST" action="<?php echo e(route('logout')); ?>" class="block">
                                     <?php echo csrf_field(); ?>
+                                    <button type="submit"
+                                            class="flex items-center justify-center w-full px-4 py-3 text-sm font-semibold text-white bg-blue-900 hover:bg-blue-800 active:bg-blue-700 transition-colors duration-200 cursor-pointer">
+                                        <svg class="w-5 h-5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                                        </svg>
+                                        Logout
+                                    </button>
                                 </form>
                             </div>
                         </div>

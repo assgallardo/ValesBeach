@@ -19,6 +19,14 @@ use Illuminate\Support\Facades\DB;
 class ReportsController extends Controller
 {
     /**
+     * Get the route prefix based on the current request
+     */
+    protected function getRoutePrefix()
+    {
+        return str_contains(request()->route()->getName(), 'admin.') ? 'admin' : 'manager';
+    }
+
+    /**
      * Display service usage and performance reports dashboard
      */
     public function index(Request $request)
@@ -87,6 +95,35 @@ class ReportsController extends Controller
             $currentDate->addDay();
         }
 
+        // Room Sales Overview
+        $roomSalesOverview = [
+            'total_bookings' => Booking::whereBetween('created_at', [$startDate, $endDate])->count(),
+            'completed_bookings' => Booking::whereIn('status', ['completed', 'checked_out'])
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->count(),
+            'total_revenue' => Booking::whereIn('status', ['completed', 'checked_out'])
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->sum('total_price'),
+            'avg_booking_value' => Booking::whereIn('status', ['completed', 'checked_out'])
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->avg('total_price'),
+        ];
+
+        // Revenue by category for quick overview
+        $revenueByCategory = Room::join('bookings', 'rooms.id', '=', 'bookings.room_id')
+            ->whereIn('bookings.status', ['completed', 'checked_out'])
+            ->whereBetween('bookings.created_at', [$startDate, $endDate])
+            ->selectRaw('
+                rooms.category,
+                COUNT(bookings.id) as booking_count,
+                SUM(bookings.total_price) as total_revenue
+            ')
+            ->groupBy('rooms.category')
+            ->orderByDesc('total_revenue')
+            ->get();
+
+        $routePrefix = $this->getRoutePrefix();
+
         return view('manager.reports.index', compact(
             'stats',
             'startDate',
@@ -94,7 +131,10 @@ class ReportsController extends Controller
             'serviceUsage',
             'performanceMetrics',
             'staffPerformance',
-            'dailyTrends'
+            'dailyTrends',
+            'roomSalesOverview',
+            'revenueByCategory',
+            'routePrefix'
         ));
     }
 
@@ -137,14 +177,33 @@ class ReportsController extends Controller
             return $service;
         });
 
-        // FIXED: Get category breakdown using proper aggregation
-        $categoryBreakdown = DB::table('services')
-            ->join('service_requests', 'services.id', '=', 'service_requests.service_id')
-            ->whereBetween('service_requests.created_at', [$startDate, $endDate])
+        // Get all distinct service categories from services table
+        $allCategories = DB::table('services')
+            ->select('category')
+            ->distinct()
+            ->pluck('category');
+
+        // Get category breakdown with actual request counts
+        $categoryRequestCounts = DB::table('services')
+            ->leftJoin('service_requests', function($join) use ($startDate, $endDate) {
+                $join->on('services.id', '=', 'service_requests.service_id')
+                     ->whereBetween('service_requests.created_at', [$startDate, $endDate]);
+            })
             ->select('services.category')
-            ->selectRaw('COUNT(*) as total_requests')
+            ->selectRaw('COUNT(service_requests.id) as total_requests')
             ->groupBy('services.category')
-            ->get();
+            ->get()
+            ->keyBy('category');
+
+        // Ensure all categories are present, even with 0 requests
+        $categoryBreakdown = $allCategories->map(function($category) use ($categoryRequestCounts) {
+            return (object)[
+                'category' => $category,
+                'total_requests' => $categoryRequestCounts->has($category) 
+                    ? $categoryRequestCounts->get($category)->total_requests 
+                    : 0
+            ];
+        });
 
         return view('manager.reports.service-usage', compact(
             'serviceUsageDetails',
@@ -507,21 +566,69 @@ class ReportsController extends Controller
                 ->avg('total_price'),
         ];
 
-        // Revenue by room
-        $revenueByRoom = Room::withSum([
-            'bookings as total_revenue' => function ($query) use ($startDate, $endDate) {
-                $query->whereIn('status', ['completed', 'checked_out'])
-                    ->whereBetween('created_at', [$startDate, $endDate]);
-            }
-        ], 'total_price')
-        ->withCount([
-            'bookings as booking_count' => function ($query) use ($startDate, $endDate) {
-                $query->whereBetween('created_at', [$startDate, $endDate]);
-            }
-        ])
-        ->having('booking_count', '>', 0)
-        ->orderByDesc('total_revenue')
-        ->get();
+        // Revenue by Rooms category
+        $revenueByRooms = Room::where('category', 'Rooms')
+            ->withSum([
+                'bookings as total_revenue' => function ($query) use ($startDate, $endDate) {
+                    $query->whereIn('status', ['completed', 'checked_out'])
+                        ->whereBetween('created_at', [$startDate, $endDate]);
+                }
+            ], 'total_price')
+            ->withCount([
+                'bookings as booking_count' => function ($query) use ($startDate, $endDate) {
+                    $query->whereBetween('created_at', [$startDate, $endDate]);
+                }
+            ])
+            ->having('booking_count', '>', 0)
+            ->orderByDesc('total_revenue')
+            ->get();
+
+        // Revenue by Cottages category
+        $revenueByCottages = Room::where('category', 'Cottages')
+            ->withSum([
+                'bookings as total_revenue' => function ($query) use ($startDate, $endDate) {
+                    $query->whereIn('status', ['completed', 'checked_out'])
+                        ->whereBetween('created_at', [$startDate, $endDate]);
+                }
+            ], 'total_price')
+            ->withCount([
+                'bookings as booking_count' => function ($query) use ($startDate, $endDate) {
+                    $query->whereBetween('created_at', [$startDate, $endDate]);
+                }
+            ])
+            ->having('booking_count', '>', 0)
+            ->orderByDesc('total_revenue')
+            ->get();
+
+        // Revenue by Event and Dining category
+        $revenueByEventDining = Room::where('category', 'Event and Dining')
+            ->withSum([
+                'bookings as total_revenue' => function ($query) use ($startDate, $endDate) {
+                    $query->whereIn('status', ['completed', 'checked_out'])
+                        ->whereBetween('created_at', [$startDate, $endDate]);
+                }
+            ], 'total_price')
+            ->withCount([
+                'bookings as booking_count' => function ($query) use ($startDate, $endDate) {
+                    $query->whereBetween('created_at', [$startDate, $endDate]);
+                }
+            ])
+            ->having('booking_count', '>', 0)
+            ->orderByDesc('total_revenue')
+            ->get();
+
+        // Revenue by category summary (for overview)
+        $revenueByCategory = Room::join('bookings', 'rooms.id', '=', 'bookings.room_id')
+            ->whereIn('bookings.status', ['completed', 'checked_out'])
+            ->whereBetween('bookings.created_at', [$startDate, $endDate])
+            ->selectRaw('
+                rooms.category,
+                COUNT(bookings.id) as booking_count,
+                SUM(bookings.total_price) as total_revenue
+            ')
+            ->groupBy('rooms.category')
+            ->orderByDesc('total_revenue')
+            ->get();
 
         // Daily revenue trends
         $dailyRevenue = Booking::whereIn('status', ['completed', 'checked_out'])
@@ -552,14 +659,57 @@ class ReportsController extends Controller
                 ->get();
         }
 
+        // Top 3 facilities per category
+        $topRooms = Room::where('category', 'Rooms')
+            ->withCount([
+                'bookings as booking_count' => function ($query) use ($startDate, $endDate) {
+                    $query->whereBetween('created_at', [$startDate, $endDate]);
+                }
+            ])
+            ->having('booking_count', '>', 0)
+            ->orderByDesc('booking_count')
+            ->take(3)
+            ->get();
+
+        $topCottages = Room::where('category', 'Cottages')
+            ->withCount([
+                'bookings as booking_count' => function ($query) use ($startDate, $endDate) {
+                    $query->whereBetween('created_at', [$startDate, $endDate]);
+                }
+            ])
+            ->having('booking_count', '>', 0)
+            ->orderByDesc('booking_count')
+            ->take(3)
+            ->get();
+
+        $topEventDining = Room::where('category', 'Event and Dining')
+            ->withCount([
+                'bookings as booking_count' => function ($query) use ($startDate, $endDate) {
+                    $query->whereBetween('created_at', [$startDate, $endDate]);
+                }
+            ])
+            ->having('booking_count', '>', 0)
+            ->orderByDesc('booking_count')
+            ->take(3)
+            ->get();
+
+        $routePrefix = $this->getRoutePrefix();
+
         return view('manager.reports.room-sales', compact(
             'stats',
-            'revenueByRoom',
+            'revenueByRooms',
+            'revenueByCottages',
+            'revenueByEventDining',
+            'revenueByCategory',
             'dailyRevenue',
             'statusBreakdown',
             'monthlyData',
+            'topRooms',
+            'topCottages',
+            'topEventDining',
             'startDate',
-            'endDate'
+            'endDate',
+            'routePrefix'
         ));
     }
 
@@ -599,14 +749,14 @@ class ReportsController extends Controller
                 menu_items.name,
                 menu_items.price,
                 SUM(order_items.quantity) as total_quantity,
-                SUM(order_items.subtotal) as total_revenue
+                SUM(order_items.total_price) as total_revenue
             ')
             ->groupBy('menu_items.id', 'menu_items.name', 'menu_items.price')
             ->orderByDesc('total_revenue')
             ->get();
 
         // Revenue by category
-        $revenueByCategory = \App\Models\MenuCategory::join('menu_items', 'menu_categories.id', '=', 'menu_items.category_id')
+        $revenueByCategory = \App\Models\MenuCategory::join('menu_items', 'menu_categories.id', '=', 'menu_items.menu_category_id')
             ->join('order_items', 'menu_items.id', '=', 'order_items.menu_item_id')
             ->join('food_orders', 'order_items.food_order_id', '=', 'food_orders.id')
             ->where('food_orders.status', 'completed')
@@ -614,7 +764,7 @@ class ReportsController extends Controller
             ->selectRaw('
                 menu_categories.name as category,
                 COUNT(DISTINCT food_orders.id) as order_count,
-                SUM(order_items.subtotal) as total_revenue
+                SUM(order_items.total_price) as total_revenue
             ')
             ->groupBy('menu_categories.id', 'menu_categories.name')
             ->orderByDesc('total_revenue')
@@ -634,14 +784,35 @@ class ReportsController extends Controller
             ->groupBy('status')
             ->get();
 
+        // Top 10 menu items by quantity sold
+        $topMenuItems = \App\Models\MenuItem::join('order_items', 'menu_items.id', '=', 'order_items.menu_item_id')
+            ->join('food_orders', 'order_items.food_order_id', '=', 'food_orders.id')
+            ->where('food_orders.status', 'completed')
+            ->whereBetween('food_orders.created_at', [$startDate, $endDate])
+            ->selectRaw('
+                menu_items.id,
+                menu_items.name,
+                menu_items.price,
+                SUM(order_items.quantity) as total_quantity,
+                SUM(order_items.total_price) as total_revenue
+            ')
+            ->groupBy('menu_items.id', 'menu_items.name', 'menu_items.price')
+            ->orderByDesc('total_quantity')
+            ->take(10)
+            ->get();
+
+        $routePrefix = $this->getRoutePrefix();
+
         return view('manager.reports.food-sales', compact(
             'stats',
             'revenueByItem',
             'revenueByCategory',
             'dailyRevenue',
             'statusBreakdown',
+            'topMenuItems',
             'startDate',
-            'endDate'
+            'endDate',
+            'routePrefix'
         ));
     }
 
@@ -718,14 +889,36 @@ class ReportsController extends Controller
             ->groupBy('status')
             ->get();
 
+        // Top 10 services by request count
+        $topServices = Service::join('service_requests', 'services.id', '=', 'service_requests.service_id')
+            ->join('payments', 'service_requests.id', '=', 'payments.service_request_id')
+            ->where('payments.status', 'completed')
+            ->whereBetween('payments.created_at', [$startDate, $endDate])
+            ->selectRaw('
+                services.id,
+                services.name,
+                services.price,
+                services.category,
+                COUNT(DISTINCT service_requests.id) as request_count,
+                SUM(payments.amount) as total_revenue
+            ')
+            ->groupBy('services.id', 'services.name', 'services.price', 'services.category')
+            ->orderByDesc('request_count')
+            ->take(10)
+            ->get();
+
+        $routePrefix = $this->getRoutePrefix();
+
         return view('manager.reports.service-sales', compact(
             'stats',
             'revenueByService',
             'revenueByCategory',
             'dailyRevenue',
             'statusBreakdown',
+            'topServices',
             'startDate',
-            'endDate'
+            'endDate',
+            'routePrefix'
         ));
     }
 }

@@ -110,8 +110,16 @@ class ServiceController extends Controller
 
         $data = $request->all();
         
+        // Handle image removal
+        if ($request->input('remove_image') == '1') {
+            // Delete old image if exists
+            if ($service->image) {
+                Storage::disk('public')->delete($service->image);
+            }
+            $data['image'] = null;
+        }
         // Handle image upload
-        if ($request->hasFile('image')) {
+        elseif ($request->hasFile('image')) {
             // Delete old image if exists
             if ($service->image) {
                 Storage::disk('public')->delete($service->image);

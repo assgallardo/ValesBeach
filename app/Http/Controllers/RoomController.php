@@ -15,41 +15,42 @@ class RoomController extends Controller
         $query = Room::query();
 
         // Search by name, type, or description
-        if ($request->search) {
-            $query->where(function($q) use ($request) {
-                $q->where('name', 'like', "%{$request->search}%")
-                  ->orWhere('type', 'like', "%{$request->search}%")
-                  ->orWhere('description', 'like', "%{$request->search}%");
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('type', 'like', "%{$search}%")
+                  ->orWhere('category', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%");
             });
         }
 
-        // Filter by type
-        if ($request->type) {
-            $query->where('type', $request->type);
+        // Filter by category
+        if ($request->filled('category')) {
+            $query->where('category', $request->category);
         }
 
         // Filter by capacity
-        if ($request->capacity) {
+        if ($request->filled('capacity')) {
             $query->where('capacity', '>=', $request->capacity);
         }
 
         // Filter by price range
-        if ($request->min_price) {
+        if ($request->filled('min_price')) {
             $query->where('price', '>=', $request->min_price);
         }
-        if ($request->max_price) {
+        if ($request->filled('max_price')) {
             $query->where('price', '<=', $request->max_price);
         }
 
         // Filter by availability status
-        if ($request->has('is_available')) {
+        if ($request->filled('is_available')) {
             $query->where('is_available', $request->is_available);
         }
 
         $rooms = $query->latest()->paginate(10)->withQueryString();
-        $types = Room::distinct()->pluck('type');
 
-        return view('admin.rooms.index', compact('rooms', 'types'));
+        return view('admin.rooms.index', compact('rooms'));
     }
 
     public function create()
@@ -65,10 +66,11 @@ class RoomController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'type' => 'required|string|max:255',
+            'category' => 'required|in:Rooms,Cottages,Event and Dining',
             'description' => 'required|string',
             'price' => 'required|numeric|min:0',
             'capacity' => 'required|integer|min:1',
-            'beds' => 'required|integer|min:1',
+            'beds' => 'required|integer|min:0',
             'amenities' => 'nullable|array',
             'images' => 'nullable|array|max:10',        // CHANGED FROM room_images
             'images.*' => 'image|mimes:jpeg,png,jpg|max:2048'  // CHANGED FROM room_images.*
@@ -79,6 +81,7 @@ class RoomController extends Controller
             $room = Room::create([
                 'name' => $validated['name'],
                 'type' => $validated['type'],
+                'category' => $validated['category'],
                 'description' => $validated['description'],
                 'price' => $validated['price'],
                 'capacity' => $validated['capacity'],
@@ -128,10 +131,11 @@ class RoomController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'type' => 'required|string|max:255',
+            'category' => 'required|in:Rooms,Cottages,Event and Dining',
             'description' => 'required|string',
             'price' => 'required|numeric|min:0',
             'capacity' => 'required|integer|min:1',
-            'beds' => 'required|integer|min:1',
+            'beds' => 'required|integer|min:0',
             'amenities' => 'nullable|array',
             'room_images.*' => 'image|mimes:jpeg,png,jpg|max:2048'
         ]);
@@ -204,6 +208,14 @@ class RoomController extends Controller
             ->where('status', '!=', 'cancelled')
             ->get(['check_in', 'check_out']);
 
+        // Determine which view to show based on user role
+        $user = auth()->user();
+        if ($user && in_array($user->role, ['admin', 'manager', 'staff'])) {
+            // Show admin view for admin, manager, and staff
+            return view('admin.rooms.show', compact('room'));
+        }
+        
+        // Show guest view for guests or unauthenticated users
         return view('guest.rooms.show', compact('room', 'isAvailable', 'upcomingBookings'));
     }
 

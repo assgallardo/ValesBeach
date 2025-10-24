@@ -65,6 +65,10 @@
                class="px-4 py-2 rounded-lg font-medium transition-colors duration-200 {{ request('category') === 'dining' ? 'bg-green-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600 hover:text-white' }}">
                 Dining
             </a>
+            <a href="{{ route('manager.services.index', ['category' => 'room_service']) }}" 
+               class="px-4 py-2 rounded-lg font-medium transition-colors duration-200 {{ request('category') === 'room_service' ? 'bg-green-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600 hover:text-white' }}">
+                Room Service
+            </a>
             <a href="{{ route('manager.services.index', ['category' => 'transportation']) }}" 
                class="px-4 py-2 rounded-lg font-medium transition-colors duration-200 {{ request('category') === 'transportation' ? 'bg-green-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600 hover:text-white' }}">
                 Transportation
@@ -90,21 +94,15 @@
                 @else
                 <div class="flex items-center justify-center h-full">
                     @if($service->category === 'spa')
-                    <svg class="w-16 h-16 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                    </svg>
+                    <i class="fas fa-spa text-purple-400 text-6xl"></i>
                     @elseif($service->category === 'dining')
-                    <svg class="w-16 h-16 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
-                    </svg>
+                    <i class="fas fa-utensils text-green-400 text-6xl"></i>
+                    @elseif($service->category === 'room_service')
+                    <i class="fas fa-concierge-bell text-red-400 text-6xl"></i>
                     @elseif($service->category === 'transportation')
-                    <svg class="w-16 h-16 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"/>
-                    </svg>
+                    <i class="fas fa-car text-blue-400 text-6xl"></i>
                     @elseif($service->category === 'activities')
-                    <svg class="w-16 h-16 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                    </svg>
+                    <i class="fas fa-volleyball-ball text-yellow-400 text-6xl"></i>
                     @else
                     <svg class="w-16 h-16 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>

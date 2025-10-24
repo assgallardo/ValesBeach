@@ -153,28 +153,46 @@
                         </label>
                         <div class="border-2 border-dashed border-gray-600 rounded-lg p-4 text-center hover:border-green-500 transition-colors duration-200">
                             @if($service->image)
-                                <div id="imagePreview" class="mb-4">
+                                <div id="imagePreview" class="mb-4 relative">
                                     <img id="previewImg" src="{{ asset('storage/' . $service->image) }}" alt="{{ $service->name }}" class="w-full h-48 object-cover rounded-lg">
+                                    <button type="button" 
+                                            id="removeImageBtn"
+                                            class="absolute top-2 right-2 bg-red-600 hover:bg-red-700 text-white rounded-full p-2 shadow-lg transition-all duration-200 transform hover:scale-110 z-50 cursor-pointer">
+                                        <svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                        </svg>
+                                    </button>
                                     <p class="text-xs text-gray-400 mt-2">Current image</p>
                                 </div>
                             @else
-                                <div id="imagePreview" class="hidden mb-4">
+                                <div id="imagePreview" class="hidden mb-4 relative">
                                     <img id="previewImg" src="" alt="Preview" class="w-full h-48 object-cover rounded-lg">
+                                    <button type="button" 
+                                            id="removeImageBtn"
+                                            class="absolute top-2 right-2 bg-red-600 hover:bg-red-700 text-white rounded-full p-2 shadow-lg transition-all duration-200 transform hover:scale-110 z-50 cursor-pointer">
+                                        <svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                        </svg>
+                                    </button>
                                 </div>
                             @endif
-                            <input type="file" 
-                                   id="image" 
-                                   name="image" 
-                                   accept="image/*"
-                                   class="hidden"
-                                   onchange="previewImage(this)">
-                            <label for="image" class="cursor-pointer">
-                                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                                </svg>
-                                <p class="mt-2 text-sm text-gray-400">Click to {{ $service->image ? 'change' : 'upload' }} image</p>
-                                <p class="mt-1 text-xs text-gray-500">PNG, JPG, GIF up to 2MB</p>
-                            </label>
+                            <div id="uploadPlaceholder" class="{{ $service->image ? 'hidden' : '' }}">
+                                <input type="file" 
+                                       id="image" 
+                                       name="image" 
+                                       accept="image/*"
+                                       class="hidden"
+                                       onchange="previewImage(this)">
+                                <label for="image" class="cursor-pointer">
+                                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                    </svg>
+                                    <p class="mt-2 text-sm text-gray-400">Click to upload image</p>
+                                    <p class="mt-1 text-xs text-gray-500">PNG, JPG, GIF up to 2MB</p>
+                                </label>
+                            </div>
+                            <!-- Hidden input to mark image for deletion -->
+                            <input type="hidden" id="removeImage" name="remove_image" value="0">
                         </div>
                         @error('image')
                             <p class="mt-1 text-sm text-red-400">{{ $message }}</p>
@@ -220,15 +238,94 @@
 </div>
 
 <script>
+// Wait for DOM to be fully loaded
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM loaded - initializing image functions');
+    
+    // Attach event listener to remove button
+    const removeBtn = document.getElementById('removeImageBtn');
+    if (removeBtn) {
+        console.log('Remove button found, attaching click listener');
+        removeBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('Remove button clicked!');
+            removeImage();
+        });
+    } else {
+        console.log('Remove button not found in DOM');
+    }
+});
+
 function previewImage(input) {
+    console.log('Preview image function called');
     if (input.files && input.files[0]) {
         const reader = new FileReader();
         reader.onload = function(e) {
-            document.getElementById('previewImg').src = e.target.result;
-            document.getElementById('imagePreview').classList.remove('hidden');
+            const previewImg = document.getElementById('previewImg');
+            const imagePreview = document.getElementById('imagePreview');
+            const uploadPlaceholder = document.getElementById('uploadPlaceholder');
+            const removeImageInput = document.getElementById('removeImage');
+            
+            if (previewImg) previewImg.src = e.target.result;
+            if (imagePreview) imagePreview.classList.remove('hidden');
+            if (uploadPlaceholder) uploadPlaceholder.classList.add('hidden');
+            if (removeImageInput) removeImageInput.value = '0';
+            
+            console.log('Image preview updated');
         }
         reader.readAsDataURL(input.files[0]);
     }
+}
+
+function removeImage() {
+    console.log('=== REMOVE IMAGE FUNCTION CALLED ===');
+    
+    const imagePreview = document.getElementById('imagePreview');
+    const uploadPlaceholder = document.getElementById('uploadPlaceholder');
+    const imageInput = document.getElementById('image');
+    const removeImageInput = document.getElementById('removeImage');
+    const previewImg = document.getElementById('previewImg');
+    
+    console.log('Elements found:', {
+        imagePreview: !!imagePreview,
+        uploadPlaceholder: !!uploadPlaceholder,
+        imageInput: !!imageInput,
+        removeImageInput: !!removeImageInput,
+        previewImg: !!previewImg
+    });
+    
+    // Hide the image preview
+    if (imagePreview) {
+        imagePreview.classList.add('hidden');
+        console.log('✓ Image preview hidden');
+    }
+    
+    // Show the upload placeholder
+    if (uploadPlaceholder) {
+        uploadPlaceholder.classList.remove('hidden');
+        console.log('✓ Upload placeholder shown');
+    }
+    
+    // Clear the file input
+    if (imageInput) {
+        imageInput.value = '';
+        console.log('✓ File input cleared');
+    }
+    
+    // Mark image for deletion
+    if (removeImageInput) {
+        removeImageInput.value = '1';
+        console.log('✓ Remove image flag set to 1');
+    }
+    
+    // Clear the preview image src
+    if (previewImg) {
+        previewImg.src = '';
+        console.log('✓ Preview image src cleared');
+    }
+    
+    console.log('=== REMOVE IMAGE COMPLETED ===');
 }
 </script>
 @endsection

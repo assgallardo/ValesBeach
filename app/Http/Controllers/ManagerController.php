@@ -150,7 +150,26 @@ class ManagerController extends Controller
      */
     public function bookings(Request $request)
     {
-        $query = Booking::with(['user', 'room', 'payments']);
+        // All bookings query (no category filter)
+        $allQuery = Booking::with(['user', 'room', 'payments']);
+
+        // Room bookings query (category = 'Rooms')
+        $roomQuery = Booking::with(['user', 'room', 'payments'])
+            ->whereHas('room', function($q) {
+                $q->where('category', 'Rooms');
+            });
+
+        // Cottage bookings query (category = 'Cottages')
+        $cottageQuery = Booking::with(['user', 'room', 'payments'])
+            ->whereHas('room', function($q) {
+                $q->where('category', 'Cottages');
+            });
+
+        // Events & Dining bookings query (category = 'Event and Dining')
+        $eventDiningQuery = Booking::with(['user', 'room', 'payments'])
+            ->whereHas('room', function($q) {
+                $q->where('category', 'Event and Dining');
+            });
 
         // Get the correct column names
         $checkinColumn = $this->getCheckinColumn();
@@ -162,7 +181,7 @@ class ManagerController extends Controller
         // Search functionality
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function($q) use ($search, $referenceColumn) {
+            $searchFilter = function($q) use ($search, $referenceColumn) {
                 $q->whereHas('user', function($userQuery) use ($search) {
                     $userQuery->where('name', 'like', "%{$search}%")
                              ->orWhere('email', 'like', "%{$search}%");
@@ -171,27 +190,40 @@ class ManagerController extends Controller
                 if ($referenceColumn && Schema::hasColumn('bookings', $referenceColumn)) {
                     $q->orWhere($referenceColumn, 'like', "%{$search}%");
                 }
-            });
+            };
+            $allQuery->where($searchFilter);
+            $roomQuery->where($searchFilter);
+            $cottageQuery->where($searchFilter);
+            $eventDiningQuery->where($searchFilter);
         }
 
         // Status filter
         if ($request->filled('status')) {
-            $query->where('status', $request->status);
+            $allQuery->where('status', $request->status);
+            $roomQuery->where('status', $request->status);
+            $cottageQuery->where('status', $request->status);
+            $eventDiningQuery->where('status', $request->status);
         }
 
         // Date filter
         if ($request->filled('date') && $checkinColumn) {
-            $query->whereDate($checkinColumn, $request->date);
+            $allQuery->whereDate($checkinColumn, $request->date);
+            $roomQuery->whereDate($checkinColumn, $request->date);
+            $cottageQuery->whereDate($checkinColumn, $request->date);
+            $eventDiningQuery->whereDate($checkinColumn, $request->date);
         }
 
-        $bookings = $query->orderBy('created_at', 'desc')->paginate(10);
+        $allBookings = $allQuery->orderBy('created_at', 'desc')->paginate(10, ['*'], 'all_page');
+        $bookings = $roomQuery->orderBy('created_at', 'desc')->paginate(10, ['*'], 'room_page');
+        $cottageBookings = $cottageQuery->orderBy('created_at', 'desc')->paginate(10, ['*'], 'cottage_page');
+        $eventDiningBookings = $eventDiningQuery->orderBy('created_at', 'desc')->paginate(10, ['*'], 'event_page');
 
         // Calculate statistics safely
         $stats = $this->calculateBookingStats();
 
         $statuses = ['pending', 'confirmed', 'checked_in', 'completed', 'cancelled'];
 
-        return view('manager.bookings.index', compact('bookings', 'stats', 'statuses'));
+        return view('manager.bookings.index', compact('allBookings', 'bookings', 'cottageBookings', 'eventDiningBookings', 'stats', 'statuses'));
     }
 
     private function getCheckinColumn()

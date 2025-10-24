@@ -66,9 +66,10 @@
                             $statusConfig = [
                                 'pending' => ['color' => 'yellow', 'icon' => 'clock'],
                                 'confirmed' => ['color' => 'blue', 'icon' => 'check-circle'],
-                                'preparing' => ['color' => 'orange', 'icon' => 'fire'],
-                                'ready' => ['color' => 'green', 'icon' => 'bell'],
+                                'preparing' => ['color' => 'blue', 'icon' => 'fire'],
+                                'ready' => ['color' => 'purple', 'icon' => 'bell'],
                                 'delivered' => ['color' => 'green', 'icon' => 'check-circle'],
+                                'completed' => ['color' => 'green', 'icon' => 'check-circle'],
                                 'cancelled' => ['color' => 'red', 'icon' => 'x-circle']
                             ];
                             $config = $statusConfig[$foodOrder->status] ?? $statusConfig['pending'];
@@ -118,6 +119,9 @@
                                         <?php break; ?>
                                     <?php case ('delivered'): ?>
                                         Your order has been delivered. Enjoy your meal!
+                                        <?php break; ?>
+                                    <?php case ('completed'): ?>
+                                        Your order has been completed. Enjoy your meal!
                                         <?php break; ?>
                                     <?php case ('cancelled'): ?>
                                         This order has been cancelled

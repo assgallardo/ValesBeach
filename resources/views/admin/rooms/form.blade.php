@@ -1,6 +1,6 @@
 <x-admin-layout>
     <x-slot name="header">
-        {{ isset($room) ? 'Edit Room' : 'Add New Room' }}
+        {{ isset($room) ? 'Edit Facility' : 'Add New Facility' }}
     </x-slot>
 
     <div class="container mx-auto px-4 lg:px-16 py-8">
@@ -31,7 +31,7 @@
 
                     <!-- Room Name -->
                     <div>
-                        <label for="name" class="block text-sm font-medium text-white mb-2">Room Name</label>
+                        <label for="name" class="block text-sm font-medium text-white mb-2">Facility Name</label>
                         <input type="text" 
                                id="name" 
                                name="name" 

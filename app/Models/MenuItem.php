@@ -51,6 +51,7 @@ class MenuItem extends Model
         'is_gluten_free' => 'boolean',
         'ingredients' => 'array',
         'allergens' => 'array',
+        'dietary_badges' => 'array',
     ];
 
     /**

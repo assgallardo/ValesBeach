@@ -225,54 +225,85 @@
                 </div>
             </div>
 
-            <!-- Performance Summary -->
-            <div class="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
-                <div class="bg-gray-750 px-6 py-4 border-b border-gray-700">
-                    <h3 class="text-lg font-semibold text-green-100">Performance Summary</h3>
+            <!-- Top Performers Award -->
+            <div class="bg-gradient-to-br from-gray-800 via-gray-800 to-gray-900 rounded-2xl border border-yellow-600/30 overflow-hidden shadow-2xl">
+                <!-- Award Header -->
+                <div class="bg-gradient-to-r from-yellow-600 via-amber-500 to-yellow-600 px-6 py-5 text-center relative overflow-hidden">
+                    <div class="absolute inset-0 bg-yellow-400/10 animate-pulse"></div>
+                    <div class="relative z-10">
+                        <div class="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center mx-auto mb-3 ring-4 ring-white/30">
+                            <i class="fas fa-trophy text-3xl text-white"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-white mb-1">Top Performers</h3>
+                        <p class="text-yellow-100 text-xs">Outstanding Staff Members</p>
+                    </div>
                 </div>
-                <div class="p-6">
+
+                <div class="p-6 space-y-3">
                     @if($staffMetrics->count() > 0)
                         @php
-                            $topPerformer = $staffMetrics->sortByDesc('completion_rate')->first();
-                            $mostProductive = $staffMetrics->sortByDesc('total_assigned')->first();
-                            $fastest = $staffMetrics->where('avg_completion_time', '>', 0)->sortBy('avg_completion_time')->first();
+                            $topStaff = $staffMetrics->sortByDesc('completion_rate')->take(3)->values();
                         @endphp
                         
-                        <div class="mb-6">
-                            <div class="flex items-center mb-3">
-                                <i class="fas fa-trophy text-yellow-400 mr-3 text-lg"></i>
-                                <span class="text-green-100 font-semibold">Top Performer</span>
+                        @foreach($topStaff as $index => $staff)
+                            <div class="flex items-center group hover:bg-gray-700/30 rounded-lg p-2 transition-all duration-200 {{ $index === 0 ? 'bg-yellow-500/10' : '' }}">
+                                <div class="relative">
+                                    @if($index === 0)
+                                        <div class="w-12 h-12 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-full flex items-center justify-center mr-3 ring-4 ring-yellow-400/30 shadow-lg">
+                                            <i class="fas fa-crown text-white text-lg"></i>
+                                        </div>
+                                    @elseif($index === 1)
+                                        <div class="w-10 h-10 bg-gradient-to-br from-gray-300 to-gray-500 rounded-full flex items-center justify-center mr-3 ring-4 ring-gray-400/30">
+                                            <i class="fas fa-medal text-white"></i>
+                                        </div>
+                                    @else
+                                        <div class="w-10 h-10 bg-gradient-to-br from-amber-600 to-amber-800 rounded-full flex items-center justify-center mr-3 ring-4 ring-amber-600/30">
+                                            <i class="fas fa-award text-white"></i>
+                                        </div>
+                                    @endif
+                                    <div class="absolute -top-1 -right-1 w-5 h-5 bg-indigo-600 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                                        {{ $index + 1 }}
+                                    </div>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-gray-200 font-medium text-sm truncate">{{ $staff->name }}</p>
+                                    <div class="flex items-center justify-between text-xs mt-0.5">
+                                        <span class="text-gray-400 flex items-center">
+                                            <i class="fas fa-tasks mr-1"></i>
+                                            {{ number_format($staff->completed_tasks) }} completed
+                                        </span>
+                                        <span class="text-green-400 font-semibold">{{ $staff->completion_rate }}%</span>
+                                    </div>
+                                </div>
+                                @if($index === 0)
+                                    <i class="fas fa-sparkles text-yellow-400 text-lg ml-2"></i>
+                                @endif
                             </div>
-                            <p class="text-gray-300 mb-1">{{ $topPerformer->name }}</p>
-                            <small class="text-gray-400">{{ $topPerformer->completion_rate }}% completion rate</small>
-                        </div>
-                        
-                        <hr class="border-gray-700 mb-6">
-                        
-                        <div class="mb-6">
-                            <div class="flex items-center mb-3">
-                                <i class="fas fa-chart-line text-green-400 mr-3 text-lg"></i>
-                                <span class="text-green-100 font-semibold">Most Productive</span>
+                        @endforeach
+
+                        <!-- Additional Staff Stats -->
+                        @if($staffMetrics->count() > 3)
+                            <div class="pt-3 mt-3 border-t border-gray-700">
+                                <div class="text-center text-xs text-gray-400">
+                                    <i class="fas fa-users mr-1"></i>
+                                    {{ $staffMetrics->count() - 3 }} more staff member{{ $staffMetrics->count() - 3 != 1 ? 's' : '' }}
+                                </div>
                             </div>
-                            <p class="text-gray-300 mb-1">{{ $mostProductive->name }}</p>
-                            <small class="text-gray-400">{{ $mostProductive->total_assigned }} tasks assigned</small>
-                        </div>
-                        
-                        @if($fastest)
-                        <hr class="border-gray-700 mb-6">
-                        
-                        <div class="mb-6">
-                            <div class="flex items-center mb-3">
-                                <i class="fas fa-bolt text-blue-400 mr-3 text-lg"></i>
-                                <span class="text-green-100 font-semibold">Fastest Completion</span>
-                            </div>
-                            <p class="text-gray-300 mb-1">{{ $fastest->name }}</p>
-                            <small class="text-gray-400">{{ $fastest->avg_completion_time }}h average</small>
-                        </div>
                         @endif
                     @else
-                        <p class="text-gray-400 text-center">No performance data available</p>
+                        <div class="text-center py-8 text-gray-500">
+                            <i class="fas fa-users text-4xl mb-3"></i>
+                            <p class="text-sm">No staff performance data available for this period.</p>
+                        </div>
                     @endif
+                </div>
+
+                <!-- Award Footer -->
+                <div class="bg-gradient-to-r from-gray-900 to-gray-800 px-6 py-3 border-t border-gray-700">
+                    <div class="flex items-center justify-center text-xs text-gray-400">
+                        <i class="fas fa-star text-yellow-500 mr-2"></i>
+                        <span>Based on completion rate</span>
+                    </div>
                 </div>
             </div>
         </div>

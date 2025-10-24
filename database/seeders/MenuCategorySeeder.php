@@ -53,7 +53,10 @@ class MenuCategorySeeder extends Seeder
         ];
 
         foreach ($categories as $category) {
-            MenuCategory::create($category);
+            MenuCategory::updateOrCreate(
+                ['name' => $category['name']], // Match by name
+                $category // Update or create with these values
+            );
         }
     }
 }

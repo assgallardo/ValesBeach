@@ -31,23 +31,8 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
                             </svg>
                         </div>
-                        <h3 class="text-xl font-semibold text-white mb-3">Book Rooms</h3>
-                        <p class="text-green-100 text-sm leading-relaxed">Explore our luxurious room accommodations</p>
-                    </div>
-                </div>
-            </a>
-
-            <!-- Browse Cottages Card (Bahay Kubo) -->
-            <a href="{{ route('guest.cottages.index') }}" class="group">
-                <div class="bg-amber-900 border-2 border-amber-700 rounded-xl p-8 text-center transform transition duration-300 hover:scale-105 hover:bg-amber-800 cursor-pointer shadow-lg h-64 flex flex-col justify-between">
-                    <div>
-                        <div class="bg-amber-700 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6 group-hover:bg-amber-600 transition-colors duration-300">
-                            <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
-                            </svg>
-                        </div>
-                        <h3 class="text-xl font-semibold text-white mb-3">Book Cottages</h3>
-                        <p class="text-amber-100 text-sm leading-relaxed">Traditional Bahay Kubo for day or overnight stays</p>
+                        <h3 class="text-xl font-semibold text-white mb-3">Browse Facilities</h3>
+                        <p class="text-green-100 text-sm leading-relaxed">Explore our facilities & room accommodations</p>
                     </div>
                 </div>
             </a>

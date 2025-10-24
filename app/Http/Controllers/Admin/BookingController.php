@@ -872,75 +872,80 @@ class BookingController extends Controller
      */
     public function reservations(Request $request)
     {
-        $query = Booking::with(['user', 'room', 'payments']);
+        // All bookings query (no category filter)
+        $allQuery = Booking::with(['user', 'room', 'payments']);
 
-        // Apply filters
+        // Room bookings query (category = 'Rooms')
+        $roomQuery = Booking::with(['user', 'room', 'payments'])
+            ->whereHas('room', function($q) {
+                $q->where('category', 'Rooms');
+            });
+
+        // Cottage bookings query (category = 'Cottages')
+        $cottageQuery = Booking::with(['user', 'room', 'payments'])
+            ->whereHas('room', function($q) {
+                $q->where('category', 'Cottages');
+            });
+
+        // Events & Dining bookings query (category = 'Event and Dining')
+        $eventDiningQuery = Booking::with(['user', 'room', 'payments'])
+            ->whereHas('room', function($q) {
+                $q->where('category', 'Event and Dining');
+            });
+
+        // Apply filters to all queries
         if ($request->filled('status')) {
-            $query->where('status', $request->status);
+            $allQuery->where('status', $request->status);
+            $roomQuery->where('status', $request->status);
+            $cottageQuery->where('status', $request->status);
+            $eventDiningQuery->where('status', $request->status);
         }
 
         if ($request->filled('room_id')) {
-            $query->where('room_id', $request->room_id);
+            $allQuery->where('room_id', $request->room_id);
+            $roomQuery->where('room_id', $request->room_id);
         }
 
         if ($request->filled('date_from')) {
-            $query->where('check_in', '>=', $request->date_from);
+            $allQuery->where('check_in', '>=', $request->date_from);
+            $roomQuery->where('check_in', '>=', $request->date_from);
+            $cottageQuery->where('check_in', '>=', $request->date_from);
+            $eventDiningQuery->where('check_in', '>=', $request->date_from);
         }
 
         if ($request->filled('date_to')) {
-            $query->where('check_out', '<=', $request->date_to);
+            $allQuery->where('check_out', '<=', $request->date_to);
+            $roomQuery->where('check_out', '<=', $request->date_to);
+            $cottageQuery->where('check_out', '<=', $request->date_to);
+            $eventDiningQuery->where('check_out', '<=', $request->date_to);
         }
 
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->whereHas('user', function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%");
-            })->orWhereHas('room', function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%");
-            });
+            $searchFilter = function ($q) use ($search) {
+                $q->whereHas('user', function ($userQ) use ($search) {
+                    $userQ->where('name', 'like', "%{$search}%")
+                          ->orWhere('email', 'like', "%{$search}%");
+                })->orWhereHas('room', function ($roomQ) use ($search) {
+                    $roomQ->where('name', 'like', "%{$search}%");
+                });
+            };
+            $allQuery->where($searchFilter);
+            $roomQuery->where($searchFilter);
+            $cottageQuery->where($searchFilter);
+            $eventDiningQuery->where($searchFilter);
         }
 
         // Order by check-in date (newest first)
-        $query->orderBy('check_in', 'desc');
-
-        $bookings = $query->paginate(20);
-
-        // Fetch Cottage Bookings with similar filters
-        $cottageQuery = \App\Models\CottageBooking::with(['user', 'cottage', 'payments']);
-
-        // Apply similar filters for cottage bookings
-        if ($request->filled('status')) {
-            $cottageQuery->where('status', $request->status);
-        }
-
-        if ($request->filled('date_from')) {
-            $cottageQuery->where('check_in_date', '>=', $request->date_from);
-        }
-
-        if ($request->filled('date_to')) {
-            $cottageQuery->where('check_out_date', '<=', $request->date_to);
-        }
-
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $cottageQuery->whereHas('user', function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%");
-            })->orWhereHas('cottage', function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%");
-            });
-        }
-
-        // Order by check-in date (newest first)
-        $cottageQuery->orderBy('check_in_date', 'desc');
-
-        $cottageBookings = $cottageQuery->paginate(20);
+        $allBookings = $allQuery->orderBy('check_in', 'desc')->paginate(20, ['*'], 'all_page');
+        $bookings = $roomQuery->orderBy('check_in', 'desc')->paginate(20, ['*'], 'room_page');
+        $cottageBookings = $cottageQuery->orderBy('check_in', 'desc')->paginate(20, ['*'], 'cottage_page');
+        $eventDiningBookings = $eventDiningQuery->orderBy('check_in', 'desc')->paginate(20, ['*'], 'event_page');
 
         $rooms = \App\Models\Room::all();
         $statuses = ['pending', 'confirmed', 'checked_in', 'checked_out', 'cancelled', 'completed'];
 
-        return view('admin.reservations.index', compact('bookings', 'cottageBookings', 'rooms', 'statuses'));
+        return view('admin.reservations.index', compact('allBookings', 'bookings', 'cottageBookings', 'eventDiningBookings', 'rooms', 'statuses'));
     }
 
     /**

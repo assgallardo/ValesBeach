@@ -40,20 +40,156 @@
                     @enderror
                 </div>
 
-                <div>
+                <div x-data="{
+                    open: false,
+                    searchQuery: '',
+                    selectedRoom: {{ old('room_id') ? old('room_id') : 'null' }},
+                    selectedRoomName: '{{ old('room_id') ? ($rooms->where('id', old('room_id'))->first()->name ?? 'Choose a room...') : 'Choose a room...' }}',
+                    selectRoom(id, name, price, capacity) {
+                        this.selectedRoom = id;
+                        this.selectedRoomName = name;
+                        this.open = false;
+                        this.searchQuery = '';
+                        // Update hidden input
+                        document.getElementById('room_id_input').value = id;
+                        // Update hidden select and its selected option's data attributes
+                        const roomSelect = document.getElementById('room_select');
+                        if (roomSelect) {
+                            roomSelect.value = id;
+                            // Update the selected option's data attributes
+                            const selectedOption = roomSelect.options[roomSelect.selectedIndex];
+                            if (selectedOption) {
+                                selectedOption.setAttribute('data-price', price);
+                                selectedOption.setAttribute('data-capacity', capacity);
+                            }
+                            // Trigger change event to update price calculation
+                            roomSelect.dispatchEvent(new Event('change'));
+                        }
+                    },
+                    clearSearch() {
+                        this.searchQuery = '';
+                        this.$refs.searchInput.focus();
+                    }
+                }" x-init="$nextTick(() => { 
+                    if (selectedRoom) {
+                        const roomSelect = document.getElementById('room_select');
+                        if (roomSelect) {
+                            roomSelect.value = selectedRoom;
+                            roomSelect.dispatchEvent(new Event('change'));
+                        }
+                    }
+                })">
                     <label class="block text-sm font-medium text-gray-300 mb-2">Select Room *</label>
-                    <select name="room_id" required id="room_select"
-                            class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                    
+                    <!-- Hidden input for form submission -->
+                    <input type="hidden" name="room_id" id="room_id_input" :value="selectedRoom" required>
+                    
+                    <!-- Hidden select for compatibility with existing JS -->
+                    <select id="room_select" class="hidden">
                         <option value="">Choose a room...</option>
                         @foreach($rooms as $room)
                             <option value="{{ $room->id }}" 
                                     data-price="{{ $room->price }}"
-                                    data-capacity="{{ $room->capacity }}"
-                                    {{ old('room_id') == $room->id ? 'selected' : '' }}>
-                                {{ $room->name }} - ₱{{ number_format($room->price, 2) }}/night ({{ $room->capacity }} guests max)
+                                    data-capacity="{{ $room->capacity }}">
+                                {{ $room->name }}
                             </option>
                         @endforeach
                     </select>
+
+                    <!-- Custom Dropdown Button -->
+                    <div class="relative">
+                        <button type="button"
+                                @click="open = !open; if(open) { $nextTick(() => $refs.searchInput.focus()); }"
+                                class="w-full px-4 py-3 bg-gray-700 border rounded-lg text-left text-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent flex items-center justify-between"
+                                :class="selectedRoom ? 'border-gray-600' : 'border-red-500'">
+                            <span x-text="selectedRoomName" class="truncate"></span>
+                            <svg class="w-5 h-5 transition-transform" :class="{'rotate-180': open}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                            </svg>
+                        </button>
+
+                        <!-- Dropdown Panel -->
+                        <div x-show="open"
+                             x-transition:enter="transition ease-out duration-100"
+                             x-transition:enter-start="transform opacity-0 scale-95"
+                             x-transition:enter-end="transform opacity-100 scale-100"
+                             x-transition:leave="transition ease-in duration-75"
+                             x-transition:leave-start="transform opacity-100 scale-100"
+                             x-transition:leave-end="transform opacity-0 scale-95"
+                             @click.away="open = false"
+                             class="absolute z-50 w-full mt-2 bg-gray-800 rounded-lg shadow-xl border border-gray-700"
+                             style="display: none;">
+                            
+                            <!-- Search Input -->
+                            <div class="p-3 border-b border-gray-700">
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                                        </svg>
+                                    </div>
+                                    <input x-ref="searchInput"
+                                           x-model="searchQuery"
+                                           type="text"
+                                           placeholder="Search facilities..."
+                                           class="w-full pl-10 pr-10 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                                    <button type="button"
+                                            x-show="searchQuery.length > 0"
+                                            @click="clearSearch()"
+                                            class="absolute inset-y-0 right-0 pr-3 flex items-center">
+                                        <svg class="w-4 h-4 text-gray-400 hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Room List -->
+                            <div class="max-h-64 overflow-y-auto">
+                                @foreach($rooms as $room)
+                                    <button type="button"
+                                            @click="selectRoom({{ $room->id }}, '{{ $room->name }}', {{ $room->price }}, {{ $room->capacity }})"
+                                            x-show="searchQuery === '' || '{{ strtolower($room->name) }} {{ strtolower($room->category ?? '') }} {{ strtolower($room->type ?? '') }}'.includes(searchQuery.toLowerCase())"
+                                            class="w-full text-left px-4 py-3 text-sm text-gray-300 hover:bg-gray-700 hover:text-white border-b border-gray-700 last:border-b-0 transition-colors">
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex-1">
+                                                <div class="font-medium text-white">{{ $room->name }}</div>
+                                                <div class="text-xs text-gray-400 mt-1">
+                                                    <span class="inline-flex items-center">
+                                                        <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
+                                                        </svg>
+                                                        ₱{{ number_format((float)$room->price, 2) }}/night
+                                                    </span>
+                                                    <span class="mx-2">•</span>
+                                                    <span class="inline-flex items-center">
+                                                        <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+                                                        </svg>
+                                                        {{ $room->capacity }} guests max
+                                                    </span>
+                                                </div>
+                                                @if($room->category)
+                                                <div class="mt-1">
+                                                    <span class="inline-block px-2 py-0.5 text-xs rounded-full
+                                                        {{ $room->category === 'Rooms' ? 'bg-blue-900 text-blue-200' : '' }}
+                                                        {{ $room->category === 'Cottages' ? 'bg-purple-900 text-purple-200' : '' }}
+                                                        {{ $room->category === 'Event and Dining' ? 'bg-pink-900 text-pink-200' : '' }}">
+                                                        {{ $room->category }}
+                                                    </span>
+                                                </div>
+                                                @endif
+                                            </div>
+                                            <svg class="w-5 h-5 text-gray-500 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                                            </svg>
+                                        </div>
+                                    </button>
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
+                    
                     @error('room_id')
                         <p class="text-red-400 text-sm mt-1">{{ $message }}</p>
                     @enderror
@@ -114,10 +250,18 @@
 
                 <!-- Price Preview -->
                 <div>
-                    <label class="block text-sm font-medium text-gray-300 mb-2">Estimated Total</label>
-                    <div class="w-full px-4 py-3 bg-gray-600 border border-gray-600 rounded-lg text-white">
-                        <span id="total_preview">Select room and dates</span>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">
+                        <span class="flex items-center">
+                            <svg class="w-4 h-4 mr-2 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
+                            </svg>
+                            Estimated Total
+                        </span>
+                    </label>
+                    <div class="w-full px-4 py-3 bg-gradient-to-r from-green-900 to-green-800 border-2 border-green-600 rounded-lg">
+                        <span id="total_preview" class="text-xl font-bold text-white">Select room and dates</span>
                     </div>
+                    <p class="text-xs text-gray-400 mt-1">Automatically calculated based on room and dates</p>
                 </div>
             </div>
 

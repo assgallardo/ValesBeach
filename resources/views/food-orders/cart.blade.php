@@ -59,7 +59,16 @@
                     
                     <div class="divide-y divide-gray-700">
                         @foreach($cartItems as $cartKey => $item)
-                        <div class="p-6 cart-item hover:bg-gray-700/50 transition-colors duration-200" data-cart-key="{{ $cartKey }}">
+                        <div class="p-6 cart-item hover:bg-gray-700/50 transition-colors duration-200 relative" data-cart-key="{{ $cartKey }}">
+                            <!-- Remove Button (X) -->
+                            <button class="remove-item-btn absolute top-4 right-4 bg-red-600 hover:bg-red-700 text-white rounded-full w-8 h-8 flex items-center justify-center shadow-lg transition-all duration-200 hover:scale-110 z-10"
+                                    data-cart-key="{{ $cartKey }}"
+                                    title="Remove item">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                </svg>
+                            </button>
+                            
                             <div class="flex items-start space-x-4">
                                 <!-- Item Image -->
                                 <div class="flex-shrink-0">
@@ -207,6 +216,20 @@ document.addEventListener('DOMContentLoaded', function() {
             const quantity = parseInt(this.value);
             
             updateCartItem(cartKey, quantity);
+        });
+    });
+    
+    // Handle Remove Item buttons (X)
+    const removeButtons = document.querySelectorAll('.remove-item-btn');
+    removeButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const cartKey = this.dataset.cartKey;
+            const itemName = this.closest('.cart-item').querySelector('h3').textContent;
+            
+            // Show confirmation
+            if (confirm(`Remove "${itemName}" from your cart?`)) {
+                updateCartItem(cartKey, 0);
+            }
         });
     });
 });

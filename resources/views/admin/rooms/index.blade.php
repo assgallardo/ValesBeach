@@ -7,7 +7,7 @@
         <h2 class="text-3xl font-bold text-white">Rooms & Facilities</h2>
         <a href="{{ route('admin.rooms.create') }}" 
            class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors">
-            Add New Room
+            Add New Facility
         </a>
     </div>
 
@@ -20,20 +20,18 @@
                 <input type="text" 
                        name="search" 
                        value="{{ request('search') }}"
-                       placeholder="Search rooms..."
-                       class="w-full bg-gray-700 text-white rounded-lg px-4 py-2">
+                       placeholder="Search facility..."
+                       class="w-full bg-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500">
             </div>
 
             <!-- Type Filter -->
             <div>
-                <label class="block text-gray-300 mb-2">Room Type</label>
-                <select name="type" class="w-full bg-gray-700 text-white rounded-lg px-4 py-2">
+                <label class="block text-gray-300 mb-2">Type</label>
+                <select name="category" class="w-full bg-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500">
                     <option value="">All Types</option>
-                    @foreach($types as $type)
-                        <option value="{{ $type }}" {{ request('type') == $type ? 'selected' : '' }}>
-                            {{ $type }}
-                        </option>
-                    @endforeach
+                    <option value="Rooms" {{ request('category') == 'Rooms' ? 'selected' : '' }}>Rooms</option>
+                    <option value="Cottages" {{ request('category') == 'Cottages' ? 'selected' : '' }}>Cottages</option>
+                    <option value="Event and Dining" {{ request('category') == 'Event and Dining' ? 'selected' : '' }}>Event and Dining</option>
                 </select>
             </div>
 
@@ -45,19 +43,19 @@
                            name="min_price" 
                            value="{{ request('min_price') }}"
                            placeholder="Min"
-                           class="w-1/2 bg-gray-700 text-white rounded-lg px-4 py-2">
+                           class="w-1/2 bg-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500">
                     <input type="number" 
                            name="max_price" 
                            value="{{ request('max_price') }}"
                            placeholder="Max"
-                           class="w-1/2 bg-gray-700 text-white rounded-lg px-4 py-2">
+                           class="w-1/2 bg-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500">
                 </div>
             </div>
 
             <!-- Availability Filter -->
             <div>
                 <label class="block text-gray-300 mb-2">Status</label>
-                <select name="is_available" class="w-full bg-gray-700 text-white rounded-lg px-4 py-2">
+                <select name="is_available" class="w-full bg-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500">
                     <option value="">All Status</option>
                     <option value="1" {{ request('is_available') === '1' ? 'selected' : '' }}>Available</option>
                     <option value="0" {{ request('is_available') === '0' ? 'selected' : '' }}>Unavailable</option>
@@ -106,7 +104,7 @@
                                     {{ $room->name }}
                                 </a>
                             </td>
-                            <td class="px-6 py-4">{{ $room->type }}</td>
+                            <td class="px-6 py-4">{{ $room->category ?? 'Rooms' }}</td>
                             <td class="px-6 py-4">₱{{ number_format($room->price, 2) }}</td>
                             <td class="px-6 py-4">{{ $room->capacity }} guests</td>
                             <td class="px-6 py-4">
@@ -120,7 +118,7 @@
                                     @if($room->is_available)
                                     <a href="{{ route('admin.reservations.createFromRoom', $room) }}" 
                                        class="text-green-400 hover:text-green-300 font-medium">
-                                        Book Room
+                                        Book
                                     </a>
                                     @endif
                                     <a href="{{ route('admin.rooms.edit', $room) }}" 
@@ -129,7 +127,7 @@
                                     </a>
                                     <button onclick="toggleAvailability({{ $room->id }}, {{ $room->is_available }})"
                                             class="text-yellow-400 hover:text-yellow-300">
-                                        {{ $room->is_available ? 'Set Unavailable' : 'Set Available' }}
+                                        {{ $room->is_available ? 'Unavailable' : 'Available' }}
                                     </button>
                                     <form action="{{ route('admin.rooms.destroy', $room) }}" 
                                           method="POST" 

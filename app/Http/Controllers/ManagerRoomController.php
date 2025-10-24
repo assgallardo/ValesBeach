@@ -15,19 +15,20 @@ class ManagerRoomController extends Controller
     {
         $query = Room::query();
 
-        // Apply search filter
+        // Apply search filter - search by name, type, category, or description
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function($q) use ($search) {
-                $q->where('number', 'like', "%{$search}%")
-                    ->orWhere('name', 'like', "%{$search}%")
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('type', 'like', "%{$search}%")
+                    ->orWhere('category', 'like', "%{$search}%")
                     ->orWhere('description', 'like', "%{$search}%");
             });
         }
 
-        // Apply type filter
-        if ($request->filled('type')) {
-            $query->where('type', $request->type);
+        // Apply category filter (changed from type to category)
+        if ($request->filled('category')) {
+            $query->where('category', $request->category);
         }
 
         // Apply price range filters
@@ -44,7 +45,7 @@ class ManagerRoomController extends Controller
         }
 
         // Apply sorting
-        $sortField = in_array($request->input('sort_by'), ['number', 'name', 'type', 'price', 'created_at']) 
+        $sortField = in_array($request->input('sort_by'), ['name', 'type', 'category', 'price', 'created_at']) 
             ? $request->input('sort_by') 
             : 'name';
             
@@ -57,13 +58,7 @@ class ManagerRoomController extends Controller
         // Get paginated results
         $rooms = $query->paginate(10)->withQueryString();
 
-        // Get available types for filter dropdown
-        $types = Room::distinct()->pluck('type');
-
-        return view('manager.rooms.index', [
-            'rooms' => $rooms,
-            'types' => $types,
-        ]);
+        return view('manager.rooms.index', compact('rooms'));
     }
 
     /**

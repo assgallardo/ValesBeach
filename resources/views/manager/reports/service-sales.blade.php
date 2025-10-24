@@ -77,8 +77,13 @@
             </div>
         </div>
 
+        <!-- Main Content Grid: Tables + Award Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+            <!-- Left Column: Revenue Tables (2/3 width) -->
+            <div class="lg:col-span-2 space-y-8">
+
         <!-- Revenue by Category -->
-        <div class="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden mb-8">
+        <div class="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
             <div class="bg-gray-750 px-6 py-4 border-b border-gray-700">
                 <h3 class="text-lg font-semibold text-green-100 flex items-center">
                     <i class="fas fa-list text-blue-400 mr-3"></i>
@@ -148,6 +153,84 @@
                 </table>
             </div>
         </div>
+
+            </div>
+            <!-- End of Left Column -->
+
+            <!-- Right Column: Top Performers Award (1/3 width) -->
+            <div class="lg:col-span-1">
+                <div class="bg-gradient-to-br from-gray-800 via-gray-800 to-gray-900 rounded-2xl border border-yellow-600/30 overflow-hidden shadow-2xl sticky top-6">
+                    <!-- Award Header -->
+                    <div class="bg-gradient-to-r from-yellow-600 via-amber-500 to-yellow-600 px-6 py-5 text-center relative overflow-hidden">
+                        <div class="absolute inset-0 bg-yellow-400/10 animate-pulse"></div>
+                        <div class="relative z-10">
+                            <div class="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center mx-auto mb-3 ring-4 ring-white/30">
+                                <i class="fas fa-trophy text-3xl text-white"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-white mb-1">Top Requested Services</h3>
+                            <p class="text-yellow-100 text-xs">Most Popular Services</p>
+                        </div>
+                    </div>
+
+                    <div class="p-6 space-y-3">
+                        @forelse($topServices as $index => $service)
+                            <div class="flex items-center group hover:bg-gray-700/30 rounded-lg p-2 transition-all duration-200 {{ $index === 0 ? 'bg-yellow-500/10' : '' }}">
+                                <div class="relative">
+                                    @if($index === 0)
+                                        <div class="w-12 h-12 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-full flex items-center justify-center mr-3 ring-4 ring-yellow-400/30 shadow-lg">
+                                            <i class="fas fa-crown text-white text-lg"></i>
+                                        </div>
+                                    @elseif($index === 1)
+                                        <div class="w-10 h-10 bg-gradient-to-br from-gray-300 to-gray-500 rounded-full flex items-center justify-center mr-3 ring-4 ring-gray-400/30">
+                                            <i class="fas fa-medal text-white"></i>
+                                        </div>
+                                    @elseif($index === 2)
+                                        <div class="w-10 h-10 bg-gradient-to-br from-amber-600 to-amber-800 rounded-full flex items-center justify-center mr-3 ring-4 ring-amber-600/30">
+                                            <i class="fas fa-award text-white"></i>
+                                        </div>
+                                    @else
+                                        <div class="w-10 h-10 bg-gray-700 rounded-full flex items-center justify-center mr-3 border-2 border-gray-600">
+                                            <i class="fas fa-star text-gray-400 text-sm"></i>
+                                        </div>
+                                    @endif
+                                    <div class="absolute -top-1 -right-1 w-5 h-5 bg-purple-600 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                                        {{ $index + 1 }}
+                                    </div>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-gray-200 font-medium text-sm truncate">{{ $service->name }}</p>
+                                    <div class="flex items-center justify-between text-xs mt-0.5">
+                                        <span class="text-gray-400 flex items-center">
+                                            <i class="fas fa-concierge-bell mr-1"></i>
+                                            {{ number_format($service->request_count) }} request{{ $service->request_count != 1 ? 's' : '' }}
+                                        </span>
+                                        <span class="text-green-400 font-semibold">₱{{ number_format($service->total_revenue, 0) }}</span>
+                                    </div>
+                                </div>
+                                @if($index === 0)
+                                    <i class="fas fa-sparkles text-yellow-400 text-lg ml-2"></i>
+                                @endif
+                            </div>
+                        @empty
+                            <div class="text-center py-8 text-gray-500">
+                                <i class="fas fa-concierge-bell text-4xl mb-3"></i>
+                                <p class="text-sm">No service data available for this period.</p>
+                            </div>
+                        @endforelse
+                    </div>
+
+                    <!-- Award Footer -->
+                    <div class="bg-gradient-to-r from-gray-900 to-gray-800 px-6 py-3 border-t border-gray-700">
+                        <div class="flex items-center justify-center text-xs text-gray-400">
+                            <i class="fas fa-star text-yellow-500 mr-2"></i>
+                            <span>Based on total service requests</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- End of Right Column -->
+        </div>
+        <!-- End of Grid -->
 
         <!-- Request Status Breakdown -->
         <div class="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden mb-8">

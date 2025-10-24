@@ -27,17 +27,24 @@
         </div>
     </div>
 
-    <!-- Room Legend -->
+    <!-- Facility Categories Legend -->
     <div class="bg-gray-800 rounded-lg p-6 mb-8">
-        <h3 class="text-lg font-semibold text-white mb-4">Rooms</h3>
-        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-            @foreach($rooms as $room)
-                <div class="flex items-center space-x-2">
-                    <div class="w-4 h-4 rounded" style="background-color: {{ $room->color ?? sprintf('#%06X', mt_rand(0, 0xFFFFFF)) }};"></div>
-                    <span class="text-white text-sm">{{ $room->name }}</span>
-                </div>
-            @endforeach
+        <h3 class="text-lg font-semibold text-white mb-4">Facility Categories</h3>
+        <div class="flex flex-wrap gap-6">
+            <div class="flex items-center space-x-3">
+                <div class="w-6 h-6 rounded bg-blue-600 border-2 border-blue-400 shadow-lg shadow-blue-500/50"></div>
+                <span class="text-white text-sm font-medium">Rooms</span>
+            </div>
+            <div class="flex items-center space-x-3">
+                <div class="w-6 h-6 rounded bg-yellow-500 border-2 border-yellow-300 shadow-lg shadow-yellow-500/50"></div>
+                <span class="text-white text-sm font-medium">Cottages</span>
+            </div>
+            <div class="flex items-center space-x-3">
+                <div class="w-6 h-6 rounded bg-red-600 border-2 border-red-400 shadow-lg shadow-red-500/50"></div>
+                <span class="text-white text-sm font-medium">Events & Dining</span>
+            </div>
         </div>
+        <p class="text-gray-400 text-xs mt-3">Each booking is color-coded by its facility category</p>
     </div>
 
     <!-- Status Legend -->
@@ -113,21 +120,23 @@
                     <div class="space-y-1">
                         @foreach($dayBookings->take(3) as $booking)
                             @php
-                                $statusColors = [
-                                    'pending' => 'bg-yellow-500',
-                                    'confirmed' => 'bg-green-500',
-                                    'checked_in' => 'bg-blue-500',
-                                    'checked_out' => 'bg-gray-500',
-                                    'cancelled' => 'bg-red-500',
-                                    'completed' => 'bg-purple-500',
+                                // Category-based colors - More distinguishable
+                                $categoryColors = [
+                                    'Rooms' => 'bg-blue-600 border-l-4 border-blue-400',
+                                    'Cottages' => 'bg-yellow-500 border-l-4 border-yellow-300',
+                                    'Event and Dining' => 'bg-red-600 border-l-4 border-red-400',
                                 ];
-                                $statusColor = $statusColors[$booking->status] ?? 'bg-gray-500';
+                                $categoryColor = $categoryColors[$booking->room->category ?? ''] ?? 'bg-gray-500 border-l-4 border-gray-300';
+                                
+                                // Status indicators (shown with opacity or strike-through)
+                                $opacity = $booking->status === 'cancelled' ? 'opacity-50 line-through' : '';
+                                $opacity .= $booking->status === 'completed' || $booking->status === 'checked_out' ? ' opacity-75' : '';
                             @endphp
-                            <div class="text-xs {{ $statusColor }} text-white p-1 rounded cursor-pointer hover:opacity-80"
+                            <div class="text-xs {{ $categoryColor }} text-white p-1 rounded cursor-pointer hover:opacity-90 transition-opacity {{ $opacity }}"
                                  onclick="showBookingDetails({{ $booking->id }})"
-                                 title="{{ $booking->room->name }} - {{ $booking->user->name }}">
-                                <div class="truncate">{{ $booking->room->name }}</div>
-                                <div class="truncate">{{ $booking->user->name }}</div>
+                                 title="{{ $booking->room->name }} - {{ $booking->user->name }} - {{ ucfirst(str_replace('_', ' ', $booking->status)) }}">
+                                <div class="truncate font-medium">{{ $booking->room->name }}</div>
+                                <div class="truncate text-xs opacity-90">{{ $booking->user->name }}</div>
                             </div>
                         @endforeach
 

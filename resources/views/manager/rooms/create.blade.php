@@ -5,10 +5,10 @@
     <div class="max-w-3xl mx-auto">
         <!-- Header -->
         <div class="flex justify-between items-center mb-6">
-            <h2 class="text-3xl font-bold text-white">Add New Room</h2>
+            <h2 class="text-3xl font-bold text-white">Add New Facility</h2>
             <a href="{{ route('manager.rooms.index') }}" 
                class="text-gray-300 hover:text-white">
-                Back to Rooms
+                Back to Facilities
             </a>
         </div>
 
@@ -29,7 +29,7 @@
 
             <!-- Name -->
             <div class="mb-6">
-                <label for="name" class="block text-gray-300 mb-2">Room Name</label>
+                <label for="name" class="block text-gray-300 mb-2">Facility Name</label>
                 <input type="text" 
                        name="name" 
                        id="name" 
@@ -38,72 +38,88 @@
                        required>
             </div>
 
-            <!-- Type -->
-            <div class="mb-6">
-                <label for="type" class="block text-gray-300 mb-2">Room Type</label>
-                <select name="type" 
-                        id="type" 
-                        class="w-full bg-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
-                        required>
-                    <option value="">Select Type</option>
-                    <option value="Standard">Standard</option>
-                    <option value="Deluxe">Deluxe</option>
-                    <option value="Suite">Suite</option>
-                    <option value="Family">Family</option>
-                </select>
-            </div>
+            <div x-data="{ selectedCategory: '{{ old('category', 'Rooms') }}' }">
+                <!-- Category (Main Type) -->
+                <div class="mb-6">
+                    <label for="category" class="block text-gray-300 mb-2">Type</label>
+                    <select name="category" 
+                            id="category" 
+                            x-model="selectedCategory"
+                            class="w-full bg-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+                            required>
+                        <option value="">Select Type</option>
+                        <option value="Rooms">Rooms</option>
+                        <option value="Cottages">Cottages</option>
+                        <option value="Event and Dining">Event and Dining</option>
+                    </select>
+                </div>
 
-            <!-- Description -->
-            <div class="mb-6">
-                <label for="description" class="block text-gray-300 mb-2">Description</label>
-                <textarea name="description" 
-                          id="description" 
-                          rows="4"
-                          class="w-full bg-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
-                          required>{{ old('description') }}</textarea>
-            </div>
+                <!-- Specific Type -->
+                <div class="mb-6">
+                    <label for="type" class="block text-gray-300 mb-2">Specific Type/Name</label>
+                    <input type="text" 
+                           name="type" 
+                           id="type" 
+                           value="{{ old('type') }}"
+                           placeholder="e.g., Umbrella Cottage, Executive Room, Function Hall"
+                           class="w-full bg-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+                           required>
+                    <p class="text-gray-400 text-sm mt-1">Examples: Umbrella Cottage, Bahay Kubo, Standard Room, Beer Garden, Dining Hall</p>
+                </div>
 
-            <!-- Price -->
-            <div class="mb-6">
-                <label for="price" class="block text-gray-300 mb-2">Price per Night (₱)</label>
-                <input type="number" 
-                       name="price" 
-                       id="price" 
-                       value="{{ old('price') }}"
-                       min="0"
-                       step="0.01"
-                       class="w-full bg-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
-                       required>
-            </div>
+                <!-- Description -->
+                <div class="mb-6">
+                    <label for="description" class="block text-gray-300 mb-2">Description</label>
+                    <textarea name="description" 
+                              id="description" 
+                              rows="4"
+                              class="w-full bg-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+                              required>{{ old('description') }}</textarea>
+                </div>
 
-            <!-- Capacity & Beds -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                <div>
-                    <label for="capacity" class="block text-gray-300 mb-2">Capacity (Guests)</label>
+                <!-- Price -->
+                <div class="mb-6">
+                    <label for="price" class="block text-gray-300 mb-2">Price per Night (₱)</label>
                     <input type="number" 
-                           name="capacity" 
-                           id="capacity" 
-                           value="{{ old('capacity', 2) }}"
-                           min="1"
+                           name="price" 
+                           id="price" 
+                           value="{{ old('price') }}"
+                           min="0"
+                           step="0.01"
                            class="w-full bg-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
                            required>
                 </div>
-                <div>
-                    <label for="beds" class="block text-gray-300 mb-2">Number of Beds</label>
-                    <input type="number" 
-                           name="beds" 
-                           id="beds" 
-                           value="{{ old('beds', 1) }}"
-                           min="1"
-                           class="w-full bg-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
-                           required>
-                </div>
-            </div>
 
-            <!-- Amenities -->
-            <div class="mb-6">
+                <!-- Capacity & Beds -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div>
+                        <label for="capacity" class="block text-gray-300 mb-2">Capacity (Guests)</label>
+                        <input type="number" 
+                               name="capacity" 
+                               id="capacity" 
+                               value="{{ old('capacity', 2) }}"
+                               min="1"
+                               class="w-full bg-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+                               required>
+                    </div>
+                    <div>
+                        <label for="beds" class="block text-gray-300 mb-2">Number of Beds</label>
+                        <input type="number" 
+                               name="beds" 
+                               id="beds" 
+                               value="{{ old('beds', 1) }}"
+                               min="1"
+                               class="w-full bg-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+                               required>
+                    </div>
+                </div>
+
+                <!-- Amenities (Dynamic based on Category) -->
+                <div class="mb-6">
                 <label class="block text-gray-300 mb-2">Amenities</label>
-                <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                
+                <!-- Rooms Amenities -->
+                <div x-show="selectedCategory === 'Rooms'" class="grid grid-cols-2 md:grid-cols-3 gap-4">
                     @foreach(['WiFi', 'TV', 'Air Conditioning', 'Mini Bar', 'Refrigerator', 'Safe', 'Balcony', 'Ocean View', 'Room Service'] as $amenity)
                         <div>
                             <label class="inline-flex items-center text-gray-300">
@@ -117,23 +133,56 @@
                         </div>
                     @endforeach
                 </div>
+
+                <!-- Cottages Amenities -->
+                <div x-show="selectedCategory === 'Cottages'" class="grid grid-cols-2 md:grid-cols-3 gap-4" style="display: none;">
+                    @foreach(['Traditional Filipino cottage', '20 pax capacity', 'Bamboo construction', 'Thatched roof', 'Natural ventilation', 'Tables and benches', 'Near beach access', 'Shaded area', 'Power outlet'] as $amenity)
+                        <div>
+                            <label class="inline-flex items-center text-gray-300">
+                                <input type="checkbox" 
+                                       name="amenities[]" 
+                                       value="{{ $amenity }}"
+                                       class="form-checkbox text-green-500 rounded"
+                                       {{ in_array($amenity, old('amenities', [])) ? 'checked' : '' }}>
+                                <span class="ml-2">{{ $amenity }}</span>
+                            </label>
+                        </div>
+                    @endforeach
+                </div>
+
+                <!-- Event and Dining Amenities -->
+                <div x-show="selectedCategory === 'Event and Dining'" class="grid grid-cols-2 md:grid-cols-3 gap-4" style="display: none;">
+                    @foreach(['Air Conditioning', 'Sound System', 'Stage/Platform', 'Dining Tables', 'Chairs', 'Kitchen Access', 'Parking Space', 'Restrooms', 'WiFi', 'LED Lighting', 'Audio Visual Equipment', 'Catering Service'] as $amenity)
+                        <div>
+                            <label class="inline-flex items-center text-gray-300">
+                                <input type="checkbox" 
+                                       name="amenities[]" 
+                                       value="{{ $amenity }}"
+                                       class="form-checkbox text-green-500 rounded"
+                                       {{ in_array($amenity, old('amenities', [])) ? 'checked' : '' }}>
+                                <span class="ml-2">{{ $amenity }}</span>
+                            </label>
+                        </div>
+                        @endforeach
+                    </div>
+                </div>
+
+                <!-- Availability -->
+                <div class="mb-6">
+                    <label class="inline-flex items-center text-gray-300">
+                        <input type="checkbox" 
+                               name="is_available" 
+                               value="1"
+                               {{ old('is_available', true) ? 'checked' : '' }}
+                               class="form-checkbox text-green-500 rounded">
+                        <span class="ml-2">Facility is Available</span>
+                    </label>
+                </div>
             </div>
 
-            <!-- Availability -->
+            <!-- Facility Images -->
             <div class="mb-6">
-                <label class="inline-flex items-center text-gray-300">
-                    <input type="checkbox" 
-                           name="is_available" 
-                           value="1"
-                           {{ old('is_available', true) ? 'checked' : '' }}
-                           class="form-checkbox text-green-500 rounded">
-                    <span class="ml-2">Room is Available</span>
-                </label>
-            </div>
-
-            <!-- Room Images -->
-            <div class="mb-6">
-                <label class="block text-gray-300 mb-2">Room Images (Max 10)</label>
+                <label class="block text-gray-300 mb-2">Facility Images (Max 10)</label>
                 <div class="mt-2" id="imagePreview" class="grid grid-cols-2 md:grid-cols-4 gap-4"></div>
                 <input type="file" 
                        name="images[]"
@@ -154,10 +203,10 @@
 
             <!-- Submit Button -->
             <div class="flex justify-end">
-                <button type="submit" 
-                        class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors">
-                    Add Room
-                </button>
+              <button type="submit" 
+                      class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors">
+                  Add Facility
+              </button>
             </div>
         </form>
     </div>

@@ -6,7 +6,6 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\GuestController;
 use App\Http\Controllers\RoomController;
 use App\Http\Controllers\BookingController;
-use App\Http\Controllers\CottageBookingController;
 use App\Http\Controllers\Admin\BookingController as AdminBookingController;
 use App\Http\Controllers\ManagerController;
 use App\Http\Controllers\PaymentController;
@@ -86,72 +85,69 @@ Route::get('/', function () {
 });
 
 // Guest Routes
-Route::prefix('guest')->name('guest.')->middleware(['auth', 'user.status', 'role:guest'])->group(function () {
-    Route::get('/dashboard', [GuestController::class, 'dashboard'])->name('dashboard');
+Route::prefix('guest')->name('guest.')->middleware(['auth', 'user.status'])->group(function () {
     
-    // Rooms and Booking Routes
-    Route::get('/rooms', [GuestController::class, 'browseRooms'])->name('rooms.browse');
-    Route::get('/rooms/{room}', [RoomController::class, 'show'])->name('rooms.show');
-    Route::get('/rooms/{room}/book', [BookingController::class, 'showBookingForm'])->name('rooms.book');
-    Route::post('/rooms/{room}/book', [BookingController::class, 'store'])->name('rooms.book.store');
-    
-    // Cottages (Bahay Kubo) and Booking Routes
-    Route::get('/cottages', [CottageBookingController::class, 'index'])->name('cottages.index');
-    Route::get('/cottages/{cottage}', [CottageBookingController::class, 'show'])->name('cottages.show');
-    Route::get('/cottages/{cottage}/book', [CottageBookingController::class, 'showBookingForm'])->name('cottages.book');
-    Route::post('/cottages/{cottage}/book', [CottageBookingController::class, 'store'])->name('cottages.book.store');
-    Route::post('/cottages/{cottage}/check-availability', [CottageBookingController::class, 'checkAvailability'])->name('cottages.check-availability');
-    
-    // Cottage Bookings Management
-    Route::get('/cottage-bookings', [CottageBookingController::class, 'myBookings'])->name('cottage-bookings.index');
-    Route::get('/cottage-bookings/{booking}', [CottageBookingController::class, 'showBooking'])->name('cottage-bookings.show');
-    Route::post('/cottage-bookings/{booking}/cancel', [CottageBookingController::class, 'cancel'])->name('cottage-bookings.cancel');
-    
-    // Bookings Management (Rooms)
-    Route::get('/bookings', [BookingController::class, 'myBookings'])->name('bookings');
-    
-    // Booking History (must come before parameterized routes)
-    Route::get('/bookings/history', [BookingController::class, 'history'])->name('bookings.history');
-    
-    // Parameterized booking routes (must come after specific routes)
-    Route::get('/bookings/{booking}', [BookingController::class, 'show'])->name('bookings.show');
-    Route::post('/bookings/{booking}/cancel', [BookingController::class, 'cancel'])->name('bookings.cancel');
-    
-    // Services and Service Requests
-    Route::prefix('services')->name('services.')->group(function () {
-        // Browse available services
-        Route::get('/', [GuestServiceController::class, 'index'])->name('index');
-        Route::get('/{service}', [GuestServiceController::class, 'show'])->name('show');
-        
-        // Service request creation
-        Route::get('/{service}/request', [GuestServiceController::class, 'create'])->name('request');
-        Route::post('/{service}/request', [GuestServiceController::class, 'store'])->name('request.store');
-        
-        // Service request history
-        Route::get('/requests/history', [GuestServiceController::class, 'history'])->name('requests.history');
+    // Routes accessible by all authenticated users (viewing)
+    Route::middleware('role:guest,admin,manager,staff')->group(function () {
+        // Rooms Browsing
+        Route::get('/rooms', [GuestController::class, 'browseRooms'])->name('rooms.browse');
+        Route::get('/rooms/{room}', [RoomController::class, 'show'])->name('rooms.show');
     });
     
-    // Food Ordering Routes
-    Route::prefix('food-orders')->name('food-orders.')->group(function () {
-        // Menu browsing
-        Route::get('/menu', [FoodOrderController::class, 'menu'])->name('menu');
+    // Guest-only routes (booking and management)
+    Route::middleware('role:guest')->group(function () {
+        Route::get('/dashboard', [GuestController::class, 'dashboard'])->name('dashboard');
         
-        // Cart management
-        Route::get('/cart', [FoodOrderController::class, 'cart'])->name('cart');
-        Route::post('/cart/add', [FoodOrderController::class, 'addToCart'])->name('cart.add');
-        Route::post('/cart/update', [FoodOrderController::class, 'updateCart'])->name('cart.update');
-        Route::get('/cart/count', [FoodOrderController::class, 'cartCount'])->name('cart.count');
+        // Room Booking Routes (Guest only)
+        Route::get('/rooms/{room}/book', [BookingController::class, 'showBookingForm'])->name('rooms.book');
+        Route::post('/rooms/{room}/book', [BookingController::class, 'store'])->name('rooms.book.store');
         
-        // Checkout and order placement
-        Route::get('/checkout', [FoodOrderController::class, 'checkout'])->name('checkout');
-        Route::post('/checkout', [FoodOrderController::class, 'placeOrder'])->name('place-order');
+        // Bookings Management (Rooms)
+        Route::get('/bookings', [BookingController::class, 'myBookings'])->name('bookings');
         
-        // Order management
-        Route::get('/orders', [FoodOrderController::class, 'orders'])->name('orders');
-        Route::get('/orders/{foodOrder}', [FoodOrderController::class, 'show'])->name('show');
-        Route::post('/orders/{foodOrder}/cancel', [FoodOrderController::class, 'cancel'])->name('cancel');
-    });
-});
+        // Booking History (must come before parameterized routes)
+        Route::get('/bookings/history', [BookingController::class, 'history'])->name('bookings.history');
+        
+        // Parameterized booking routes (must come after specific routes)
+        Route::get('/bookings/{booking}', [BookingController::class, 'show'])->name('bookings.show');
+        Route::post('/bookings/{booking}/cancel', [BookingController::class, 'cancel'])->name('bookings.cancel');
+        
+        // Services and Service Requests
+        Route::prefix('services')->name('services.')->group(function () {
+            // Browse available services
+            Route::get('/', [GuestServiceController::class, 'index'])->name('index');
+            Route::get('/{service}', [GuestServiceController::class, 'show'])->name('show');
+            
+            // Service request creation
+            Route::get('/{service}/request', [GuestServiceController::class, 'create'])->name('request');
+            Route::post('/{service}/request', [GuestServiceController::class, 'store'])->name('request.store');
+            
+            // Service request history
+            Route::get('/requests/history', [GuestServiceController::class, 'history'])->name('requests.history');
+        });
+        
+        // Food Ordering Routes
+        Route::prefix('food-orders')->name('food-orders.')->group(function () {
+            // Menu browsing
+            Route::get('/menu', [FoodOrderController::class, 'menu'])->name('menu');
+            
+            // Cart management
+            Route::get('/cart', [FoodOrderController::class, 'cart'])->name('cart');
+            Route::post('/cart/add', [FoodOrderController::class, 'addToCart'])->name('cart.add');
+            Route::post('/cart/update', [FoodOrderController::class, 'updateCart'])->name('cart.update');
+            Route::get('/cart/count', [FoodOrderController::class, 'cartCount'])->name('cart.count');
+            
+            // Checkout and order placement
+            Route::get('/checkout', [FoodOrderController::class, 'checkout'])->name('checkout');
+            Route::post('/checkout', [FoodOrderController::class, 'placeOrder'])->name('place-order');
+            
+            // Order management
+            Route::get('/orders', [FoodOrderController::class, 'orders'])->name('orders');
+            Route::get('/orders/{foodOrder}', [FoodOrderController::class, 'show'])->name('show');
+            Route::post('/orders/{foodOrder}/cancel', [FoodOrderController::class, 'cancel'])->name('cancel');
+        });
+    }); // End of guest-only middleware group
+}); // End of guest routes group
 
 // Payment Routes - Accessible by authenticated users
 Route::middleware(['auth', 'user.status'])->group(function () {
@@ -248,6 +244,18 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'user.status', 'role
     Route::patch('/bookings/{booking}/status', [AdminBookingController::class, 'updateStatus'])->name('bookings.status');
     Route::patch('/bookings/{booking}/payment-status', [AdminBookingController::class, 'updatePaymentStatus'])->name('bookings.payment-status');
     
+    // Reports & Analytics routes - Same as Manager
+    Route::get('/reports', [ManagerReportsController::class, 'index'])->name('reports.index');
+    Route::get('/reports/service-usage', [ManagerReportsController::class, 'serviceUsage'])->name('reports.service-usage');
+    Route::get('/reports/performance-metrics', [ManagerReportsController::class, 'performanceMetrics'])->name('reports.performance-metrics');
+    Route::get('/reports/staff-performance', [ManagerReportsController::class, 'staffPerformance'])->name('reports.staff-performance');
+    Route::get('/reports/export', [ManagerReportsController::class, 'export'])->name('reports.export');
+    
+    // Sales Reports routes - Same as Manager
+    Route::get('/reports/room-sales', [ManagerReportsController::class, 'roomSales'])->name('reports.room-sales');
+    Route::get('/reports/food-sales', [ManagerReportsController::class, 'foodSales'])->name('reports.food-sales');
+    Route::get('/reports/service-sales', [ManagerReportsController::class, 'serviceSales'])->name('reports.service-sales');
+    
     // Calendar view for bookings
     Route::get('/calendar', [AdminBookingController::class, 'calendar'])->name('calendar');
 });
@@ -274,6 +282,9 @@ Route::prefix('staff')->name('staff.')->middleware(['auth', 'user.status', 'role
     Route::get('/dashboard', function() {
         return redirect()->route('admin.dashboard');
     })->name('dashboard');
+    
+    // Calendar view for bookings
+    Route::get('/calendar', [App\Http\Controllers\ManagerController::class, 'calendar'])->name('calendar');
 });
 
 // Manager Routes - Accessible by manager, admin, and staff

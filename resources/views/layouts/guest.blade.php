@@ -37,7 +37,8 @@
                         @endif
                         
                         <div class="relative" x-data="{ open: false }">
-                            <button @click="open = !open" class="flex items-center space-x-2 text-gray-200 hover:text-white transition-colors duration-200">
+                            <button @click="open = !open" 
+                                    class="flex items-center space-x-2 text-gray-200 hover:text-white transition-colors duration-200 font-medium">
                                 <span>{{ Auth::user()->name }}</span>
                                 <!-- Role Indicator Badge -->
                                 <span class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-md
@@ -52,18 +53,29 @@
                                     @endif">
                                     {{ strtoupper(auth()->user()->role) }}
                                 </span>
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="w-5 h-5 transition-transform duration-200" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                                 </svg>
                             </button>
 
-                            <div x-show="open" @click.away="open = false" 
-                                 class="absolute right-0 mt-2 w-56 bg-green-800 rounded-lg shadow-xl py-2 border border-green-700">
-                                <form method="POST" action="{{ route('logout') }}">
+                            <!-- Dropdown Menu -->
+                            <div x-show="open" 
+                                 @click.away="open = false"
+                                 x-transition:enter="transition ease-out duration-100"
+                                 x-transition:enter-start="opacity-0 scale-95"
+                                 x-transition:enter-end="opacity-100 scale-100"
+                                 x-transition:leave="transition ease-in duration-75"
+                                 x-transition:leave-start="opacity-100 scale-100"
+                                 x-transition:leave-end="opacity-0 scale-95"
+                                 style="display: none;"
+                                 class="absolute right-0 mt-3 w-40 rounded-lg shadow-2xl z-50 overflow-hidden">
+                                
+                                <!-- Logout Button -->
+                                <form method="POST" action="{{ route('logout') }}" class="block">
                                     @csrf
-                                    <button type="submit" 
-                                            class="flex items-center w-full text-left px-5 py-3 text-base font-semibold text-white bg-red-600 hover:bg-red-700 transition-all duration-200 rounded-md mx-2 shadow-lg hover:shadow-xl transform hover:scale-105">
-                                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <button type="submit"
+                                            class="flex items-center justify-center w-full px-4 py-3 text-sm font-semibold text-white bg-blue-900 hover:bg-blue-800 active:bg-blue-700 transition-colors duration-200 cursor-pointer">
+                                        <svg class="w-5 h-5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
                                         </svg>
                                         Logout

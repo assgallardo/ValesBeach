@@ -1,8 +1,6 @@
-@extends('layouts.admin')
+<?php $__env->startSection('title', 'Food Order Sales Report'); ?>
 
-@section('title', 'Food Order Sales Report')
-
-@section('content')
+<?php $__env->startSection('content'); ?>
 <div class="min-h-screen bg-gray-900 py-6">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <!-- Header -->
@@ -13,7 +11,7 @@
                     <p class="text-gray-400 mt-2">Food & beverage revenue analytics</p>
                 </div>
                 <div class="flex space-x-3">
-                    <a href="{{ route('manager.reports.index') }}" 
+                    <a href="<?php echo e(route('manager.reports.index')); ?>" 
                        class="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg font-medium hover:bg-gray-700 transition-colors">
                         <i class="fas fa-arrow-left mr-2"></i>
                         Back to Reports
@@ -28,7 +26,7 @@
                 <div class="flex items-center">
                     <i class="fas fa-info-circle text-blue-400 mr-3 text-lg"></i>
                     <span class="text-blue-100">
-                        Showing data from <strong>{{ $startDate->format('M d, Y') }}</strong> to <strong>{{ $endDate->format('M d, Y') }}</strong>
+                        Showing data from <strong><?php echo e($startDate->format('M d, Y')); ?></strong> to <strong><?php echo e($endDate->format('M d, Y')); ?></strong>
                     </span>
                 </div>
             </div>
@@ -40,7 +38,7 @@
                 <div class="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
                     <i class="fas fa-shopping-cart text-2xl text-white"></i>
                 </div>
-                <h2 class="text-3xl font-bold text-green-50 mb-2">{{ number_format($stats['total_orders']) }}</h2>
+                <h2 class="text-3xl font-bold text-green-50 mb-2"><?php echo e(number_format($stats['total_orders'])); ?></h2>
                 <p class="text-gray-400 text-sm uppercase tracking-wider font-medium">Total Orders</p>
             </div>
 
@@ -48,7 +46,7 @@
                 <div class="w-16 h-16 bg-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
                     <i class="fas fa-check-circle text-2xl text-white"></i>
                 </div>
-                <h2 class="text-3xl font-bold text-green-50 mb-2">{{ number_format($stats['completed_orders']) }}</h2>
+                <h2 class="text-3xl font-bold text-green-50 mb-2"><?php echo e(number_format($stats['completed_orders'])); ?></h2>
                 <p class="text-gray-400 text-sm uppercase tracking-wider font-medium">Completed</p>
             </div>
 
@@ -56,7 +54,7 @@
                 <div class="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
                     <i class="fas fa-times-circle text-2xl text-white"></i>
                 </div>
-                <h2 class="text-3xl font-bold text-green-50 mb-2">{{ number_format($stats['cancelled_orders']) }}</h2>
+                <h2 class="text-3xl font-bold text-green-50 mb-2"><?php echo e(number_format($stats['cancelled_orders'])); ?></h2>
                 <p class="text-gray-400 text-sm uppercase tracking-wider font-medium">Cancelled</p>
             </div>
 
@@ -64,7 +62,7 @@
                 <div class="w-16 h-16 bg-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
                     <i class="fas fa-peso-sign text-2xl text-white"></i>
                 </div>
-                <h2 class="text-3xl font-bold text-green-50 mb-2">₱{{ number_format($stats['total_revenue'], 2) }}</h2>
+                <h2 class="text-3xl font-bold text-green-50 mb-2">₱<?php echo e(number_format($stats['total_revenue'], 2)); ?></h2>
                 <p class="text-gray-400 text-sm uppercase tracking-wider font-medium">Total Revenue</p>
             </div>
 
@@ -72,7 +70,7 @@
                 <div class="w-16 h-16 bg-yellow-600 rounded-full flex items-center justify-center mx-auto mb-4">
                     <i class="fas fa-chart-line text-2xl text-white"></i>
                 </div>
-                <h2 class="text-3xl font-bold text-green-50 mb-2">₱{{ number_format($stats['avg_order_value'] ?? 0, 2) }}</h2>
+                <h2 class="text-3xl font-bold text-green-50 mb-2">₱<?php echo e(number_format($stats['avg_order_value'] ?? 0, 2)); ?></h2>
                 <p class="text-gray-400 text-sm uppercase tracking-wider font-medium">Avg Order Value</p>
             </div>
         </div>
@@ -101,18 +99,18 @@
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-700">
-                        @forelse($revenueByCategory as $category)
+                        <?php $__empty_1 = true; $__currentLoopData = $revenueByCategory; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $category): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                         <tr class="hover:bg-gray-700/50">
-                            <td class="px-6 py-4 text-gray-200 font-medium">{{ $category->category }}</td>
-                            <td class="px-6 py-4 text-gray-300">{{ number_format($category->order_count) }}</td>
-                            <td class="px-6 py-4 text-green-400 font-semibold">₱{{ number_format($category->total_revenue, 2) }}</td>
-                            <td class="px-6 py-4 text-gray-300">{{ number_format(($category->total_revenue / max($stats['total_revenue'], 1)) * 100, 1) }}%</td>
+                            <td class="px-6 py-4 text-gray-200 font-medium"><?php echo e($category->category); ?></td>
+                            <td class="px-6 py-4 text-gray-300"><?php echo e(number_format($category->order_count)); ?></td>
+                            <td class="px-6 py-4 text-green-400 font-semibold">₱<?php echo e(number_format($category->total_revenue, 2)); ?></td>
+                            <td class="px-6 py-4 text-gray-300"><?php echo e(number_format(($category->total_revenue / max($stats['total_revenue'], 1)) * 100, 1)); ?>%</td>
                         </tr>
-                        @empty
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                         <tr>
                             <td colspan="4" class="px-6 py-8 text-center text-gray-400">No category data available for this period.</td>
                         </tr>
-                        @endforelse
+                        <?php endif; ?>
                     </tbody>
                 </table>
             </div>
@@ -137,18 +135,18 @@
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-700">
-                        @forelse($revenueByItem->take(20) as $item)
+                        <?php $__empty_1 = true; $__currentLoopData = $revenueByItem->take(20); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $item): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                         <tr class="hover:bg-gray-700/50">
-                            <td class="px-6 py-4 text-gray-200">{{ $item->name }}</td>
-                            <td class="px-6 py-4 text-gray-300">₱{{ number_format($item->price, 2) }}</td>
-                            <td class="px-6 py-4 text-blue-400 font-semibold">{{ number_format($item->total_quantity) }}</td>
-                            <td class="px-6 py-4 text-green-400 font-semibold">₱{{ number_format($item->total_revenue, 2) }}</td>
+                            <td class="px-6 py-4 text-gray-200"><?php echo e($item->name); ?></td>
+                            <td class="px-6 py-4 text-gray-300">₱<?php echo e(number_format($item->price, 2)); ?></td>
+                            <td class="px-6 py-4 text-blue-400 font-semibold"><?php echo e(number_format($item->total_quantity)); ?></td>
+                            <td class="px-6 py-4 text-green-400 font-semibold">₱<?php echo e(number_format($item->total_revenue, 2)); ?></td>
                         </tr>
-                        @empty
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                         <tr>
                             <td colspan="4" class="px-6 py-8 text-center text-gray-400">No menu item data available for this period.</td>
                         </tr>
-                        @endforelse
+                        <?php endif; ?>
                     </tbody>
                 </table>
             </div>
@@ -173,50 +171,51 @@
                     </div>
 
                     <div class="p-6 space-y-3">
-                        @forelse($topMenuItems as $index => $item)
-                            <div class="flex items-center group hover:bg-gray-700/30 rounded-lg p-2 transition-all duration-200 {{ $index === 0 ? 'bg-yellow-500/10' : '' }}">
+                        <?php $__empty_1 = true; $__currentLoopData = $topMenuItems; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $index => $item): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+                            <div class="flex items-center group hover:bg-gray-700/30 rounded-lg p-2 transition-all duration-200 <?php echo e($index === 0 ? 'bg-yellow-500/10' : ''); ?>">
                                 <div class="relative">
-                                    @if($index === 0)
+                                    <?php if($index === 0): ?>
                                         <div class="w-12 h-12 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-full flex items-center justify-center mr-3 ring-4 ring-yellow-400/30 shadow-lg">
                                             <i class="fas fa-crown text-white text-lg"></i>
                                         </div>
-                                    @elseif($index === 1)
+                                    <?php elseif($index === 1): ?>
                                         <div class="w-10 h-10 bg-gradient-to-br from-gray-300 to-gray-500 rounded-full flex items-center justify-center mr-3 ring-4 ring-gray-400/30">
                                             <i class="fas fa-medal text-white"></i>
                                         </div>
-                                    @elseif($index === 2)
+                                    <?php elseif($index === 2): ?>
                                         <div class="w-10 h-10 bg-gradient-to-br from-amber-600 to-amber-800 rounded-full flex items-center justify-center mr-3 ring-4 ring-amber-600/30">
                                             <i class="fas fa-award text-white"></i>
                                         </div>
-                                    @else
+                                    <?php else: ?>
                                         <div class="w-10 h-10 bg-gray-700 rounded-full flex items-center justify-center mr-3 border-2 border-gray-600">
                                             <i class="fas fa-star text-gray-400 text-sm"></i>
                                         </div>
-                                    @endif
+                                    <?php endif; ?>
                                     <div class="absolute -top-1 -right-1 w-5 h-5 bg-green-600 rounded-full flex items-center justify-center text-white text-xs font-bold">
-                                        {{ $index + 1 }}
+                                        <?php echo e($index + 1); ?>
+
                                     </div>
                                 </div>
                                 <div class="flex-1 min-w-0">
-                                    <p class="text-gray-200 font-medium text-sm truncate">{{ $item->name }}</p>
+                                    <p class="text-gray-200 font-medium text-sm truncate"><?php echo e($item->name); ?></p>
                                     <div class="flex items-center justify-between text-xs mt-0.5">
                                         <span class="text-gray-400 flex items-center">
                                             <i class="fas fa-shopping-cart mr-1"></i>
-                                            {{ number_format($item->total_quantity) }} sold
+                                            <?php echo e(number_format($item->total_quantity)); ?> sold
                                         </span>
-                                        <span class="text-green-400 font-semibold">₱{{ number_format($item->total_revenue, 0) }}</span>
+                                        <span class="text-green-400 font-semibold">₱<?php echo e(number_format($item->total_revenue, 0)); ?></span>
                                     </div>
                                 </div>
-                                @if($index === 0)
+                                <?php if($index === 0): ?>
                                     <i class="fas fa-sparkles text-yellow-400 text-lg ml-2"></i>
-                                @endif
+                                <?php endif; ?>
                             </div>
-                        @empty
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                             <div class="text-center py-8 text-gray-500">
                                 <i class="fas fa-utensils text-4xl mb-3"></i>
                                 <p class="text-sm">No menu item data available for this period.</p>
                             </div>
-                        @endforelse
+                        <?php endif; ?>
                     </div>
 
                     <!-- Award Footer -->
@@ -251,27 +250,32 @@
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-700">
-                        @forelse($statusBreakdown as $status)
+                        <?php $__empty_1 = true; $__currentLoopData = $statusBreakdown; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $status): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                         <tr class="hover:bg-gray-700/50">
                             <td class="px-6 py-4">
                                 <span class="px-3 py-1 rounded-full text-xs font-medium
-                                    {{ $status->status === 'completed' ? 'bg-green-600/20 text-green-400' : '' }}
-                                    {{ $status->status === 'pending' ? 'bg-yellow-600/20 text-yellow-400' : '' }}
-                                    {{ $status->status === 'cancelled' ? 'bg-red-600/20 text-red-400' : '' }}
-                                    {{ $status->status === 'preparing' ? 'bg-blue-600/20 text-blue-400' : '' }}
+                                    <?php echo e($status->status === 'completed' ? 'bg-green-600/20 text-green-400' : ''); ?>
+
+                                    <?php echo e($status->status === 'pending' ? 'bg-yellow-600/20 text-yellow-400' : ''); ?>
+
+                                    <?php echo e($status->status === 'cancelled' ? 'bg-red-600/20 text-red-400' : ''); ?>
+
+                                    <?php echo e($status->status === 'preparing' ? 'bg-blue-600/20 text-blue-400' : ''); ?>
+
                                 ">
-                                    {{ ucfirst($status->status) }}
+                                    <?php echo e(ucfirst($status->status)); ?>
+
                                 </span>
                             </td>
-                            <td class="px-6 py-4 text-gray-300">{{ number_format($status->count) }}</td>
-                            <td class="px-6 py-4 text-green-400 font-semibold">₱{{ number_format($status->revenue ?? 0, 2) }}</td>
-                            <td class="px-6 py-4 text-gray-300">{{ number_format(($status->count / max($stats['total_orders'], 1)) * 100, 1) }}%</td>
+                            <td class="px-6 py-4 text-gray-300"><?php echo e(number_format($status->count)); ?></td>
+                            <td class="px-6 py-4 text-green-400 font-semibold">₱<?php echo e(number_format($status->revenue ?? 0, 2)); ?></td>
+                            <td class="px-6 py-4 text-gray-300"><?php echo e(number_format(($status->count / max($stats['total_orders'], 1)) * 100, 1)); ?>%</td>
                         </tr>
-                        @empty
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                         <tr>
                             <td colspan="4" class="px-6 py-8 text-center text-gray-400">No status data available.</td>
                         </tr>
-                        @endforelse
+                        <?php endif; ?>
                     </tbody>
                 </table>
             </div>
@@ -279,8 +283,10 @@
 
     </div>
 </div>
-@endsection
+<?php $__env->stopSection(); ?>
 
-@push('scripts')
+<?php $__env->startPush('scripts'); ?>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-@endpush
+<?php $__env->stopPush(); ?>
+
+<?php echo $__env->make('layouts.admin', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\valesbeachresort\ValesBeach\resources\views/manager/reports/food-sales.blade.php ENDPATH**/ ?>

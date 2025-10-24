@@ -7,8 +7,8 @@
         <div class="mb-8">
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
                 <div class="mb-4 sm:mb-0">
-                    <h1 class="text-3xl font-bold text-green-50">Service Reports Dashboard</h1>
-                    <p class="text-gray-400 mt-2">Service usage and performance analytics</p>
+                    <h1 class="text-3xl font-bold text-green-50">Reports & Analytics Dashboard</h1>
+                    <p class="text-gray-400 mt-2">Booking, Usage, and Performance analytics</p>
                 </div>
                 <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
                     <button type="button" 
@@ -46,6 +46,134 @@
             </div>
         </div>
 
+        <!-- Quick Access to Reports -->
+        <div class="mb-8">
+            <div class="flex items-center mb-4">
+                <div class="w-1 h-8 bg-gradient-to-b from-green-400 to-green-600 rounded-full mr-3"></div>
+                <h2 class="text-2xl font-bold text-white">Quick Access Reports</h2>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+                <!-- Room Sales -->
+                <a href="<?php echo e(route('manager.reports.room-sales', request()->query())); ?>" 
+                   class="group bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg p-5 hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-105">
+                    <div class="flex flex-col items-center text-center">
+                        <div class="w-14 h-14 bg-white/20 rounded-xl flex items-center justify-center mb-3 group-hover:bg-white/30 transition-colors">
+                            <i class="fas fa-door-open text-white text-2xl"></i>
+                        </div>
+                        <h3 class="text-white font-bold text-sm mb-1">Room Sales</h3>
+                        <p class="text-blue-100 text-xs">Booking Revenue</p>
+                    </div>
+                </a>
+
+                <!-- Food Sales -->
+                <a href="<?php echo e(route('manager.reports.food-sales', request()->query())); ?>" 
+                   class="group bg-gradient-to-br from-green-600 to-green-700 rounded-lg p-5 hover:from-green-700 hover:to-green-800 transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-105">
+                    <div class="flex flex-col items-center text-center">
+                        <div class="w-14 h-14 bg-white/20 rounded-xl flex items-center justify-center mb-3 group-hover:bg-white/30 transition-colors">
+                            <i class="fas fa-utensils text-white text-2xl"></i>
+                        </div>
+                        <h3 class="text-white font-bold text-sm mb-1">Food Sales</h3>
+                        <p class="text-green-100 text-xs">F&B Revenue</p>
+                    </div>
+                </a>
+
+                <!-- Service Usage -->
+                <a href="<?php echo e(route('manager.reports.service-usage', request()->query())); ?>" 
+                   class="group bg-gradient-to-br from-purple-600 to-purple-700 rounded-lg p-5 hover:from-purple-700 hover:to-purple-800 transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-105">
+                    <div class="flex flex-col items-center text-center">
+                        <div class="w-14 h-14 bg-white/20 rounded-xl flex items-center justify-center mb-3 group-hover:bg-white/30 transition-colors">
+                            <i class="fas fa-chart-bar text-white text-2xl"></i>
+                        </div>
+                        <h3 class="text-white font-bold text-sm mb-1">Service Usage</h3>
+                        <p class="text-purple-100 text-xs">Request Trends</p>
+                    </div>
+                </a>
+
+                <!-- Service Revenue -->
+                <a href="<?php echo e(route('manager.reports.service-sales', request()->query())); ?>" 
+                   class="group bg-gradient-to-br from-indigo-600 to-indigo-700 rounded-lg p-5 hover:from-indigo-700 hover:to-indigo-800 transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-105">
+                    <div class="flex flex-col items-center text-center">
+                        <div class="w-14 h-14 bg-white/20 rounded-xl flex items-center justify-center mb-3 group-hover:bg-white/30 transition-colors">
+                            <i class="fas fa-concierge-bell text-white text-2xl"></i>
+                        </div>
+                        <h3 class="text-white font-bold text-sm mb-1">Service Revenue</h3>
+                        <p class="text-indigo-100 text-xs">Service Sales</p>
+                    </div>
+                </a>
+
+                <!-- Staff Performance -->
+                <a href="<?php echo e(route('manager.reports.staff-performance', request()->query())); ?>" 
+                   class="group bg-gradient-to-br from-pink-600 to-pink-700 rounded-lg p-5 hover:from-pink-700 hover:to-pink-800 transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-105">
+                    <div class="flex flex-col items-center text-center">
+                        <div class="w-14 h-14 bg-white/20 rounded-xl flex items-center justify-center mb-3 group-hover:bg-white/30 transition-colors">
+                            <i class="fas fa-users text-white text-2xl"></i>
+                        </div>
+                        <h3 class="text-white font-bold text-sm mb-1">Staff Performance</h3>
+                        <p class="text-pink-100 text-xs">Productivity</p>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        <!-- Overall Performance Metrics -->
+        <div class="mb-8">
+            <div class="flex items-center mb-4">
+                <div class="w-1 h-8 bg-gradient-to-b from-blue-400 to-blue-600 rounded-full mr-3"></div>
+                <h2 class="text-2xl font-bold text-white">Overall Performance Metrics</h2>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="bg-gray-800 rounded-lg border border-gray-700 p-5">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="w-12 h-12 bg-blue-600/20 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-clipboard-list text-blue-400 text-xl"></i>
+                        </div>
+                    </div>
+                    <h2 class="text-2xl font-bold text-white mb-1"><?php echo e(number_format($stats['total_requests'])); ?></h2>
+                    <p class="text-gray-400 text-xs uppercase tracking-wider">Total Requests</p>
+                </div>
+
+                <div class="bg-gray-800 rounded-lg border border-gray-700 p-5">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="w-12 h-12 bg-green-600/20 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-check-circle text-green-400 text-xl"></i>
+                        </div>
+                        <?php if($stats['total_requests'] > 0): ?>
+                            <span class="px-2 py-1 bg-green-600/20 text-green-400 text-xs font-bold rounded">
+                                <?php echo e(round(($stats['completed_requests'] / $stats['total_requests']) * 100, 1)); ?>%
+                            </span>
+                        <?php endif; ?>
+                    </div>
+                    <h2 class="text-2xl font-bold text-white mb-1"><?php echo e(number_format($stats['completed_requests'])); ?></h2>
+                    <p class="text-gray-400 text-xs uppercase tracking-wider">Completed</p>
+                </div>
+
+                <div class="bg-gray-800 rounded-lg border border-gray-700 p-5">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="w-12 h-12 bg-yellow-600/20 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-clock text-yellow-400 text-xl"></i>
+                        </div>
+                        <?php if($stats['total_requests'] > 0): ?>
+                            <span class="px-2 py-1 bg-yellow-600/20 text-yellow-400 text-xs font-bold rounded">
+                                <?php echo e(round(($stats['pending_requests'] / $stats['total_requests']) * 100, 1)); ?>%
+                            </span>
+                        <?php endif; ?>
+                    </div>
+                    <h2 class="text-2xl font-bold text-white mb-1"><?php echo e(number_format($stats['pending_requests'])); ?></h2>
+                    <p class="text-gray-400 text-xs uppercase tracking-wider">Pending</p>
+                        </div>
+
+                <div class="bg-gray-800 rounded-lg border border-gray-700 p-5">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="w-12 h-12 bg-purple-600/20 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-tachometer-alt text-purple-400 text-xl"></i>
+                        </div>
+                    </div>
+                    <h2 class="text-2xl font-bold text-white mb-1"><?php echo e(round($stats['avg_response_time'], 1)); ?>h</h2>
+                    <p class="text-gray-400 text-xs uppercase tracking-wider">Avg Response Time</p>
+                </div>
+            </div>
+        </div>
+
         <!-- Date Range Display -->
         <div class="mb-8">
             <div class="bg-blue-900/30 border border-blue-600/30 rounded-lg p-4">
@@ -58,118 +186,297 @@
             </div>
         </div>
 
-        <!-- Overview Statistics -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <div class="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
-                <div class="p-6 text-center">
-                    <div class="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <i class="fas fa-clipboard-list text-2xl text-white"></i>
-                    </div>
-                    <h2 class="text-3xl font-bold text-green-50 mb-2"><?php echo e(number_format($stats['total_requests'])); ?></h2>
-                    <p class="text-gray-400 text-sm uppercase tracking-wider font-medium">Total Requests</p>
-                </div>
+        <!-- 1. BOOKING & ROOM SALES REPORTS -->
+        <div class="mb-8">
+            <div class="flex items-center mb-4">
+                <div class="w-1 h-8 bg-gradient-to-b from-blue-400 to-blue-600 rounded-full mr-3"></div>
+                <h2 class="text-2xl font-bold text-white">Booking & Room Sales Reports</h2>
             </div>
-
+            
             <div class="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
-                <div class="p-6 text-center">
-                    <div class="w-16 h-16 bg-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <i class="fas fa-check-circle text-2xl text-white"></i>
+            <div class="bg-gradient-to-r from-blue-900/30 to-blue-800/20 px-6 py-4 border-b border-gray-700 flex items-center justify-between">
+                <div class="flex items-center">
+                    <div class="w-10 h-10 bg-blue-600/30 rounded-lg flex items-center justify-center mr-3">
+                        <i class="fas fa-door-open text-blue-400 text-lg"></i>
                     </div>
-                    <h2 class="text-3xl font-bold text-green-50 mb-2"><?php echo e(number_format($stats['completed_requests'])); ?></h2>
-                    <p class="text-gray-400 text-sm uppercase tracking-wider font-medium mb-2">Completed</p>
-                    <?php if($stats['total_requests'] > 0): ?>
-                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-600/20 text-green-400">
-                            <?php echo e(round(($stats['completed_requests'] / $stats['total_requests']) * 100, 1)); ?>%
-                        </span>
-                    <?php endif; ?>
-                </div>
-            </div>
-
-            <div class="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
-                <div class="p-6 text-center">
-                    <div class="w-16 h-16 bg-yellow-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <i class="fas fa-clock text-2xl text-white"></i>
-                    </div>
-                    <h2 class="text-3xl font-bold text-green-50 mb-2"><?php echo e(number_format($stats['pending_requests'])); ?></h2>
-                    <p class="text-gray-400 text-sm uppercase tracking-wider font-medium mb-2">Pending</p>
-                    <?php if($stats['total_requests'] > 0): ?>
-                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-600/20 text-yellow-400">
-                            <?php echo e(round(($stats['pending_requests'] / $stats['total_requests']) * 100, 1)); ?>%
-                        </span>
-                    <?php endif; ?>
-                </div>
-            </div>
-
-            <div class="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
-                <div class="p-6 text-center">
-                    <div class="w-16 h-16 bg-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <i class="fas fa-tachometer-alt text-2xl text-white"></i>
-                    </div>
-                    <h2 class="text-3xl font-bold text-green-50 mb-2"><?php echo e(round($stats['avg_response_time'], 1)); ?>h</h2>
-                    <p class="text-gray-400 text-sm uppercase tracking-wider font-medium">Avg Response Time</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Charts Row -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            <!-- Service Usage Chart -->
-            <div class="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
-                <div class="bg-gray-750 px-6 py-4 border-b border-gray-700">
-                    <h3 class="text-lg font-semibold text-green-100 flex items-center">
-                        <i class="fas fa-chart-bar text-blue-400 mr-3"></i>
-                        Top Services by Usage
-                    </h3>
-                </div>
-                <div class="p-6">
-                    <div class="relative" style="height: 300px;">
-                        <canvas id="serviceUsageChart"></canvas>
+                    <div>
+                        <h3 class="text-lg font-semibold text-white">Room Booking Sales Overview</h3>
+                        <p class="text-gray-400 text-xs">Revenue analysis by facility categories</p>
                     </div>
                 </div>
+                <a href="<?php echo e(route($routePrefix . '.reports.room-sales', request()->query())); ?>" 
+                   class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition-colors shadow-lg">
+                    <i class="fas fa-chart-bar mr-2"></i>
+                    View Full Report
+                </a>
             </div>
 
-            <!-- Status Distribution Chart -->
-            <div class="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
-                <div class="bg-gray-750 px-6 py-4 border-b border-gray-700">
-                    <h3 class="text-lg font-semibold text-green-100 flex items-center">
-                        <i class="fas fa-chart-pie text-green-400 mr-3"></i>
-                        Request Status Distribution
-                    </h3>
-                </div>
-                <div class="p-6">
-                    <div class="relative" style="height: 300px;">
-                        <canvas id="statusChart"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Daily Trends -->
-        <div class="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden mb-8">
-            <div class="bg-gray-750 px-6 py-4 border-b border-gray-700">
-                <h3 class="text-lg font-semibold text-green-100 flex items-center">
-                    <i class="fas fa-chart-line text-purple-400 mr-3"></i>
-                    Daily Request Trends
-                </h3>
-            </div>
             <div class="p-6">
-                <div class="relative" style="height: 250px;">
-                    <canvas id="dailyTrendsChart"></canvas>
+                <!-- Quick Stats Grid -->
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                    <div class="bg-gray-900 rounded-lg p-4 border border-gray-700">
+                        <div class="flex items-center justify-between mb-2">
+                            <i class="fas fa-clipboard-list text-blue-400 text-lg"></i>
+                        </div>
+                        <h4 class="text-2xl font-bold text-green-50"><?php echo e(number_format($roomSalesOverview['total_bookings'])); ?></h4>
+                        <p class="text-gray-400 text-xs uppercase tracking-wider mt-1">Total Bookings</p>
+                    </div>
+                    
+                    <div class="bg-gray-900 rounded-lg p-4 border border-gray-700">
+                        <div class="flex items-center justify-between mb-2">
+                            <i class="fas fa-check-circle text-green-400 text-lg"></i>
+                        </div>
+                        <h4 class="text-2xl font-bold text-green-50"><?php echo e(number_format($roomSalesOverview['completed_bookings'])); ?></h4>
+                        <p class="text-gray-400 text-xs uppercase tracking-wider mt-1">Completed</p>
+                    </div>
+                    
+                    <div class="bg-gray-900 rounded-lg p-4 border border-gray-700">
+                        <div class="flex items-center justify-between mb-2">
+                            <i class="fas fa-peso-sign text-purple-400 text-lg"></i>
+                        </div>
+                        <h4 class="text-2xl font-bold text-green-50">₱<?php echo e(number_format($roomSalesOverview['total_revenue'], 0)); ?></h4>
+                        <p class="text-gray-400 text-xs uppercase tracking-wider mt-1">Total Revenue</p>
+                    </div>
+                    
+                    <div class="bg-gray-900 rounded-lg p-4 border border-gray-700">
+                        <div class="flex items-center justify-between mb-2">
+                            <i class="fas fa-chart-line text-yellow-400 text-lg"></i>
+                        </div>
+                        <h4 class="text-2xl font-bold text-green-50">₱<?php echo e(number_format($roomSalesOverview['avg_booking_value'] ?? 0, 0)); ?></h4>
+                        <p class="text-gray-400 text-xs uppercase tracking-wider mt-1">Avg. Value</p>
+                    </div>
+                </div>
+
+                <!-- Revenue by Categories (Grid Layout) -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                    <!-- Rooms -->
+                    <div class="bg-gray-900 rounded-lg border border-gray-700 overflow-hidden">
+                        <div class="px-4 py-3 bg-gradient-to-r from-blue-900/50 to-blue-800/30 border-b border-blue-600/30">
+                            <div class="flex items-center">
+                                <div class="w-8 h-8 bg-blue-600/30 rounded-lg flex items-center justify-center mr-2">
+                                    <i class="fas fa-door-open text-blue-400 text-sm"></i>
+                                </div>
+                                <h4 class="text-sm font-semibold text-blue-100 uppercase tracking-wider">Rooms</h4>
+                            </div>
+                        </div>
+                        <div class="p-4">
+                            <?php
+                                $roomsCategory = $revenueByCategory->firstWhere('category', 'Rooms');
+                            ?>
+                            <?php if($roomsCategory): ?>
+                                <div class="text-center mb-3">
+                                    <div class="text-2xl font-bold text-green-400 mb-1">₱<?php echo e(number_format($roomsCategory->total_revenue, 0)); ?></div>
+                                    <div class="text-xs text-gray-400"><?php echo e(number_format($roomsCategory->booking_count)); ?> booking<?php echo e($roomsCategory->booking_count != 1 ? 's' : ''); ?></div>
+                                </div>
+                                <div class="bg-gray-700 rounded-full h-2">
+                                    <div class="bg-blue-500 h-2 rounded-full" 
+                                         style="width: <?php echo e($roomSalesOverview['total_revenue'] > 0 ? ($roomsCategory->total_revenue / $roomSalesOverview['total_revenue']) * 100 : 0); ?>%;"></div>
+                                </div>
+                                <div class="text-center text-xs text-gray-400 mt-2">
+                                    <?php echo e($roomSalesOverview['total_revenue'] > 0 ? number_format(($roomsCategory->total_revenue / $roomSalesOverview['total_revenue']) * 100, 1) : 0); ?>% of total
+                                </div>
+                            <?php else: ?>
+                                <div class="text-center py-6 text-gray-500">
+                                    <i class="fas fa-door-open text-2xl mb-2"></i>
+                                    <p class="text-xs">No data</p>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+
+                    <!-- Cottages -->
+                    <div class="bg-gray-900 rounded-lg border border-gray-700 overflow-hidden">
+                        <div class="px-4 py-3 bg-gradient-to-r from-amber-900/50 to-amber-800/30 border-b border-amber-600/30">
+                            <div class="flex items-center">
+                                <div class="w-8 h-8 bg-amber-600/30 rounded-lg flex items-center justify-center mr-2">
+                                    <i class="fas fa-home text-amber-400 text-sm"></i>
+                                </div>
+                                <h4 class="text-sm font-semibold text-amber-100 uppercase tracking-wider">Cottages</h4>
+                            </div>
+                        </div>
+                        <div class="p-4">
+                            <?php
+                                $cottagesCategory = $revenueByCategory->firstWhere('category', 'Cottages');
+                            ?>
+                            <?php if($cottagesCategory): ?>
+                                <div class="text-center mb-3">
+                                    <div class="text-2xl font-bold text-green-400 mb-1">₱<?php echo e(number_format($cottagesCategory->total_revenue, 0)); ?></div>
+                                    <div class="text-xs text-gray-400"><?php echo e(number_format($cottagesCategory->booking_count)); ?> booking<?php echo e($cottagesCategory->booking_count != 1 ? 's' : ''); ?></div>
+                                </div>
+                                <div class="bg-gray-700 rounded-full h-2">
+                                    <div class="bg-amber-500 h-2 rounded-full" 
+                                         style="width: <?php echo e($roomSalesOverview['total_revenue'] > 0 ? ($cottagesCategory->total_revenue / $roomSalesOverview['total_revenue']) * 100 : 0); ?>%;"></div>
+                                </div>
+                                <div class="text-center text-xs text-gray-400 mt-2">
+                                    <?php echo e($roomSalesOverview['total_revenue'] > 0 ? number_format(($cottagesCategory->total_revenue / $roomSalesOverview['total_revenue']) * 100, 1) : 0); ?>% of total
+                                </div>
+                            <?php else: ?>
+                                <div class="text-center py-6 text-gray-500">
+                                    <i class="fas fa-home text-2xl mb-2"></i>
+                                    <p class="text-xs">No data</p>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+
+                    <!-- Event & Dining -->
+                    <div class="bg-gray-900 rounded-lg border border-gray-700 overflow-hidden">
+                        <div class="px-4 py-3 bg-gradient-to-r from-purple-900/50 to-purple-800/30 border-b border-purple-600/30">
+                            <div class="flex items-center">
+                                <div class="w-8 h-8 bg-purple-600/30 rounded-lg flex items-center justify-center mr-2">
+                                    <i class="fas fa-utensils text-purple-400 text-sm"></i>
+                                </div>
+                                <h4 class="text-sm font-semibold text-purple-100 uppercase tracking-wider">Event & Dining</h4>
+                            </div>
+                        </div>
+                        <div class="p-4">
+                            <?php
+                                $eventDiningCategory = $revenueByCategory->firstWhere('category', 'Event and Dining');
+                            ?>
+                            <?php if($eventDiningCategory): ?>
+                                <div class="text-center mb-3">
+                                    <div class="text-2xl font-bold text-green-400 mb-1">₱<?php echo e(number_format($eventDiningCategory->total_revenue, 0)); ?></div>
+                                    <div class="text-xs text-gray-400"><?php echo e(number_format($eventDiningCategory->booking_count)); ?> booking<?php echo e($eventDiningCategory->booking_count != 1 ? 's' : ''); ?></div>
+                                </div>
+                                <div class="bg-gray-700 rounded-full h-2">
+                                    <div class="bg-purple-500 h-2 rounded-full" 
+                                         style="width: <?php echo e($roomSalesOverview['total_revenue'] > 0 ? ($eventDiningCategory->total_revenue / $roomSalesOverview['total_revenue']) * 100 : 0); ?>%;"></div>
+                                </div>
+                                <div class="text-center text-xs text-gray-400 mt-2">
+                                    <?php echo e($roomSalesOverview['total_revenue'] > 0 ? number_format(($eventDiningCategory->total_revenue / $roomSalesOverview['total_revenue']) * 100, 1) : 0); ?>% of total
+                                </div>
+                            <?php else: ?>
+                                <div class="text-center py-6 text-gray-500">
+                                    <i class="fas fa-utensils text-2xl mb-2"></i>
+                                    <p class="text-xs">No data</p>
+                                </div>
+                    <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        </div>
+
+        <!-- 2. FOOD & BEVERAGE REPORTS -->
+        <div class="mb-8">
+            <div class="flex items-center mb-4">
+                <div class="w-1 h-8 bg-gradient-to-b from-green-400 to-green-600 rounded-full mr-3"></div>
+                <h2 class="text-2xl font-bold text-white">Food & Beverage Reports</h2>
+            </div>
+
+            <div class="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
+                <div class="bg-gradient-to-r from-green-900/30 to-green-800/20 px-6 py-4 border-b border-gray-700 flex items-center justify-between">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 bg-green-600/30 rounded-lg flex items-center justify-center mr-3">
+                            <i class="fas fa-utensils text-green-400 text-lg"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-semibold text-white">Food Sales Overview</h3>
+                            <p class="text-gray-400 text-xs">Menu items and food order analytics</p>
+                        </div>
+                    </div>
+                    <a href="<?php echo e(route('manager.reports.food-sales', request()->query())); ?>" 
+                       class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 transition-colors shadow-lg">
+                        <i class="fas fa-chart-pie mr-2"></i>
+                        View Full Report
+                    </a>
+                </div>
+                <div class="p-6">
+                    <div class="text-center py-8">
+                        <div class="w-20 h-20 bg-green-600/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-utensils text-green-400 text-3xl"></i>
+                        </div>
+                        <p class="text-gray-400 text-sm mb-3">View detailed food & beverage sales analytics</p>
+                        <a href="<?php echo e(route('manager.reports.food-sales', request()->query())); ?>" 
+                           class="inline-flex items-center text-green-400 hover:text-green-300 text-sm font-medium">
+                            Access Full Report <i class="fas fa-arrow-right ml-2"></i>
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- Staff Performance Overview -->
-        <div class="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden mb-8">
-            <div class="bg-gray-750 px-6 py-4 border-b border-gray-700 flex items-center justify-between">
-                <h3 class="text-lg font-semibold text-green-100 flex items-center">
-                    <i class="fas fa-users text-indigo-400 mr-3"></i>
-                    Staff Performance Overview
-                </h3>
+        <!-- 3. SERVICE USAGE & REVENUE REPORTS -->
+        <div class="mb-8">
+            <div class="flex items-center mb-4">
+                <div class="w-1 h-8 bg-gradient-to-b from-purple-400 to-purple-600 rounded-full mr-3"></div>
+                <h2 class="text-2xl font-bold text-white">Service Usage & Revenue Reports</h2>
+            </div>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Service Usage -->
+                <div class="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
+                    <div class="bg-gradient-to-r from-purple-900/30 to-purple-800/20 px-6 py-4 border-b border-gray-700 flex items-center justify-between">
+                        <div class="flex items-center">
+                            <div class="w-10 h-10 bg-purple-600/30 rounded-lg flex items-center justify-center mr-3">
+                                <i class="fas fa-chart-bar text-purple-400 text-lg"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-base font-semibold text-white">Service Usage</h3>
+                                <p class="text-gray-400 text-xs">Request trends & categories</p>
+                            </div>
+                        </div>
+                        <a href="<?php echo e(route('manager.reports.service-usage', request()->query())); ?>" 
+                           class="inline-flex items-center px-3 py-1.5 bg-purple-600 text-white rounded-lg text-xs hover:bg-purple-700 transition-colors">
+                            View
+                        </a>
+                    </div>
+                    <div class="p-6">
+                        <div class="relative" style="height: 200px;">
+                            <canvas id="serviceUsageChartSmall"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Service Revenue -->
+            <div class="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
+                    <div class="bg-gradient-to-r from-indigo-900/30 to-indigo-800/20 px-6 py-4 border-b border-gray-700 flex items-center justify-between">
+                        <div class="flex items-center">
+                            <div class="w-10 h-10 bg-indigo-600/30 rounded-lg flex items-center justify-center mr-3">
+                                <i class="fas fa-concierge-bell text-indigo-400 text-lg"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-base font-semibold text-white">Service Revenue</h3>
+                                <p class="text-gray-400 text-xs">Service sales & payments</p>
+                            </div>
+                        </div>
+                        <a href="<?php echo e(route('manager.reports.service-sales', request()->query())); ?>" 
+                           class="inline-flex items-center px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs hover:bg-indigo-700 transition-colors">
+                            View
+                        </a>
+                    </div>
+                    <div class="p-6">
+                        <div class="relative" style="height: 200px;">
+                            <canvas id="statusChartSmall"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. STAFF PERFORMANCE REPORTS -->
+        <div class="mb-8">
+            <div class="flex items-center mb-4">
+                <div class="w-1 h-8 bg-gradient-to-b from-indigo-400 to-indigo-600 rounded-full mr-3"></div>
+                <h2 class="text-2xl font-bold text-white">Staff Performance Reports</h2>
+        </div>
+            
+        <div class="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
+            <div class="bg-gradient-to-r from-indigo-900/30 to-indigo-800/20 px-6 py-4 border-b border-gray-700 flex items-center justify-between">
+                <div class="flex items-center">
+                    <div class="w-10 h-10 bg-indigo-600/30 rounded-lg flex items-center justify-center mr-3">
+                        <i class="fas fa-users text-indigo-400 text-lg"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold text-white">Staff Performance Overview</h3>
+                        <p class="text-gray-400 text-xs">Task assignments and productivity metrics</p>
+                    </div>
+                </div>
                 <a href="<?php echo e(route('manager.reports.staff-performance', request()->query())); ?>" 
-                   class="inline-flex items-center px-3 py-1 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition-colors">
-                    View Details 
-                    <i class="fas fa-arrow-right ml-2"></i>
+                   class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700 transition-colors shadow-lg">
+                    <i class="fas fa-users-cog mr-2"></i>
+                    View Full Report
                 </a>
             </div>
             <div class="overflow-hidden">
@@ -233,55 +540,36 @@
                 </div>
             </div>
         </div>
+        </div>
 
-        <!-- Quick Actions -->
-        <div class="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
-            <div class="bg-gray-750 px-6 py-4 border-b border-gray-700">
-                <h3 class="text-lg font-semibold text-green-100 flex items-center">
-                    <i class="fas fa-file-chart-line text-green-400 mr-3"></i>
-                    Detailed Reports
-                </h3>
+        <!-- 5. PERFORMANCE ANALYTICS -->
+        <div class="mb-8">
+            <div class="flex items-center mb-4">
+                <div class="w-1 h-8 bg-gradient-to-b from-green-400 to-green-600 rounded-full mr-3"></div>
+                <h2 class="text-2xl font-bold text-white">Performance Analytics</h2>
             </div>
-            <div class="p-6">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <a href="<?php echo e(route('manager.reports.service-usage', request()->query())); ?>" 
-                       class="group block bg-gray-750 rounded-lg border border-gray-600 p-6 hover:bg-gray-700 hover:border-gray-500 transition-all duration-200">
-                        <div class="flex items-center">
-                            <div class="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center mr-4 group-hover:bg-blue-500 transition-colors">
-                                <i class="fas fa-chart-bar text-white text-xl"></i>
-                            </div>
-                            <div>
-                                <h4 class="text-green-100 font-semibold mb-1">Service Usage Report</h4>
-                                <p class="text-gray-400 text-sm">Detailed service utilization analysis</p>
-                            </div>
+            
+            <div class="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
+                <div class="bg-gradient-to-r from-green-900/30 to-green-800/20 px-6 py-4 border-b border-gray-700 flex items-center justify-between">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 bg-green-600/30 rounded-lg flex items-center justify-center mr-3">
+                            <i class="fas fa-chart-line text-green-400 text-lg"></i>
                         </div>
-                    </a>
-
+                        <div>
+                            <h3 class="text-lg font-semibold text-white">Daily Request Trends</h3>
+                            <p class="text-gray-400 text-xs">Service request patterns over time</p>
+                        </div>
+                    </div>
                     <a href="<?php echo e(route('manager.reports.performance-metrics', request()->query())); ?>" 
-                       class="group block bg-gray-750 rounded-lg border border-gray-600 p-6 hover:bg-gray-700 hover:border-gray-500 transition-all duration-200">
-                        <div class="flex items-center">
-                            <div class="w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center mr-4 group-hover:bg-green-500 transition-colors">
-                                <i class="fas fa-tachometer-alt text-white text-xl"></i>
-                            </div>
-                            <div>
-                                <h4 class="text-green-100 font-semibold mb-1">Performance Metrics</h4>
-                                <p class="text-gray-400 text-sm">Response times and efficiency metrics</p>
-                            </div>
-                        </div>
+                       class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 transition-colors shadow-lg">
+                        <i class="fas fa-tachometer-alt mr-2"></i>
+                        View Metrics
                     </a>
-
-                    <a href="<?php echo e(route('manager.reports.staff-performance', request()->query())); ?>" 
-                       class="group block bg-gray-750 rounded-lg border border-gray-600 p-6 hover:bg-gray-700 hover:border-gray-500 transition-all duration-200">
-                        <div class="flex items-center">
-                            <div class="w-12 h-12 bg-purple-600 rounded-lg flex items-center justify-center mr-4 group-hover:bg-purple-500 transition-colors">
-                                <i class="fas fa-users text-white text-xl"></i>
-                            </div>
-                            <div>
-                                <h4 class="text-green-100 font-semibold mb-1">Staff Performance</h4>
-                                <p class="text-gray-400 text-sm">Individual staff productivity analysis</p>
-                            </div>
-                        </div>
-                    </a>
+                </div>
+                <div class="p-6">
+                    <div class="relative" style="height: 250px;">
+                        <canvas id="dailyTrendsChart"></canvas>
+                    </div>
                 </div>
             </div>
         </div>
@@ -354,17 +642,17 @@ Chart.defaults.color = '#9ca3af';
 Chart.defaults.borderColor = '#374151';
 Chart.defaults.backgroundColor = 'rgba(55, 65, 81, 0.1)';
 
-// Service Usage Chart
-const serviceUsageCtx = document.getElementById('serviceUsageChart').getContext('2d');
-new Chart(serviceUsageCtx, {
+// Service Usage Chart (Small)
+const serviceUsageCtxSmall = document.getElementById('serviceUsageChartSmall').getContext('2d');
+new Chart(serviceUsageCtxSmall, {
     type: 'bar',
     data: {
-        labels: <?php echo json_encode($serviceUsage->pluck('name')->take(10)); ?>,
+        labels: <?php echo json_encode($serviceUsage->pluck('name')->take(5)); ?>,
         datasets: [{
             label: 'Requests',
-            data: <?php echo json_encode($serviceUsage->pluck('request_count')->take(10)); ?>,
-            backgroundColor: 'rgba(59, 130, 246, 0.8)',
-            borderColor: 'rgba(59, 130, 246, 1)',
+            data: <?php echo json_encode($serviceUsage->pluck('request_count')->take(5)); ?>,
+            backgroundColor: 'rgba(168, 85, 247, 0.8)',
+            borderColor: 'rgba(168, 85, 247, 1)',
             borderWidth: 1,
             borderRadius: 4
         }]
@@ -391,7 +679,8 @@ new Chart(serviceUsageCtx, {
                 beginAtZero: true,
                 ticks: {
                     precision: 0,
-                    color: '#9ca3af'
+                    color: '#9ca3af',
+                    font: { size: 10 }
                 },
                 grid: {
                     color: '#374151',
@@ -400,7 +689,9 @@ new Chart(serviceUsageCtx, {
             },
             x: {
                 ticks: {
-                    color: '#9ca3af'
+                    color: '#9ca3af',
+                    font: { size: 9 },
+                    maxRotation: 45
                 },
                 grid: {
                     display: false
@@ -410,9 +701,9 @@ new Chart(serviceUsageCtx, {
     }
 });
 
-// Status Distribution Chart
-const statusCtx = document.getElementById('statusChart').getContext('2d');
-new Chart(statusCtx, {
+// Status Distribution Chart (Small)
+const statusCtxSmall = document.getElementById('statusChartSmall').getContext('2d');
+new Chart(statusCtxSmall, {
     type: 'doughnut',
     data: {
         labels: <?php echo json_encode($performanceMetrics->pluck('status')); ?>,
@@ -420,14 +711,14 @@ new Chart(statusCtx, {
             data: <?php echo json_encode($performanceMetrics->pluck('count')); ?>,
             backgroundColor: [
                 'rgba(239, 68, 68, 0.8)',
-                'rgba(59, 130, 246, 0.8)',
+                'rgba(99, 102, 241, 0.8)',
                 'rgba(245, 158, 11, 0.8)',
                 'rgba(34, 197, 94, 0.8)',
                 'rgba(168, 85, 247, 0.8)'
             ],
             borderColor: [
                 'rgba(239, 68, 68, 1)',
-                'rgba(59, 130, 246, 1)',
+                'rgba(99, 102, 241, 1)',
                 'rgba(245, 158, 11, 1)',
                 'rgba(34, 197, 94, 1)',
                 'rgba(168, 85, 247, 1)'
@@ -443,10 +734,11 @@ new Chart(statusCtx, {
                 display: true,
                 position: 'bottom',
                 labels: {
-                    padding: 20,
+                    padding: 10,
                     color: '#9ca3af',
                     usePointStyle: true,
-                    pointStyle: 'circle'
+                    pointStyle: 'circle',
+                    font: { size: 10 }
                 }
             },
             tooltip: {
@@ -456,7 +748,7 @@ new Chart(statusCtx, {
                 borderColor: '#374151',
                 borderWidth: 1,
                 cornerRadius: 8,
-                padding: 12,
+                padding: 8,
                 callbacks: {
                     label: function(context) {
                         let label = context.label || '';

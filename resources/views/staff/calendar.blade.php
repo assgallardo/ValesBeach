@@ -1,4 +1,4 @@
-@extends('layouts.manager')
+@extends('layouts.staff')
 
 @section('content')
 <div class="container mx-auto px-4 lg:px-8 py-8">
@@ -12,14 +12,14 @@
             
             <!-- Month Navigation -->
             <div class="flex items-center space-x-4">
-                <a href="{{ route('manager.calendar', ['year' => $startDate->copy()->subMonth()->year, 'month' => $startDate->copy()->subMonth()->month]) }}" 
+                <a href="{{ route('staff.calendar', ['year' => $startDate->copy()->subMonth()->year, 'month' => $startDate->copy()->subMonth()->month]) }}" 
                    class="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors">
                     ← Previous
                 </a>
                 <div class="text-white font-semibold text-lg">
                     {{ $startDate->format('F Y') }}
                 </div>
-                <a href="{{ route('manager.calendar', ['year' => $startDate->copy()->addMonth()->year, 'month' => $startDate->copy()->addMonth()->month]) }}" 
+                <a href="{{ route('staff.calendar', ['year' => $startDate->copy()->addMonth()->year, 'month' => $startDate->copy()->addMonth()->month]) }}" 
                    class="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors">
                     Next →
                 </a>
@@ -268,7 +268,7 @@ function showBookingDetails(bookingId) {
                 <p class="text-sm text-gray-400">${booking.user.email}</p>
             </div>
             <div>
-                <label class="text-sm text-gray-400">Room</label>
+                <label class="text-sm text-gray-400">Facility</label>
                 <p class="text-white font-medium">${booking.room.name}</p>
                 <p class="text-sm text-gray-400">${booking.guests} guests</p>
             </div>
@@ -294,11 +294,6 @@ function showBookingDetails(bookingId) {
                     </span>
                 </div>
             </div>
-            <div class="flex space-x-2 pt-4">
-                <a href="/manager/reservations/${booking.id}" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-500 transition-colors text-center">
-                    View Details
-                </a>
-            </div>
         </div>
     `;
     
@@ -319,3 +314,4 @@ document.getElementById('bookingModal').addEventListener('click', function(e) {
 </script>
 @endpush
 @endsection
+

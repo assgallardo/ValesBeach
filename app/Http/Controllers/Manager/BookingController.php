@@ -13,36 +13,52 @@ class BookingController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Reservation::with(['room']);
+        // Room bookings query
+        $roomQuery = Reservation::with(['room'])
+            ->whereHas('room', function($q) {
+                $q->where('category', 'Rooms');
+            });
+
+        // Cottage bookings query
+        $cottageQuery = Reservation::with(['room'])
+            ->whereHas('room', function($q) {
+                $q->where('category', 'Cottages');
+            });
 
         // Search functionality
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function ($q) use ($search) {
+            $searchFilter = function ($q) use ($search) {
                 $q->where('guest_name', 'like', "%{$search}%")
                   ->orWhere('guest_email', 'like', "%{$search}%");
-            });
+            };
+            $roomQuery->where($searchFilter);
+            $cottageQuery->where($searchFilter);
         }
 
         // Status filter
         if ($request->filled('status')) {
-            $query->where('status', $request->status);
+            $roomQuery->where('status', $request->status);
+            $cottageQuery->where('status', $request->status);
         }
 
         // Date range filter
         if ($request->filled('date_from')) {
-            $query->where('check_in_date', '>=', $request->date_from);
+            $roomQuery->where('check_in_date', '>=', $request->date_from);
+            $cottageQuery->where('check_in_date', '>=', $request->date_from);
         }
 
         if ($request->filled('date_to')) {
-            $query->where('check_out_date', '<=', $request->date_to);
+            $roomQuery->where('check_out_date', '<=', $request->date_to);
+            $cottageQuery->where('check_out_date', '<=', $request->date_to);
         }
 
-        $reservations = $query->orderBy('created_at', 'desc')->paginate(15);
+        $reservations = $roomQuery->orderBy('created_at', 'desc')->paginate(15, ['*'], 'room_page');
+        $cottageBookings = $cottageQuery->orderBy('created_at', 'desc')->paginate(15, ['*'], 'cottage_page');
         
         $statuses = ['pending', 'confirmed', 'checked_in', 'checked_out', 'cancelled', 'completed'];
 
-        return view('manager.bookings.index', compact('reservations', 'statuses'));
+        return view('manager.bookings.index', compact('reservations', 'cottageBookings', 'statuses'));
     }
 
     public function show(Reservation $reservation)

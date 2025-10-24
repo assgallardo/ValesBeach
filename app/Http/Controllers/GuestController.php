@@ -105,23 +105,12 @@ class GuestController extends Controller
             // Start query with images relationship
             $query = Room::with('images');
             
-            // Exclude cottage types (they should use the cottages booking system)
-            $cottageTypes = ['Umbrella Cottage', 'Bahay Kubo'];
-            $query->whereNotIn('type', $cottageTypes);
+            // Get available categories (Rooms, Cottages, Event and Dining)
+            $categories = ['Rooms', 'Cottages', 'Event and Dining'];
 
-            // Get room types from your actual database (excluding cottages)
-            $types = Room::whereNotIn('type', $cottageTypes)
-                        ->distinct()
-                        ->pluck('type')
-                        ->filter()
-                        ->values();
-            if ($types->isEmpty()) {
-                $types = collect(['Standard', 'suite', 'villa', 'standard', 'Suite']);
-            }
-
-            // Apply filters
-            if ($request->filled('type')) {
-                $query->where('type', 'like', '%' . $request->type . '%');
+            // Apply category filter
+            if ($request->filled('category')) {
+                $query->where('category', $request->category);
             }
 
             if ($request->filled('guests')) {
@@ -168,7 +157,7 @@ class GuestController extends Controller
                 'luxury' => ['min' => 20001, 'max' => 999999, 'label' => 'Luxury (₱20,000+)']
             ];
 
-            return view('guest.rooms.browse', compact('rooms', 'types', 'amenities', 'priceRanges'));
+            return view('guest.rooms.browse', compact('rooms', 'categories', 'amenities', 'priceRanges'));
 
         } catch (\Exception $e) {
             \Log::error('Error in browseRooms: ' . $e->getMessage());

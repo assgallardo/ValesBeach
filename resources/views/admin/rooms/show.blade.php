@@ -5,14 +5,14 @@
     <div class="max-w-4xl mx-auto">
         <!-- Header with Back Button -->
         <div class="flex justify-between items-center mb-6">
-            <h2 class="text-3xl font-bold text-white">Room Details</h2>
+            <h2 class="text-3xl font-bold text-white">Facility Details</h2>
             <a href="{{ route('admin.rooms.index') }}" 
                class="text-gray-300 hover:text-white">
-                Back to Rooms
+                Back to Facilities
             </a>
         </div>
 
-        <!-- Room Details Card -->
+        <!-- Facility Details Card -->
         <div class="bg-gray-800 rounded-lg shadow-xl overflow-hidden">
             <!-- Basic Info Section -->
             <div class="p-6 border-b border-gray-700">
@@ -36,7 +36,12 @@
                 <!-- Left Column -->
                 <div class="space-y-6">
                     <div>
-                        <h4 class="text-lg font-semibold text-white mb-2">Room Type</h4>
+                        <h4 class="text-lg font-semibold text-white mb-2">Category</h4>
+                        <p class="text-gray-300">{{ $room->category ?? 'Rooms' }}</p>
+                    </div>
+
+                    <div>
+                        <h4 class="text-lg font-semibold text-white mb-2">Type</h4>
                         <p class="text-gray-300">{{ $room->type }}</p>
                     </div>
                     
@@ -56,7 +61,7 @@
                     <div>
                         <h4 class="text-lg font-semibold text-white mb-2">Amenities</h4>
                         <div class="grid grid-cols-2 gap-2">
-                            @foreach(json_decode($room->amenities) ?? [] as $amenity)
+                            @foreach((is_array($room->amenities) ? $room->amenities : json_decode($room->amenities, true)) ?? [] as $amenity)
                                 <span class="text-gray-300">
                                     <svg class="w-4 h-4 inline-block mr-1" fill="currentColor" viewBox="0 0 20 20">
                                         <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
@@ -108,16 +113,16 @@
             <div class="p-6 bg-gray-700 flex justify-end space-x-4">
                 <a href="{{ route('admin.rooms.edit', $room) }}" 
                    class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
-                    Edit Room
+                    Edit Facility
                 </a>
                 <form action="{{ route('admin.rooms.destroy', $room) }}" 
                       method="POST"
-                      onsubmit="return confirm('Are you sure you want to delete this room?')">
+                      onsubmit="return confirm('Are you sure you want to delete this facility?')">
                     @csrf
                     @method('DELETE')
                     <button type="submit" 
                             class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors">
-                        Delete Room
+                        Delete Facility
                     </button>
                 </form>
             </div>

@@ -113,48 +113,6 @@
                     </div>
                 </div>
 
-                <!-- Staff Management -->
-                <div class="bg-green-800 rounded-lg p-6 lg:p-8 hover:bg-green-700 transition-all duration-300 transform hover:scale-105 shadow-lg">
-                    <div class="text-center h-full flex flex-col">
-                        <div class="mb-4">
-                            <svg class="w-12 h-12 mx-auto text-green-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
-                            </svg>
-                        </div>
-                        <h3 class="text-2xl lg:text-3xl font-bold text-white mb-6 leading-tight">
-                            Staff Management
-                        </h3>
-                        <p class="text-green-100 text-sm lg:text-base mb-8 flex-grow">
-                            Monitor staff performance and manage team schedules.
-                        </p>
-                        <a href="{{ route('manager.staff') }}" 
-                           class="w-full py-3 bg-green-50 text-black font-medium text-lg rounded-lg hover:bg-white transition-colors duration-200 text-center">
-                            Manage Staff
-                        </a>
-                    </div>
-                </div>
-
-                <!-- Guests Management -->
-                <div class="bg-green-800 rounded-lg p-6 lg:p-8 hover:bg-green-700 transition-all duration-300 transform hover:scale-105 shadow-lg">
-                    <div class="text-center h-full flex flex-col">
-                        <div class="mb-4">
-                            <svg class="w-12 h-12 mx-auto text-green-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"/>
-                            </svg>
-                        </div>
-                        <h3 class="text-2xl lg:text-3xl font-bold text-white mb-6 leading-tight">
-                            Guests Management
-                        </h3>
-                        <p class="text-green-100 text-sm lg:text-base mb-8 flex-grow">
-                            View guest information and booking history.
-                        </p>
-                        <a href="{{ route('manager.guests') }}" 
-                           class="w-full py-3 bg-green-50 text-black font-medium text-lg rounded-lg hover:bg-white transition-colors duration-200 text-center">
-                            Manage Guests
-                        </a>
-                    </div>
-                </div>
-
                 <!-- Reports & Analytics -->
                 <div class="bg-green-800 rounded-lg p-6 lg:p-8 hover:bg-green-700 transition-all duration-300 transform hover:scale-105 shadow-lg">
                     <div class="text-center h-full flex flex-col">

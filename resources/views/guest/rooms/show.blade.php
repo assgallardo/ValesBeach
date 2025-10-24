@@ -8,10 +8,10 @@
         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
         </svg>
-        Back to Rooms
+        Back to Facilities
     </a>
 
-    <!-- Room Details Card -->
+    <!-- Facility Details Card -->
     <div class="bg-green-900/50 backdrop-blur-sm rounded-lg overflow-hidden">
         <!-- Image Gallery -->
         <div class="relative h-[500px]" x-data="{ activeSlide: 0 }">
@@ -65,7 +65,11 @@
                     <!-- Quick Stats -->
                     <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
                         <div class="bg-green-800/50 p-4 rounded-lg">
-                            <span class="block text-gray-300 text-sm">Room Type</span>
+                            <span class="block text-gray-300 text-sm">Category</span>
+                            <span class="text-white font-semibold">{{ $room->category ?? 'Rooms' }}</span>
+                        </div>
+                        <div class="bg-green-800/50 p-4 rounded-lg">
+                            <span class="block text-gray-300 text-sm">Type</span>
                             <span class="text-white font-semibold">{{ $room->type }}</span>
                         </div>
                         <div class="bg-green-800/50 p-4 rounded-lg">
@@ -89,7 +93,7 @@
                         <div class="mb-6">
                             <h2 class="text-xl font-semibold text-white mb-2">Amenities</h2>
                             <div class="grid grid-cols-2 gap-2">
-                                @foreach(json_decode($room->amenities) as $amenity)
+                                @foreach(is_array($room->amenities) ? $room->amenities : json_decode($room->amenities, true) as $amenity)
                                     <div class="flex items-center text-gray-300">
                                         <svg class="w-5 h-5 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>

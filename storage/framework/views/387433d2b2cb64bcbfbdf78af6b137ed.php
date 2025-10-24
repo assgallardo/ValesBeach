@@ -101,9 +101,10 @@
                         <p class="text-green-100 text-sm lg:text-base mb-8 flex-grow">
                             Access performance reports and guest insights.
                         </p>
-                        <button class="w-full py-3 bg-green-50 text-black font-medium text-lg rounded-lg hover:bg-white transition-colors duration-200">
+                        <a href="<?php echo e(route('admin.reports.index')); ?>" 
+                           class="w-full py-3 bg-green-50 text-black font-medium text-lg rounded-lg hover:bg-white transition-colors duration-200 text-center block">
                             View Reports
-                        </button>
+                        </a>
                     </div>
                 </div>
 
