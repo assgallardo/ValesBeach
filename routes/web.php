@@ -163,6 +163,8 @@ Route::middleware(['auth', 'user.status'])->group(function () {
     // Invoice management
     Route::get('/invoices', [InvoiceController::class, 'index'])->name('invoices.index');
     Route::match(['get', 'post'], '/bookings/{booking}/invoice/generate', [InvoiceController::class, 'generate'])->name('invoices.generate');
+    Route::post('/invoices/generate-combined', [InvoiceController::class, 'generateCombined'])->name('invoices.generate-combined');
+    Route::get('/invoices/combined', [InvoiceController::class, 'showCombined'])->name('invoices.show-combined');
     Route::get('/invoices/{invoice}', [InvoiceController::class, 'show'])->name('invoices.show');
     Route::get('/invoices/{invoice}/download', [InvoiceController::class, 'download'])->name('invoices.download');
 });
@@ -216,6 +218,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'user.status', 'role
         Route::get('/reservations/create-from-room/{room}', 'createFromRoom')->name('reservations.createFromRoom');
         Route::post('/reservations/store', 'store')->name('reservations.store');
         Route::get('/reservations/{booking}', 'show')->name('reservations.show');
+        Route::get('/reservations/{booking}/edit', 'edit')->name('reservations.edit');
+        Route::put('/reservations/{booking}', 'update')->name('reservations.update');
         Route::patch('/reservations/{booking}/status', 'updateStatus')->name('reservations.status');
         Route::patch('/reservations/{booking}/payment-status', 'updatePaymentStatus')->name('reservations.payment-status');
     });

@@ -32,104 +32,57 @@
             </div>
         </div>
 
-        <!-- Statistics Cards - Single Line Compact View -->
-        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-9 gap-3 mb-6">
+        <!-- Statistics Cards - Clean & Simple -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <!-- Total Revenue -->
-            <div class="bg-gray-800 rounded-lg p-3 border border-gray-700 hover:border-green-500 transition-colors">
-                <div class="flex flex-col items-center text-center">
-                    <div class="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center mb-2">
-                        <i class="fas fa-dollar-sign text-white text-sm"></i>
+            <div class="bg-gray-800 rounded-lg p-4 border border-gray-700">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-xs text-gray-400 mb-1">Total Revenue</p>
+                        <p class="text-xl font-bold text-green-50">₱{{ number_format($stats['total_payments'], 2) }}</p>
                     </div>
-                    <p class="text-[10px] text-gray-400 mb-1">Total Revenue</p>
-                    <p class="text-sm font-bold text-green-50">₱{{ number_format($stats['total_payments'], 2) }}</p>
+                    <div class="w-10 h-10 bg-gray-700 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-dollar-sign text-green-400"></i>
+                    </div>
                 </div>
             </div>
 
             <!-- Pending Payments -->
-            <div class="bg-gray-800 rounded-lg p-3 border border-gray-700 hover:border-yellow-500 transition-colors">
-                <div class="flex flex-col items-center text-center">
-                    <div class="w-8 h-8 bg-yellow-600 rounded-lg flex items-center justify-center mb-2">
-                        <i class="fas fa-clock text-white text-sm"></i>
+            <div class="bg-gray-800 rounded-lg p-4 border border-gray-700">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-xs text-gray-400 mb-1">Pending Payments</p>
+                        <p class="text-xl font-bold text-green-50">₱{{ number_format($stats['pending_payments'], 2) }}</p>
                     </div>
-                    <p class="text-[10px] text-gray-400 mb-1">Pending</p>
-                    <p class="text-sm font-bold text-green-50">₱{{ number_format($stats['pending_payments'], 2) }}</p>
+                    <div class="w-10 h-10 bg-gray-700 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-clock text-yellow-400"></i>
+                    </div>
                 </div>
             </div>
 
             <!-- Total Transactions -->
-            <div class="bg-gray-800 rounded-lg p-3 border border-gray-700 hover:border-teal-500 transition-colors">
-                <div class="flex flex-col items-center text-center">
-                    <div class="w-8 h-8 bg-teal-600 rounded-lg flex items-center justify-center mb-2">
-                        <i class="fas fa-receipt text-white text-sm"></i>
+            <div class="bg-gray-800 rounded-lg p-4 border border-gray-700">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-xs text-gray-400 mb-1">Total Transactions</p>
+                        <p class="text-xl font-bold text-green-50">{{ number_format($stats['total_count']) }}</p>
                     </div>
-                    <p class="text-[10px] text-gray-400 mb-1">Transactions</p>
-                    <p class="text-sm font-bold text-green-50">{{ number_format($stats['total_count']) }}</p>
-                </div>
-            </div>
-
-            <!-- Room Bookings -->
-            <div class="bg-gray-800 rounded-lg p-3 border border-gray-700 hover:border-blue-500 transition-colors">
-                <div class="flex flex-col items-center text-center">
-                    <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center mb-2">
-                        <i class="fas fa-bed text-white text-sm"></i>
+                    <div class="w-10 h-10 bg-gray-700 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-receipt text-blue-400"></i>
                     </div>
-                    <p class="text-[10px] text-gray-400 mb-1">Room Bookings</p>
-                    <p class="text-sm font-bold text-green-50">₱{{ number_format($stats['booking_payments'], 2) }}</p>
-                </div>
-            </div>
-
-            <!-- Services -->
-            <div class="bg-gray-800 rounded-lg p-3 border border-gray-700 hover:border-purple-500 transition-colors">
-                <div class="flex flex-col items-center text-center">
-                    <div class="w-8 h-8 bg-purple-600 rounded-lg flex items-center justify-center mb-2">
-                        <i class="fas fa-concierge-bell text-white text-sm"></i>
-                    </div>
-                    <p class="text-[10px] text-gray-400 mb-1">Services</p>
-                    <p class="text-sm font-bold text-green-50">₱{{ number_format($stats['service_payments'], 2) }}</p>
-                </div>
-            </div>
-
-            <!-- Food & Beverage -->
-            <div class="bg-gray-800 rounded-lg p-3 border border-gray-700 hover:border-orange-500 transition-colors">
-                <div class="flex flex-col items-center text-center">
-                    <div class="w-8 h-8 bg-orange-600 rounded-lg flex items-center justify-center mb-2">
-                        <i class="fas fa-utensils text-white text-sm"></i>
-                    </div>
-                    <p class="text-[10px] text-gray-400 mb-1">Food & Beverage</p>
-                    <p class="text-sm font-bold text-green-50">₱{{ number_format($stats['food_order_payments'] ?? 0, 2) }}</p>
                 </div>
             </div>
 
             <!-- Total Refunds -->
-            <div class="bg-gray-800 rounded-lg p-3 border border-gray-700 hover:border-red-500 transition-colors">
-                <div class="flex flex-col items-center text-center">
-                    <div class="w-8 h-8 bg-red-600 rounded-lg flex items-center justify-center mb-2">
-                        <i class="fas fa-undo text-white text-sm"></i>
+            <div class="bg-gray-800 rounded-lg p-4 border border-gray-700">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-xs text-gray-400 mb-1">Total Refunds</p>
+                        <p class="text-xl font-bold text-green-50">₱{{ number_format($stats['total_refunds'], 2) }}</p>
                     </div>
-                    <p class="text-[10px] text-gray-400 mb-1">Refunds</p>
-                    <p class="text-sm font-bold text-green-50">₱{{ number_format($stats['total_refunds'], 2) }}</p>
-                </div>
-            </div>
-
-            <!-- Refundable -->
-            <div class="bg-gray-800 rounded-lg p-3 border border-gray-700 hover:border-indigo-500 transition-colors">
-                <div class="flex flex-col items-center text-center">
-                    <div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center mb-2">
-                        <i class="fas fa-coins text-white text-sm"></i>
+                    <div class="w-10 h-10 bg-gray-700 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-undo text-red-400"></i>
                     </div>
-                    <p class="text-[10px] text-gray-400 mb-1">Refundable</p>
-                    <p class="text-sm font-bold text-green-50">{{ $stats['refundable_payments'] }}</p>
-                </div>
-            </div>
-
-            <!-- Failed -->
-            <div class="bg-gray-800 rounded-lg p-3 border border-gray-700 hover:border-gray-500 transition-colors">
-                <div class="flex flex-col items-center text-center">
-                    <div class="w-8 h-8 bg-gray-600 rounded-lg flex items-center justify-center mb-2">
-                        <i class="fas fa-times-circle text-white text-sm"></i>
-                    </div>
-                    <p class="text-[10px] text-gray-400 mb-1">Failed</p>
-                    <p class="text-sm font-bold text-green-50">₱{{ number_format($stats['failed_payments'], 2) }}</p>
                 </div>
             </div>
         </div>
@@ -227,204 +180,102 @@
             </div>
 
             @if($payments->count() > 0)
-                <div class="overflow-x-auto">
-                    <table class="w-full">
+                <div>
+                    <table class="w-full table-fixed">
                         <thead class="bg-gray-750">
                             <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Guest</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Payment Details</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Type & Service</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Amount</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Method</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Status</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Date</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Actions</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase w-[16%]">Guest</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase w-[12%]">Payment Ref</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase w-[18%]">Type & Service</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase w-[11%]">Amount</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase w-[10%]">Method</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase w-[9%]">Status</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase w-[10%]">Date</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase w-[14%]">Actions</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-700">
                             @foreach($payments as $payment)
                             <tr class="hover:bg-gray-750 transition-colors">
                                 <!-- Guest Info -->
-                                <td class="px-6 py-4">
-                                    <div class="flex items-center">
-                                        <div class="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center mr-3">
-                                            <i class="fas fa-user text-white text-sm"></i>
-                                        </div>
-                                        <div>
-                                            <div class="font-medium text-green-50">{{ $payment->user->name ?? 'N/A' }}</div>
-                                            <div class="text-sm text-gray-400">{{ $payment->user->email ?? 'N/A' }}</div>
-                                            @if($payment->user->phone)
-                                                <div class="text-xs text-gray-500">{{ $payment->user->phone }}</div>
-                                            @endif
-                                        </div>
+                                <td class="px-4 py-3">
+                                    <div class="font-medium text-green-50 text-sm truncate" title="{{ $payment->user->name ?? 'N/A' }}">
+                                        {{ $payment->user->name ?? 'N/A' }}
+                                    </div>
+                                    <div class="text-xs text-gray-400 truncate" title="{{ $payment->user->email ?? 'N/A' }}">
+                                        {{ $payment->user->email ?? 'N/A' }}
                                     </div>
                                 </td>
 
                                 <!-- Payment Details -->
-                                <td class="px-6 py-4">
-                                    <div class="font-medium text-blue-400">{{ $payment->payment_reference }}</div>
-                                    @if($payment->transaction_id)
-                                        <div class="text-sm text-gray-400">TXN: {{ $payment->transaction_id }}</div>
-                                    @endif
-                                    @if($payment->notes)
-                                        <div class="text-sm text-gray-500 mt-1">
-                                            <i class="fas fa-sticky-note mr-1"></i>{{ Str::limit($payment->notes, 30) }}
-                                        </div>
-                                    @endif
+                                <td class="px-4 py-3">
+                                    <div class="text-sm text-blue-400 truncate" title="{{ $payment->payment_reference }}">
+                                        {{ $payment->payment_reference }}
+                                    </div>
                                 </td>
 
                                 <!-- Type & Service -->
-                                <td class="px-6 py-4">
+                                <td class="px-4 py-3">
                                     @if($payment->booking)
-                                        <div class="inline-flex items-start bg-blue-600 text-white px-3 py-2 rounded-lg">
-                                            <div class="flex-shrink-0 mr-2">
-                                                <i class="fas fa-bed text-white"></i>
-                                            </div>
-                                            <div class="text-xs">
-                                                <div class="font-bold mb-1">Room Booking</div>
-                                                <div class="opacity-90">{{ $payment->booking->room->name ?? 'N/A' }}</div>
-                                                <div class="opacity-75 mt-0.5">{{ $payment->booking->booking_reference }}</div>
-                                                <div class="opacity-75 text-[10px] mt-0.5">
-                                                    {{ $payment->booking->check_in ? $payment->booking->check_in->format('M d') : 'N/A' }} - 
-                                                    {{ $payment->booking->check_out ? $payment->booking->check_out->format('M d, Y') : 'N/A' }}
+                                        <div class="flex items-start gap-2">
+                                            <i class="fas fa-bed text-blue-400 mt-0.5"></i>
+                                            <div class="text-sm overflow-hidden">
+                                                <div class="font-medium text-green-50 truncate">Booking</div>
+                                                <div class="text-xs text-gray-400 truncate" title="{{ $payment->booking->room->name ?? 'N/A' }}">
+                                                    {{ $payment->booking->room->name ?? 'N/A' }}
                                                 </div>
                                             </div>
                                         </div>
                                     @elseif($payment->serviceRequest)
-                                        <div class="inline-flex items-start bg-purple-600 text-white px-3 py-2 rounded-lg">
-                                            <div class="flex-shrink-0 mr-2">
-                                                <i class="fas fa-concierge-bell text-white"></i>
-                                            </div>
-                                            <div class="text-xs">
-                                                <div class="font-bold mb-1">Service</div>
-                                                <div class="opacity-90">{{ $payment->serviceRequest->service->name ?? 'Service Request' }}</div>
-                                                <div class="opacity-75 mt-0.5">{{ $payment->serviceRequest->service->category ?? 'N/A' }}</div>
-                                            </div>
-                                        </div>
-                                    @elseif($payment->foodOrder)
-                                        <div class="inline-flex items-start bg-orange-600 text-white px-3 py-2 rounded-lg">
-                                            <div class="flex-shrink-0 mr-2">
-                                                <i class="fas fa-utensils text-white"></i>
-                                            </div>
-                                            <div class="text-xs">
-                                                <div class="font-bold mb-1">Food & Beverage</div>
-                                                <div class="opacity-90">Food Order #{{ $payment->foodOrder->order_number }}</div>
-                                                <div class="opacity-75 mt-0.5">{{ $payment->foodOrder->orderItems->count() }} item(s)</div>
-                                                <div class="opacity-75 text-[10px] mt-0.5">
-                                                    {{ ucfirst(str_replace('_', ' ', $payment->foodOrder->delivery_type)) }}
+                                        <div class="flex items-start gap-2">
+                                            <i class="fas fa-concierge-bell text-purple-400 mt-0.5"></i>
+                                            <div class="text-sm overflow-hidden">
+                                                <div class="font-medium text-green-50 truncate">Service</div>
+                                                <div class="text-xs text-gray-400 truncate" title="{{ $payment->serviceRequest->service->name ?? 'N/A' }}">
+                                                    {{ Str::limit($payment->serviceRequest->service->name ?? 'Service Request', 20) }}
                                                 </div>
                                             </div>
                                         </div>
+                                    @elseif($payment->foodOrder)
+                                        <div class="flex items-start gap-2">
+                                            <i class="fas fa-utensils text-orange-400 mt-0.5"></i>
+                                            <div class="text-sm overflow-hidden">
+                                                <div class="font-medium text-green-50 truncate">Food</div>
+                                                <div class="text-xs text-gray-400 truncate">Order #{{ $payment->foodOrder->order_number }}</div>
+                                            </div>
+                                        </div>
                                     @else
-                                        <div class="inline-flex items-center bg-gray-600 text-white px-3 py-2 rounded-lg">
-                                            <i class="fas fa-question-circle text-white mr-2"></i>
-                                            <span class="text-xs font-bold">Other</span>
+                                        <div class="flex items-center gap-2">
+                                            <i class="fas fa-question-circle text-gray-400"></i>
+                                            <span class="text-sm text-gray-400">Other</span>
                                         </div>
                                     @endif
                                 </td>
 
                                 <!-- Amount -->
-                                <td class="px-6 py-4">
-                                    <div class="font-bold text-green-400">
-                                        ₱{{ number_format($payment->calculated_amount, 2) }}
+                                <td class="px-4 py-3">
+                                    <div class="text-sm font-bold text-green-400">
+                                        ₱{{ number_format($payment->amount, 2) }}
                                     </div>
-                                    
-                                    <!-- Show breakdown for bookings -->
-                                    @if($payment->booking)
-                                        <div class="text-xs text-gray-400 mt-1">
-                                            @if($payment->booking->room)
-                                                @php
-                                                    $checkIn = \Carbon\Carbon::parse($payment->booking->check_in_date);
-                                                    $checkOut = \Carbon\Carbon::parse($payment->booking->check_out_date);
-                                                    $nights = $checkIn->diffInDays($checkOut);
-                                                    $roomCost = $payment->booking->room->price * $nights;
-                                                @endphp
-                                                Room: ₱{{ number_format($payment->booking->room->price, 2) }} × {{ $nights }} nights
-                                                = ₱{{ number_format($roomCost, 2) }}
-                                            @endif
-                                        </div>
-                                        @if($payment->booking->additional_fees > 0)
-                                            <div class="text-xs text-blue-400">
-                                                + ₱{{ number_format($payment->booking->additional_fees, 2) }} fees
-                                            </div>
-                                        @endif
-                                        @if($payment->booking->discount_amount > 0)
-                                            <div class="text-xs text-yellow-400">
-                                                - ₱{{ number_format($payment->booking->discount_amount, 2) }} discount
-                                            </div>
-                                        @endif
-                                    @endif
-                                    
-                                    <!-- Show breakdown for services -->
-                                    @if($payment->serviceRequest && $payment->serviceRequest->service)
-                                        @php
-                                            $service = $payment->serviceRequest->service;
-                                            $quantity = $payment->serviceRequest->quantity ?? 1;
-                                            $serviceTotal = $service->price * $quantity;
-                                        @endphp
-                                        <div class="text-xs text-gray-400 mt-1">
-                                            Service: {{ $service->name }}
-                                        </div>
-                                        <div class="text-xs text-blue-400">
-                                            ₱{{ number_format($service->price, 2) }}
-                                            @if($quantity > 1)
-                                                × {{ $quantity }} = ₱{{ number_format($serviceTotal, 2) }}
-                                            @endif
-                                        </div>
-                                        @if($payment->serviceRequest->service->duration)
-                                            <div class="text-xs text-gray-500">
-                                                Duration: {{ $payment->serviceRequest->service->duration }} min
-                                            </div>
-                                        @endif
-                                    @endif
-                                    
-                                    <!-- Show breakdown for food orders -->
-                                    @if($payment->foodOrder)
-                                        <div class="text-xs text-gray-400 mt-1">
-                                            {{ $payment->foodOrder->orderItems->count() }} item(s)
-                                        </div>
-                                        @if($payment->foodOrder->subtotal)
-                                            <div class="text-xs text-orange-400">
-                                                Subtotal: ₱{{ number_format($payment->foodOrder->subtotal, 2) }}
-                                            </div>
-                                        @endif
-                                        @if($payment->foodOrder->delivery_fee > 0)
-                                            <div class="text-xs text-blue-400">
-                                                + ₱{{ number_format($payment->foodOrder->delivery_fee, 2) }} delivery
-                                            </div>
-                                        @endif
-                                        @if($payment->foodOrder->tax_amount > 0)
-                                            <div class="text-xs text-gray-500">
-                                                + ₱{{ number_format($payment->foodOrder->tax_amount, 2) }} tax
-                                            </div>
-                                        @endif
-                                    @endif
-                                    
-                                    <!-- Show refund information -->
                                     @if($payment->refund_amount > 0)
-                                        <div class="text-sm text-red-400 mt-1">
-                                            <i class="fas fa-minus-circle mr-1"></i>Refunded: ₱{{ number_format($payment->refund_amount, 2) }}
+                                        <div class="text-xs text-red-400">
+                                            -₱{{ number_format($payment->refund_amount, 2) }}
                                         </div>
-                                        <div class="text-sm font-medium text-green-400">
-                                            Net: ₱{{ number_format($payment->calculated_amount - ($payment->refund_amount ?? 0), 2) }}
+                                        <div class="text-xs font-medium text-gray-300">
+                                            Net: ₱{{ number_format($payment->amount - $payment->refund_amount, 2) }}
                                         </div>
                                     @endif
                                 </td>
 
                                 <!-- Method -->
-                                <td class="px-6 py-4">
-                                    <span class="inline-block px-2 py-1 text-xs bg-gray-700 text-gray-300 rounded border border-gray-600">
+                                <td class="px-4 py-3">
+                                    <div class="text-sm text-gray-300 truncate">
                                         {{ $payment->payment_method_display }}
-                                    </span>
-                                    @if($payment->payment_date)
-                                        <div class="text-sm text-gray-400 mt-1">
-                                            {{ $payment->payment_date->format('M d, H:i') }}
-                                        </div>
-                                    @endif
+                                    </div>
                                 </td>
 
                                 <!-- Status -->
-                                <td class="px-6 py-4">
+                                <td class="px-4 py-3">
                                     @php
                                         $statusConfig = match($payment->status) {
                                             'completed' => ['bg' => 'bg-green-600', 'text' => 'text-white'],
@@ -439,99 +290,49 @@
                                     <span class="inline-block px-2 py-1 text-xs {{ $statusConfig['bg'] }} {{ $statusConfig['text'] }} rounded">
                                         {{ ucfirst($payment->status) }}
                                     </span>
-                                    @if($payment->isPartiallyRefunded())
-                                        <div class="mt-1">
-                                            <span class="inline-block px-2 py-1 text-xs bg-yellow-600 text-white rounded">Partial Refund</span>
-                                        </div>
-                                    @endif
                                 </td>
 
                                 <!-- Date -->
-                                <td class="px-6 py-4">
-                                    <div class="text-sm text-green-50">{{ $payment->created_at->format('M d, Y') }}</div>
-                                    <div class="text-xs text-gray-400">{{ $payment->created_at->format('H:i A') }}</div>
+                                <td class="px-4 py-3">
+                                    <div class="text-sm text-green-50">
+                                        {{ $payment->created_at->format('M d, Y') }}
+                                    </div>
+                                    <div class="text-xs text-gray-400">
+                                        {{ $payment->created_at->format('h:i A') }}
+                                    </div>
                                 </td>
 
                                 <!-- Actions -->
-                                <td class="px-6 py-4">
-                                    <div class="flex flex-col space-y-1">
-                                        <!-- View Details - Works for both bookings and services -->
+                                <td class="px-4 py-3">
+                                    <div class="flex flex-wrap gap-1">
                                         <a href="{{ route('admin.payments.show', $payment) }}" 
-                                           class="inline-flex items-center px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors" 
-                                           title="View Payment Details">
-                                            <i class="fas fa-eye mr-1"></i>View
+                                           class="inline-flex items-center px-2 py-1 text-xs bg-gray-700 text-gray-300 rounded hover:bg-gray-600 transition-colors border border-gray-600" 
+                                           title="View">
+                                            <i class="fas fa-eye text-blue-400"></i>
                                         </a>
                                         
-                                        <!-- Refund Action - Works for both bookings and services -->
-                                        @if($payment->canBeRefunded())
-                                            <button onclick="showRefundModal({{ $payment->id }}, {{ $payment->getRemainingRefundableAmount() }})"
-                                                    class="inline-flex items-center px-2 py-1 text-xs bg-yellow-600 text-white rounded hover:bg-yellow-700 transition-colors" 
-                                                    title="Process Refund">
-                                                <i class="fas fa-undo mr-1"></i>Refund
-                                            </button>
-                                        @endif
-
-                                        <!-- Mark as Complete - Works for both bookings and services -->
                                         @if($payment->status === 'pending')
                                             <button onclick="updatePaymentStatus({{ $payment->id }}, 'completed')"
-                                                    class="inline-flex items-center px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 transition-colors" 
-                                                    title="Mark as Completed">
-                                                <i class="fas fa-check mr-1"></i>Complete
+                                                    class="inline-flex items-center px-2 py-1 text-xs bg-gray-700 text-gray-300 rounded hover:bg-gray-600 transition-colors border border-gray-600" 
+                                                    title="Complete">
+                                                <i class="fas fa-check text-green-400"></i>
                                             </button>
                                         @endif
 
-                                        <!-- View Related Record - Booking or Service -->
-                                        @if($payment->booking)
-                                            <a href="{{ route('admin.bookings.show', $payment->booking) }}" 
-                                               class="inline-flex items-center px-2 py-1 text-xs bg-indigo-600 text-white rounded hover:bg-indigo-700 transition-colors" 
-                                               title="View Booking Details">
-                                                <i class="fas fa-bed mr-1"></i>Booking
-                                            </a>
-                                            
-                                            <!-- Invoice Actions for Booking Payments -->
-                                            @if($payment->booking->invoice)
-                                                <a href="{{ route('invoices.show', $payment->booking->invoice) }}" 
-                                                   class="inline-flex items-center px-2 py-1 text-xs bg-purple-600 text-white rounded hover:bg-purple-700 transition-colors" 
-                                                   title="View Invoice">
-                                                    <i class="fas fa-file-invoice mr-1"></i>Invoice
-                                                </a>
-                                            @elseif($payment->booking->amount_paid > 0)
-                                                <form action="{{ route('invoices.generate', $payment->booking) }}" method="POST" class="inline">
-                                                    @csrf
-                                                    <button type="submit" 
-                                                            class="inline-flex items-center px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 transition-colors w-full" 
-                                                            title="Generate Invoice"
-                                                            onclick="return confirm('Generate invoice for {{ $payment->booking->booking_reference }}?');">
-                                                        <i class="fas fa-file-invoice-dollar mr-1"></i>Generate Invoice
-                                                    </button>
-                                                </form>
-                                            @endif
-                                        @elseif($payment->serviceRequest)
-                                            <a href="{{ route('manager.service-requests.show', $payment->serviceRequest) }}" 
-                                               class="inline-flex items-center px-2 py-1 text-xs bg-purple-600 text-white rounded hover:bg-purple-700 transition-colors" 
-                                               title="View Service Request Details">
-                                                <i class="fas fa-concierge-bell mr-1"></i>Service
-                                            </a>
-                                        @elseif($payment->foodOrder)
-                                            <a href="{{ route('staff.orders.show', $payment->foodOrder) }}" 
-                                               class="inline-flex items-center px-2 py-1 text-xs bg-orange-600 text-white rounded hover:bg-orange-700 transition-colors" 
-                                               title="View Food Order Details">
-                                                <i class="fas fa-utensils mr-1"></i>Food Order
-                                            </a>
+                                        @if($payment->canBeRefunded())
+                                            <button onclick="showRefundModal({{ $payment->id }}, {{ $payment->getRemainingRefundableAmount() }})"
+                                                    class="inline-flex items-center px-2 py-1 text-xs bg-gray-700 text-gray-300 rounded hover:bg-gray-600 transition-colors border border-gray-600" 
+                                                    title="Refund">
+                                                <i class="fas fa-undo text-yellow-400"></i>
+                                            </button>
                                         @endif
 
-                                        <!-- Additional Actions for Processing Status -->
-                                        @if($payment->status === 'processing')
-                                            <button onclick="updatePaymentStatus({{ $payment->id }}, 'completed')"
-                                                    class="inline-flex items-center px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 transition-colors" 
-                                                    title="Complete Payment">
-                                                <i class="fas fa-check-circle mr-1"></i>Complete
-                                            </button>
-                                            <button onclick="updatePaymentStatus({{ $payment->id }}, 'failed')"
-                                                    class="inline-flex items-center px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700 transition-colors" 
-                                                    title="Mark as Failed">
-                                                <i class="fas fa-times-circle mr-1"></i>Failed
-                                            </button>
+                                        @if($payment->booking && $payment->booking->invoice)
+                                            <a href="{{ route('invoices.show', $payment->booking->invoice) }}" 
+                                               class="inline-flex items-center px-2 py-1 text-xs bg-gray-700 text-gray-300 rounded hover:bg-gray-600 transition-colors border border-gray-600" 
+                                               title="Invoice">
+                                                <i class="fas fa-file-invoice text-purple-400"></i>
+                                            </a>
                                         @endif
                                     </div>
                                 </td>

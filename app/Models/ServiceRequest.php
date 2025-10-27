@@ -160,6 +160,14 @@ class ServiceRequest extends Model
     }
 
     /**
+     * Relationship: Service request has one payment
+     */
+    public function payment()
+    {
+        return $this->hasOne(\App\Models\Payment::class, 'service_request_id');
+    }
+
+    /**
      * Relationship: Service request may have a related task
      */
     public function task()

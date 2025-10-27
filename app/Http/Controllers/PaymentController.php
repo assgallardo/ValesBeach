@@ -7,6 +7,7 @@ use App\Models\Booking;
 use App\Models\Payment;
 use App\Models\Invoice;
 use App\Models\ServiceRequest;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -97,22 +98,8 @@ class PaymentController extends Controller
                 'payment_amount' => $paymentAmount
             ]);
             
-            // Update booking status based on payment completion
-            $isFullyPaid = $booking->amount_paid >= $booking->total_price;
-            
-            // If fully paid, mark as completed
-            if ($isFullyPaid) {
-                $booking->update(['status' => 'completed']);
-            } 
-            // If partial payment (50% or more), mark as confirmed
-            elseif ($booking->amount_paid >= ($booking->total_price * 0.5)) {
-                if ($booking->status === 'pending') {
-                    $booking->update(['status' => 'confirmed']);
-                }
-            }
-            
-            // Refresh again after status update
-            $booking->refresh();
+            // NOTE: Booking status remains unchanged after payment
+            // Only admin/manager/staff can change booking status through reservations management
             
             // Reload the payment with fresh booking data
             $payment->load('booking');
@@ -246,19 +233,8 @@ class PaymentController extends Controller
             $booking->updatePaymentTracking();
             $booking->refresh();
 
-            // Update booking status
-            $isFullyPaid = $booking->amount_paid >= $booking->total_price;
-            
-            if ($isFullyPaid) {
-                $booking->update(['status' => 'completed']);
-            } 
-            elseif ($booking->amount_paid >= ($booking->total_price * 0.5)) {
-                if ($booking->status === 'pending') {
-                    $booking->update(['status' => 'confirmed']);
-                }
-            }
-
-            $booking->refresh();
+            // NOTE: Booking status remains unchanged after payment update
+            // Only admin/manager/staff can change booking status through reservations management
             $payment->load('booking');
 
             \Log::info('Payment updated', [
@@ -287,11 +263,12 @@ class PaymentController extends Controller
     public function history()
     {
         // Get all bookings with their payments for this user
+        // Show ALL bookings so guests can see what needs to be paid
         $bookings = \App\Models\Booking::where('user_id', auth()->id())
             ->with(['room', 'invoice', 'payments' => function($query) {
                 $query->orderBy('created_at', 'desc');
             }])
-            ->whereHas('payments') // Only bookings that have payments
+            ->where('status', '!=', 'cancelled') // Exclude cancelled bookings
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -553,6 +530,17 @@ class PaymentController extends Controller
             $query->where('payment_method', $request->payment_method);
         }
 
+        // Filter by type
+        if ($request->filled('type')) {
+            if ($request->type === 'booking') {
+                $query->whereNotNull('booking_id');
+            } elseif ($request->type === 'service') {
+                $query->whereNotNull('service_request_id');
+            } elseif ($request->type === 'food') {
+                $query->whereNotNull('food_order_id');
+            }
+        }
+
         // Filter by date range
         if ($request->filled('date_from')) {
             $query->whereDate('created_at', '>=', $request->date_from);
@@ -575,6 +563,19 @@ class PaymentController extends Controller
 
         $payments = $query->orderBy('created_at', 'desc')->paginate(15);
 
+        // Get all bookings grouped by user (for complete guest data)
+        $userIds = $payments->pluck('user_id')->unique();
+        
+        if ($userIds->isNotEmpty()) {
+            $allBookings = Booking::with(['room', 'payments', 'invoice'])
+                ->whereIn('user_id', $userIds)
+                ->where('status', '!=', 'cancelled')
+                ->get()
+                ->groupBy('user_id');
+        } else {
+            $allBookings = collect();
+        }
+
         $stats = [
             'total_payments' => Payment::completed()->sum('amount'),
             'pending_payments' => Payment::pending()->sum('amount'),
@@ -588,9 +589,64 @@ class PaymentController extends Controller
             'booking_count' => Payment::whereNotNull('booking_id')->count(),
             'service_count' => Payment::whereNotNull('service_request_id')->count(),
             'food_order_count' => Payment::whereNotNull('food_order_id')->count(),
+            'total_count' => Payment::count(),
+            'failed_payments' => Payment::where('status', 'failed')->sum('amount'),
         ];
 
-        return view('admin.payments.index', compact('payments', 'stats'));
+        return view('admin.payments.index', compact('payments', 'stats', 'allBookings'));
+    }
+
+    /**
+     * Show all payments for a specific guest
+     */
+    public function guestPayments(User $user)
+    {
+        if (!in_array(Auth::user()->role, ['admin', 'manager', 'staff'])) {
+            abort(403, 'Only administrators, managers, and staff can access this page.');
+        }
+
+        // Get all bookings for this guest (including those without payments)
+        $bookings = Booking::where('user_id', $user->id)
+            ->with(['room', 'payments'])
+            ->where('status', '!=', 'cancelled')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        // Get all payments for this guest
+        $payments = Payment::where('user_id', $user->id)
+            ->with(['booking.room', 'serviceRequest.service', 'foodOrder.orderItems.menuItem'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        // Separate payments by type
+        $bookingPayments = $payments->filter(fn($p) => $p->booking_id)->values();
+        $servicePayments = $payments->filter(fn($p) => $p->service_request_id)->values();
+        $foodPayments = $payments->filter(fn($p) => $p->food_order_id)->values();
+
+        // Calculate totals
+        $totalAmount = $payments->sum('amount');
+        $totalPaid = $payments->where('status', 'completed')->sum('amount');
+        $totalPending = $payments->whereIn('status', ['pending', 'processing'])->sum('amount');
+        
+        // Add booking totals
+        $bookingTotalAmount = $bookings->sum('total_price');
+        $bookingTotalPaid = $bookings->sum('amount_paid');
+        $bookingTotalPending = $bookings->sum('remaining_balance');
+
+        return view('admin.payments.guest', compact(
+            'user',
+            'bookings',
+            'payments',
+            'bookingPayments',
+            'servicePayments',
+            'foodPayments',
+            'totalAmount',
+            'totalPaid',
+            'totalPending',
+            'bookingTotalAmount',
+            'bookingTotalPaid',
+            'bookingTotalPending'
+        ));
     }
 
     /**
@@ -637,24 +693,13 @@ class PaymentController extends Controller
             'notes' => $request->notes
         ]);
 
-        // Update booking status if payment is completed
+        // Update booking payment tracking if payment is completed
         if ($request->status === 'completed' && $payment->booking) {
-            // Update booking payment tracking
+            // Update booking payment tracking (amount_paid, remaining_balance, payment_status)
             $payment->booking->updatePaymentTracking();
             
-            $totalPaid = $payment->booking->payments()->where('status', 'completed')->sum('amount');
-            $isFullyPaid = $totalPaid >= $payment->booking->total_price;
-            
-            // If fully paid, mark as completed
-            if ($isFullyPaid) {
-                $payment->booking->update(['status' => 'completed']);
-            } 
-            // If partial payment (50% or more), mark as confirmed
-            elseif ($totalPaid >= ($payment->booking->total_price * 0.5)) {
-                if (in_array($payment->booking->status, ['pending', 'processing'])) {
-                    $payment->booking->update(['status' => 'confirmed']);
-                }
-            }
+            // NOTE: Booking status is NOT automatically changed
+            // Admin/Manager/Staff must manually update booking status through Reservations Management
         }
         
         // Update service request status if payment is completed
@@ -737,12 +782,26 @@ class PaymentController extends Controller
 
         $payments = $query->orderBy('created_at', 'desc')->paginate(20);
 
+        // Get all bookings grouped by user (for complete guest data)
+        $userIds = $payments->pluck('user_id')->unique();
+        
+        if ($userIds->isNotEmpty()) {
+            $allBookings = Booking::with(['room', 'payments', 'invoice'])
+                ->whereIn('user_id', $userIds)
+                ->where('status', '!=', 'cancelled')
+                ->get()
+                ->groupBy('user_id');
+        } else {
+            $allBookings = collect();
+        }
+
         // Calculate comprehensive statistics
         $stats = [
             'total_payments' => Payment::where('status', 'completed')->sum('amount'),
             'pending_payments' => Payment::where('status', 'pending')->sum('amount'),
             'failed_payments' => Payment::where('status', 'failed')->sum('amount'),
             'total_refunds' => Payment::whereNotNull('refund_amount')->sum('refund_amount'),
+            'total_transactions' => Payment::count(),
             'booking_payments' => Payment::whereNotNull('booking_id')->where('status', 'completed')->sum('amount'),
             'service_payments' => Payment::whereNotNull('service_request_id')->where('status', 'completed')->sum('amount'),
             'food_order_payments' => Payment::whereNotNull('food_order_id')->where('status', 'completed')->sum('amount'),
@@ -763,9 +822,9 @@ class PaymentController extends Controller
 
         // Return appropriate view based on route prefix
         if ($routePrefix === 'manager') {
-            return view('manager.payments.index', compact('payments', 'stats'));
+            return view('manager.payments.index', compact('payments', 'stats', 'allBookings'));
         } else {
-            return view('admin.payments.index', compact('payments', 'stats'));
+            return view('admin.payments.index', compact('payments', 'stats', 'allBookings'));
         }
     }
 

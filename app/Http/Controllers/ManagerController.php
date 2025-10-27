@@ -205,6 +205,22 @@ class ManagerController extends Controller
             $eventDiningQuery->where('status', $request->status);
         }
 
+        // Category filter
+        if ($request->filled('category')) {
+            $allQuery->whereHas('room', function($q) use ($request) {
+                $q->where('category', $request->category);
+            });
+            $roomQuery->whereHas('room', function($q) use ($request) {
+                $q->where('category', $request->category);
+            });
+            $cottageQuery->whereHas('room', function($q) use ($request) {
+                $q->where('category', $request->category);
+            });
+            $eventDiningQuery->whereHas('room', function($q) use ($request) {
+                $q->where('category', $request->category);
+            });
+        }
+
         // Date filter
         if ($request->filled('date') && $checkinColumn) {
             $allQuery->whereDate($checkinColumn, $request->date);

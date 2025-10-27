@@ -205,17 +205,17 @@ class GuestServiceController extends Controller
             \Log::info('Service request created successfully:', $serviceRequest->toArray());
 
             // Create a payment record for the service request
-            // For now, we'll assume services are free or have a default amount
-            // You can modify this based on your service pricing structure
-            $serviceAmount = 0; // Default to free, can be modified based on service pricing
+            // Get the actual service price from the Service model
+            $service = Service::find($validated['service_id']);
+            $serviceAmount = $service ? $service->price : 0;
             
             try {
                 Payment::create([
                     'service_request_id' => $serviceRequest->id,
                     'user_id' => $serviceRequest->user_id ?? $serviceRequest->guest_id, // Use user_id first, fallback to guest_id
                     'amount' => $serviceAmount,
-                    'payment_method' => 'service_request', // Special method for service requests
-                    'status' => 'completed', // Service requests are considered "paid" when submitted
+                    'payment_method' => 'cash', // Default payment method
+                    'status' => 'pending', // Service requests payment is pending until guest pays
                     'payment_date' => now(),
                     'notes' => 'Service request payment - ' . ($serviceRequest->service_type ?? 'Service')
                 ]);
@@ -358,11 +358,13 @@ class GuestServiceController extends Controller
     {
         $user = Auth::user();
         
-        $serviceRequest = ServiceRequest::where(function($query) use ($user) {
-            $query->where('guest_id', $user->id)
-                  ->orWhere('guest_email', $user->email);
-        })
-        ->findOrFail($id);
+        $serviceRequest = ServiceRequest::with(['service', 'payment'])
+            ->where(function($query) use ($user) {
+                $query->where('guest_id', $user->id)
+                      ->orWhere('guest_email', $user->email)
+                      ->orWhere('user_id', $user->id);
+            })
+            ->findOrFail($id);
 
         if (request()->expectsJson()) {
             return response()->json([
@@ -371,8 +373,7 @@ class GuestServiceController extends Controller
             ]);
         }
 
-        // Redirect to history page for now since show-request view doesn't exist
-        return redirect()->route('guest.services.history')->with('info', 'Viewing request #' . $serviceRequest->id);
+        return view('guest.services.show-request', compact('serviceRequest'));
     }
 
     /**

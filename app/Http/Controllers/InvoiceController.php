@@ -248,4 +248,152 @@ class InvoiceController extends Controller
 
         return view('admin.invoices.create', compact('bookings'));
     }
+
+    /**
+     * Generate combined invoice for multiple items (bookings, services, food orders)
+     */
+    public function generateCombined(Request $request)
+    {
+        $request->validate([
+            'bookings' => 'nullable|array',
+            'bookings.*' => 'exists:bookings,id',
+            'services' => 'nullable|array',
+            'services.*' => 'exists:payments,id',
+            'food_orders' => 'nullable|array',
+            'food_orders.*' => 'exists:payments,id',
+        ]);
+
+        // Ensure at least one item is selected
+        if (empty($request->bookings) && empty($request->services) && empty($request->food_orders)) {
+            return redirect()->back()->with('error', 'Please select at least one item to include in the invoice.');
+        }
+
+        // Collect all items
+        $items = [];
+        $total = 0;
+
+        // Add bookings
+        if ($request->bookings) {
+            $bookings = Booking::with('room')->whereIn('id', $request->bookings)->get();
+            foreach ($bookings as $booking) {
+                // Only include bookings the user owns
+                if ($booking->user_id !== Auth::id()) {
+                    continue;
+                }
+                
+                $items[] = [
+                    'type' => 'booking',
+                    'id' => $booking->id,
+                    'description' => $booking->room->name,
+                    'reference' => $booking->booking_reference,
+                    'details' => $booking->check_in->format('M d') . ' - ' . $booking->check_out->format('M d, Y') . ' (' . $booking->check_in->diffInDays($booking->check_out) . ' nights)',
+                    'quantity' => 1,
+                    'unit_price' => $booking->total_price,
+                    'amount' => $booking->total_price,
+                    'paid' => $booking->amount_paid,
+                    'balance' => $booking->remaining_balance
+                ];
+                $total += $booking->total_price;
+            }
+        }
+
+        // Add services
+        if ($request->services) {
+            $services = \App\Models\Payment::with('serviceRequest.service')
+                ->whereIn('id', $request->services)
+                ->whereNotNull('service_request_id')
+                ->get();
+                
+            foreach ($services as $payment) {
+                // Only include payments the user owns
+                if ($payment->user_id !== Auth::id()) {
+                    continue;
+                }
+                
+                $items[] = [
+                    'type' => 'service',
+                    'id' => $payment->id,
+                    'description' => $payment->serviceRequest->service->name ?? 'Service Request',
+                    'reference' => $payment->payment_reference,
+                    'details' => 'Service completed on ' . $payment->created_at->format('M d, Y'),
+                    'quantity' => 1,
+                    'unit_price' => $payment->amount,
+                    'amount' => $payment->amount,
+                    'paid' => $payment->status === 'completed' ? $payment->amount : 0,
+                    'balance' => $payment->status === 'completed' ? 0 : $payment->amount
+                ];
+                $total += $payment->amount;
+            }
+        }
+
+        // Add food orders
+        if ($request->food_orders) {
+            $foodOrders = \App\Models\Payment::with('foodOrder.orderItems.menuItem')
+                ->whereIn('id', $request->food_orders)
+                ->whereNotNull('food_order_id')
+                ->get();
+                
+            foreach ($foodOrders as $payment) {
+                // Only include payments the user owns
+                if ($payment->user_id !== Auth::id()) {
+                    continue;
+                }
+                
+                $orderDetails = '';
+                if ($payment->foodOrder) {
+                    $orderDetails = 'Order #' . $payment->foodOrder->order_number . ' - ' . $payment->foodOrder->orderItems->count() . ' items';
+                }
+                
+                $items[] = [
+                    'type' => 'food_order',
+                    'id' => $payment->id,
+                    'description' => 'Food Order',
+                    'reference' => $payment->payment_reference,
+                    'details' => $orderDetails,
+                    'quantity' => 1,
+                    'unit_price' => $payment->amount,
+                    'amount' => $payment->amount,
+                    'paid' => $payment->status === 'completed' ? $payment->amount : 0,
+                    'balance' => $payment->status === 'completed' ? 0 : $payment->amount
+                ];
+                $total += $payment->amount;
+            }
+        }
+
+        // Calculate totals
+        $totalPaid = collect($items)->sum('paid');
+        $totalBalance = collect($items)->sum('balance');
+
+        // Generate invoice number
+        $invoiceNumber = 'INV-' . strtoupper(uniqid());
+
+        // Store invoice data in session for display
+        session([
+            'combined_invoice' => [
+                'invoice_number' => $invoiceNumber,
+                'items' => $items,
+                'subtotal' => $total,
+                'total' => $total,
+                'total_paid' => $totalPaid,
+                'total_balance' => $totalBalance,
+                'created_at' => now()
+            ]
+        ]);
+
+        return redirect()->route('invoices.show-combined');
+    }
+
+    /**
+     * Show combined invoice
+     */
+    public function showCombined()
+    {
+        $invoiceData = session('combined_invoice');
+        
+        if (!$invoiceData) {
+            return redirect()->route('payments.history')->with('error', 'Invoice data not found. Please generate a new invoice.');
+        }
+
+        return view('invoices.combined', ['invoice' => (object) $invoiceData]);
+    }
 }

@@ -206,17 +206,15 @@
                 </select>
             </div>
 
-            <!-- Room Filter -->
+            <!-- Category Filter -->
             <div>
-                <label for="room_id" class="block text-sm font-medium text-gray-300 mb-2">Room</label>
-                <select name="room_id" id="room_id" 
+                <label for="category" class="block text-sm font-medium text-gray-300 mb-2">Category</label>
+                <select name="category" id="category" 
                         class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <option value="">All Rooms</option>
-                    @foreach($rooms as $room)
-                        <option value="{{ $room->id }}" {{ request('room_id') == $room->id ? 'selected' : '' }}>
-                            {{ $room->name }}
-                        </option>
-                    @endforeach
+                    <option value="">All Categories</option>
+                    <option value="Rooms" {{ request('category') === 'Rooms' ? 'selected' : '' }}>Rooms</option>
+                    <option value="Cottages" {{ request('category') === 'Cottages' ? 'selected' : '' }}>Cottages</option>
+                    <option value="Event and Dining" {{ request('category') === 'Event and Dining' ? 'selected' : '' }}>Event and Dining</option>
                 </select>
             </div>
 
@@ -260,7 +258,7 @@
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-blue-100 text-sm">Total Reservations</p>
-                    <p class="text-2xl font-bold">{{ $bookings->total() }}</p>
+                    <p class="text-2xl font-bold">{{ $allBookings->total() }}</p>
                 </div>
                 <div class="bg-blue-500 bg-opacity-50 rounded-full p-3">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -274,7 +272,7 @@
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-green-100 text-sm">Active Bookings</p>
-                    <p class="text-2xl font-bold">{{ $bookings->where('status', 'confirmed')->count() + $bookings->where('status', 'checked_in')->count() }}</p>
+                    <p class="text-2xl font-bold">{{ $allBookings->where('status', 'confirmed')->count() + $allBookings->where('status', 'checked_in')->count() }}</p>
                 </div>
                 <div class="bg-green-500 bg-opacity-50 rounded-full p-3">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -288,7 +286,7 @@
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-purple-100 text-sm">Completed</p>
-                    <p class="text-2xl font-bold">{{ $bookings->where('status', 'completed')->count() }}</p>
+                    <p class="text-2xl font-bold">{{ $allBookings->where('status', 'completed')->count() }}</p>
                 </div>
                 <div class="bg-purple-500 bg-opacity-50 rounded-full p-3">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -302,7 +300,7 @@
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-red-100 text-sm">Cancelled</p>
-                    <p class="text-2xl font-bold">{{ $bookings->where('status', 'cancelled')->count() }}</p>
+                    <p class="text-2xl font-bold">{{ $allBookings->where('status', 'cancelled')->count() }}</p>
                 </div>
                 <div class="bg-red-500 bg-opacity-50 rounded-full p-3">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -366,11 +364,12 @@
                             <th class="px-6 py-4 text-xs font-medium text-gray-300 uppercase tracking-wider">Dates</th>
                             <th class="px-6 py-4 text-xs font-medium text-gray-300 uppercase tracking-wider">Total</th>
                             <th class="px-6 py-4 text-xs font-medium text-gray-300 uppercase tracking-wider">Status</th>
+                            <th class="px-6 py-4 text-xs font-medium text-gray-300 uppercase tracking-wider">Actions</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-700">
                         @forelse($allBookings as $booking)
-                        <tr class="hover:bg-gray-700 transition-colors">
+                        <tr class="hover:bg-gray-700 transition-colors" id="all-booking-row-{{ $booking->id }}">
                             <td class="px-6 py-4">
                                 <div class="text-white font-medium">#{{ $booking->id }}</div>
                                 <div class="text-xs text-gray-400">{{ $booking->created_at->format('M d, Y') }}</div>
@@ -380,8 +379,8 @@
                                 <div class="text-sm text-gray-400">{{ $booking->user->email ?? 'N/A' }}</div>
                             </td>
                             <td class="px-6 py-4">
-                                <div class="text-white">{{ $booking->room->name ?? 'N/A' }}</div>
-                                <div class="text-sm text-gray-400">{{ $booking->guests }} guests</div>
+                                <div class="text-white booking-room-name">{{ $booking->room->name ?? 'N/A' }}</div>
+                                <div class="text-sm text-gray-400 booking-guests">{{ $booking->guests }} guests</div>
                             </td>
                             <td class="px-6 py-4">
                                 <span class="px-2 py-1 text-xs font-medium rounded-full 
@@ -391,17 +390,20 @@
                                     {{ $booking->room->category ?? 'N/A' }}
                                 </span>
                             </td>
-                            <td class="px-6 py-4">
+                            <td class="px-6 py-4 booking-dates">
                                 <div class="text-white">{{ $booking->check_in->format('M d, Y') }}</div>
                                 <div class="text-sm text-gray-400">{{ $booking->check_in->format('l \a\t g:i A') }}</div>
                                 <div class="text-white mt-1">{{ $booking->check_out->format('M d, Y') }}</div>
                                 <div class="text-sm text-gray-400">{{ $booking->check_out->format('l \a\t g:i A') }}</div>
                             </td>
                             <td class="px-6 py-4">
-                                <div class="text-green-400 font-semibold">₱{{ number_format((float)$booking->total_price, 2) }}</div>
+                                <div class="text-green-400 font-semibold booking-total">₱{{ number_format((float)$booking->total_price, 2) }}</div>
+                                <div class="text-sm text-gray-400 booking-nights">
+                                    {{ $booking->check_in->diffInDays($booking->check_out) }} night(s)
+                                </div>
                             </td>
                             <td class="px-6 py-4">
-                                <span class="px-3 py-1 rounded-full text-xs font-medium
+                                <span class="px-3 py-1 rounded-full text-xs font-medium booking-status
                                     {{ $booking->status === 'pending' ? 'bg-yellow-900 text-yellow-200' : '' }}
                                     {{ $booking->status === 'confirmed' ? 'bg-blue-900 text-blue-200' : '' }}
                                     {{ $booking->status === 'checked_in' ? 'bg-green-900 text-green-200' : '' }}
@@ -410,10 +412,40 @@
                                     {{ ucfirst($booking->status) }}
                                 </span>
                             </td>
+                            <td class="px-6 py-4">
+                                <div class="flex items-center space-x-3">
+                                    <!-- View Details -->
+                                    <a href="{{ route('admin.reservations.show', $booking) }}" 
+                                       class="text-blue-400 hover:text-blue-300 transition-colors" title="View Details">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                        </svg>
+                                    </a>
+                                    @if(in_array(auth()->user()->role, ['admin', 'manager', 'staff']))
+                                    <!-- Edit Booking Details -->
+                                    <button type="button"
+                                            onclick='editBookingDetails(@json($booking->load(["user", "room"])))'
+                                            class="text-green-400 hover:text-green-300 transition-colors" title="Edit Booking">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                        </svg>
+                                    </button>
+                                    <!-- Update Status -->
+                                    <button type="button"
+                                            onclick="updateStatus('{{ $booking->id }}')"
+                                            class="text-yellow-400 hover:text-yellow-300 transition-colors" title="Update Status">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                                        </svg>
+                                    </button>
+                                    @endif
+                                </div>
+                            </td>
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="7" class="px-6 py-12 text-center text-gray-400">
+                            <td colspan="8" class="px-6 py-12 text-center text-gray-400">
                                 No bookings found.
                             </td>
                         </tr>
@@ -436,7 +468,8 @@
                         <tr>
                             <th class="px-6 py-4 text-xs font-medium text-gray-300 uppercase tracking-wider">ID</th>
                             <th class="px-6 py-4 text-xs font-medium text-gray-300 uppercase tracking-wider">Guest</th>
-                            <th class="px-6 py-4 text-xs font-medium text-gray-300 uppercase tracking-wider">Room</th>
+                            <th class="px-6 py-4 text-xs font-medium text-gray-300 uppercase tracking-wider">Facility</th>
+                            <th class="px-6 py-4 text-xs font-medium text-gray-300 uppercase tracking-wider">Category</th>
                             <th class="px-6 py-4 text-xs font-medium text-gray-300 uppercase tracking-wider">Dates</th>
                             <th class="px-6 py-4 text-xs font-medium text-gray-300 uppercase tracking-wider">Total</th>
                             <th class="px-6 py-4 text-xs font-medium text-gray-300 uppercase tracking-wider">Status</th>
@@ -458,6 +491,14 @@
                             <div class="text-white booking-room-name">{{ $booking->room->name ?? 'N/A' }}</div>
                             <div class="text-sm text-gray-400 booking-guests">{{ $booking->guests }} guests</div>
                         </td>
+                        <td class="px-6 py-4">
+                            <span class="px-2 py-1 text-xs font-medium rounded-full 
+                                {{ $booking->room->category === 'Rooms' ? 'bg-blue-900 text-blue-200' : '' }}
+                                {{ $booking->room->category === 'Cottages' ? 'bg-purple-900 text-purple-200' : '' }}
+                                {{ $booking->room->category === 'Event and Dining' ? 'bg-pink-900 text-pink-200' : '' }}">
+                                {{ $booking->room->category ?? 'N/A' }}
+                            </span>
+                        </td>
                         <td class="px-6 py-4 booking-dates">
                             <div class="text-white">{{ $booking->check_in->format('M d, Y') }}</div>
                             <div class="text-sm text-gray-400">{{ $booking->check_in->format('l \a\t g:i A') }}</div>
@@ -465,22 +506,19 @@
                             <div class="text-sm text-gray-400">{{ $booking->check_out->format('l \a\t g:i A') }}</div>
                         </td>
                         <td class="px-6 py-4">
-                            <div class="text-green-400 font-bold text-lg booking-total">{{ $booking->formatted_total_price }}</div>
+                            <div class="text-green-400 font-semibold booking-total">₱{{ number_format((float)$booking->total_price, 2) }}</div>
                             <div class="text-sm text-gray-400 booking-nights">
                                 {{ $booking->check_in->diffInDays($booking->check_out) }} night(s)
                             </div>
                         </td>
                         <td class="px-6 py-4">
-                            <span @class([
-                                'px-3 py-1 rounded-full text-xs font-medium',
-                                'bg-yellow-100 text-yellow-800' => $booking->status === 'pending',
-                                'bg-green-100 text-green-800' => $booking->status === 'confirmed',
-                                'bg-blue-100 text-blue-800' => $booking->status === 'checked_in',
-                                'bg-gray-100 text-gray-800' => $booking->status === 'checked_out',
-                                'bg-red-100 text-red-800' => $booking->status === 'cancelled',
-                                'bg-purple-100 text-purple-800' => $booking->status === 'completed',
-                            ])>
-                                {{ ucfirst(str_replace('_', ' ', $booking->status)) }}
+                            <span class="px-3 py-1 rounded-full text-xs font-medium booking-status
+                                {{ $booking->status === 'pending' ? 'bg-yellow-900 text-yellow-200' : '' }}
+                                {{ $booking->status === 'confirmed' ? 'bg-blue-900 text-blue-200' : '' }}
+                                {{ $booking->status === 'checked_in' ? 'bg-green-900 text-green-200' : '' }}
+                                {{ $booking->status === 'completed' ? 'bg-purple-900 text-purple-200' : '' }}
+                                {{ $booking->status === 'cancelled' ? 'bg-red-900 text-red-200' : '' }}">
+                                {{ ucfirst($booking->status) }}
                             </span>
                         </td>
                         <td class="px-6 py-4">
@@ -522,7 +560,7 @@
                     </tr>
                         @empty
                         <tr>
-                            <td colspan="7" class="px-6 py-8 text-center text-gray-400">
+                            <td colspan="8" class="px-6 py-8 text-center text-gray-400">
                                 No room bookings found.
                             </td>
                         </tr>
@@ -545,8 +583,8 @@
                         <tr>
                             <th class="px-6 py-4 text-xs font-medium text-gray-300 uppercase tracking-wider">ID</th>
                             <th class="px-6 py-4 text-xs font-medium text-gray-300 uppercase tracking-wider">Guest</th>
-                            <th class="px-6 py-4 text-xs font-medium text-gray-300 uppercase tracking-wider">Cottage</th>
-                            <th class="px-6 py-4 text-xs font-medium text-gray-300 uppercase tracking-wider">Type</th>
+                            <th class="px-6 py-4 text-xs font-medium text-gray-300 uppercase tracking-wider">Facility</th>
+                            <th class="px-6 py-4 text-xs font-medium text-gray-300 uppercase tracking-wider">Category</th>
                             <th class="px-6 py-4 text-xs font-medium text-gray-300 uppercase tracking-wider">Dates</th>
                             <th class="px-6 py-4 text-xs font-medium text-gray-300 uppercase tracking-wider">Total</th>
                             <th class="px-6 py-4 text-xs font-medium text-gray-300 uppercase tracking-wider">Status</th>
@@ -557,7 +595,7 @@
                         @forelse($cottageBookings as $cottageBooking)
                         <tr class="hover:bg-gray-700 transition-colors" id="cottage-booking-row-{{ $cottageBooking->id }}">
                             <td class="px-6 py-4">
-                                <div class="text-white font-medium">#C{{ $cottageBooking->id }}</div>
+                                <div class="text-white font-medium">#{{ $cottageBooking->id }}</div>
                                 <div class="text-xs text-gray-400">{{ $cottageBooking->created_at->format('M d, Y') }}</div>
                             </td>
                             <td class="px-6 py-4">
@@ -565,68 +603,64 @@
                                 <div class="text-sm text-gray-400">{{ $cottageBooking->user->email ?? 'N/A' }}</div>
                             </td>
                             <td class="px-6 py-4">
-                                <div class="text-white">{{ $cottageBooking->room->name ?? 'N/A' }}</div>
-                                <div class="text-sm text-gray-400">{{ $cottageBooking->guests }} guests</div>
+                                <div class="text-white booking-room-name">{{ $cottageBooking->room->name ?? 'N/A' }}</div>
+                                <div class="text-sm text-gray-400 booking-guests">{{ $cottageBooking->guests }} guests</div>
                             </td>
                             <td class="px-6 py-4">
-                                <span class="px-2 py-1 text-xs font-medium rounded-full bg-purple-900 text-purple-200">
-                                    {{ $cottageBooking->room->type ?? 'Cottage Booking' }}
+                                <span class="px-2 py-1 text-xs font-medium rounded-full 
+                                    {{ $cottageBooking->room->category === 'Rooms' ? 'bg-blue-900 text-blue-200' : '' }}
+                                    {{ $cottageBooking->room->category === 'Cottages' ? 'bg-purple-900 text-purple-200' : '' }}
+                                    {{ $cottageBooking->room->category === 'Event and Dining' ? 'bg-pink-900 text-pink-200' : '' }}">
+                                    {{ $cottageBooking->room->category ?? 'N/A' }}
                                 </span>
                             </td>
-                            <td class="px-6 py-4">
-                                <div class="text-white">{{ $cottageBooking->check_in_date->format('M d, Y') }}</div>
-                                @if($cottageBooking->check_in_time)
-                                    <div class="text-sm text-gray-400">{{ date('g:i A', strtotime($cottageBooking->check_in_time)) }}</div>
-                                @endif
-                                <div class="text-white mt-1">{{ $cottageBooking->check_out_date->format('M d, Y') }}</div>
-                                @if($cottageBooking->check_out_time)
-                                    <div class="text-sm text-gray-400">{{ date('g:i A', strtotime($cottageBooking->check_out_time)) }}</div>
-                                @endif
-                                @if($cottageBooking->hours)
-                                    <div class="text-xs text-blue-400 mt-1">{{ $cottageBooking->hours }} hours</div>
-                                @endif
+                            <td class="px-6 py-4 booking-dates">
+                                <div class="text-white">{{ $cottageBooking->check_in->format('M d, Y') }}</div>
+                                <div class="text-sm text-gray-400">{{ $cottageBooking->check_in->format('l \a\t g:i A') }}</div>
+                                <div class="text-white mt-1">{{ $cottageBooking->check_out->format('M d, Y') }}</div>
+                                <div class="text-sm text-gray-400">{{ $cottageBooking->check_out->format('l \a\t g:i A') }}</div>
                             </td>
                             <td class="px-6 py-4">
-                                <div class="text-green-400 font-bold text-lg">₱{{ number_format($cottageBooking->total_price, 2) }}</div>
-                                @if($cottageBooking->nights > 0)
-                                    <div class="text-sm text-gray-400">{{ $cottageBooking->nights }} night(s)</div>
-                                @endif
+                                <div class="text-green-400 font-semibold booking-total">₱{{ number_format((float)$cottageBooking->total_price, 2) }}</div>
+                                <div class="text-sm text-gray-400 booking-nights">
+                                    {{ $cottageBooking->check_in->diffInDays($cottageBooking->check_out) }} night(s)
+                                </div>
                             </td>
                             <td class="px-6 py-4">
-                                <span @class([
-                                    'px-3 py-1 rounded-full text-xs font-medium',
-                                    'bg-yellow-100 text-yellow-800' => $cottageBooking->status === 'pending',
-                                    'bg-green-100 text-green-800' => $cottageBooking->status === 'confirmed',
-                                    'bg-blue-100 text-blue-800' => $cottageBooking->status === 'checked_in',
-                                    'bg-gray-100 text-gray-800' => $cottageBooking->status === 'checked_out',
-                                    'bg-red-100 text-red-800' => $cottageBooking->status === 'cancelled',
-                                    'bg-purple-100 text-purple-800' => $cottageBooking->status === 'completed',
-                                    'bg-orange-100 text-orange-800' => $cottageBooking->status === 'no_show',
-                                ])>
-                                    {{ ucfirst(str_replace('_', ' ', $cottageBooking->status)) }}
+                                <span class="px-3 py-1 rounded-full text-xs font-medium booking-status
+                                    {{ $cottageBooking->status === 'pending' ? 'bg-yellow-900 text-yellow-200' : '' }}
+                                    {{ $cottageBooking->status === 'confirmed' ? 'bg-blue-900 text-blue-200' : '' }}
+                                    {{ $cottageBooking->status === 'checked_in' ? 'bg-green-900 text-green-200' : '' }}
+                                    {{ $cottageBooking->status === 'completed' ? 'bg-purple-900 text-purple-200' : '' }}
+                                    {{ $cottageBooking->status === 'cancelled' ? 'bg-red-900 text-red-200' : '' }}">
+                                    {{ ucfirst($cottageBooking->status) }}
                                 </span>
                             </td>
                             <td class="px-6 py-4">
                                 <div class="flex items-center space-x-3">
-                                    <button type="button"
-                                            onclick="viewCottageBooking({{ $cottageBooking->id }})"
-                                            class="text-blue-400 hover:text-blue-300 transition-colors"
-                                            title="View Details">
+                                    <!-- View Details -->
+                                    <a href="{{ route('admin.reservations.show', $cottageBooking) }}" 
+                                       class="text-blue-400 hover:text-blue-300 transition-colors" title="View Details">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                                  d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                        </svg>
+                                    </a>
+                                    @if(in_array(auth()->user()->role, ['admin', 'manager', 'staff']))
+                                    <!-- Edit Booking Details -->
+                                    <button type="button"
+                                            onclick='editBookingDetails(@json($cottageBooking->load(["user", "room"])))'
+                                            class="text-green-400 hover:text-green-300 transition-colors" title="Edit Booking">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                                         </svg>
                                     </button>
-                                    @if(in_array(auth()->user()->role, ['admin', 'manager', 'staff']))
+                                    <!-- Update Status -->
                                     <button type="button"
-                                            onclick="updateCottageStatus('{{ $cottageBooking->id }}')"
-                                            class="text-yellow-400 hover:text-yellow-300 transition-colors"
-                                            title="Update Status">
+                                            onclick="updateStatus('{{ $cottageBooking->id }}')"
+                                            class="text-yellow-400 hover:text-yellow-300 transition-colors" title="Update Status">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
                                         </svg>
                                     </button>
                                     @endif
@@ -663,11 +697,12 @@
                             <th class="px-6 py-4 text-xs font-medium text-gray-300 uppercase tracking-wider">Dates</th>
                             <th class="px-6 py-4 text-xs font-medium text-gray-300 uppercase tracking-wider">Total</th>
                             <th class="px-6 py-4 text-xs font-medium text-gray-300 uppercase tracking-wider">Status</th>
+                            <th class="px-6 py-4 text-xs font-medium text-gray-300 uppercase tracking-wider">Actions</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-700">
                         @forelse($eventDiningBookings as $eventBooking)
-                        <tr class="hover:bg-gray-700 transition-colors">
+                        <tr class="hover:bg-gray-700 transition-colors" id="event-booking-row-{{ $eventBooking->id }}">
                             <td class="px-6 py-4">
                                 <div class="text-white font-medium">#E{{ $eventBooking->id }}</div>
                                 <div class="text-xs text-gray-400">{{ $eventBooking->created_at->format('M d, Y') }}</div>
@@ -677,25 +712,28 @@
                                 <div class="text-sm text-gray-400">{{ $eventBooking->user->email ?? 'N/A' }}</div>
                             </td>
                             <td class="px-6 py-4">
-                                <div class="text-white">{{ $eventBooking->room->name ?? 'N/A' }}</div>
-                                <div class="text-sm text-gray-400">{{ $eventBooking->guests }} guests</div>
+                                <div class="text-white booking-room-name">{{ $eventBooking->room->name ?? 'N/A' }}</div>
+                                <div class="text-sm text-gray-400 booking-guests">{{ $eventBooking->guests }} guests</div>
                             </td>
                             <td class="px-6 py-4">
                                 <span class="px-2 py-1 text-xs font-medium rounded-full bg-pink-900 text-pink-200">
                                     {{ $eventBooking->room->type ?? 'Event & Dining' }}
                                 </span>
                             </td>
-                            <td class="px-6 py-4">
+                            <td class="px-6 py-4 booking-dates">
                                 <div class="text-white">{{ $eventBooking->check_in->format('M d, Y') }}</div>
                                 <div class="text-sm text-gray-400">{{ $eventBooking->check_in->format('l \a\t g:i A') }}</div>
                                 <div class="text-white mt-1">{{ $eventBooking->check_out->format('M d, Y') }}</div>
                                 <div class="text-sm text-gray-400">{{ $eventBooking->check_out->format('l \a\t g:i A') }}</div>
                             </td>
                             <td class="px-6 py-4">
-                                <div class="text-green-400 font-semibold">₱{{ number_format((float)$eventBooking->total_price, 2) }}</div>
+                                <div class="text-green-400 font-semibold booking-total">₱{{ number_format((float)$eventBooking->total_price, 2) }}</div>
+                                <div class="text-sm text-gray-400 booking-nights">
+                                    {{ $eventBooking->check_in->diffInDays($eventBooking->check_out) }} night(s)
+                                </div>
                             </td>
                             <td class="px-6 py-4">
-                                <span class="px-3 py-1 rounded-full text-xs font-medium
+                                <span class="px-3 py-1 rounded-full text-xs font-medium booking-status
                                     {{ $eventBooking->status === 'pending' ? 'bg-yellow-900 text-yellow-200' : '' }}
                                     {{ $eventBooking->status === 'confirmed' ? 'bg-blue-900 text-blue-200' : '' }}
                                     {{ $eventBooking->status === 'checked_in' ? 'bg-green-900 text-green-200' : '' }}
@@ -704,10 +742,40 @@
                                     {{ ucfirst($eventBooking->status) }}
                                 </span>
                             </td>
+                            <td class="px-6 py-4">
+                                <div class="flex items-center space-x-3">
+                                    <!-- View Details -->
+                                    <a href="{{ route('admin.reservations.show', $eventBooking) }}" 
+                                       class="text-blue-400 hover:text-blue-300 transition-colors" title="View Details">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                        </svg>
+                                    </a>
+                                    @if(in_array(auth()->user()->role, ['admin', 'manager', 'staff']))
+                                    <!-- Edit Booking Details -->
+                                    <button type="button"
+                                            onclick='editBookingDetails(@json($eventBooking->load(["user", "room"])))'
+                                            class="text-green-400 hover:text-green-300 transition-colors" title="Edit Booking">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                        </svg>
+                                    </button>
+                                    <!-- Update Status -->
+                                    <button type="button"
+                                            onclick="updateStatus('{{ $eventBooking->id }}')"
+                                            class="text-yellow-400 hover:text-yellow-300 transition-colors" title="Update Status">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                                        </svg>
+                                    </button>
+                                    @endif
+                                </div>
+                            </td>
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="7" class="px-6 py-12 text-center text-gray-400">
+                            <td colspan="8" class="px-6 py-12 text-center text-gray-400">
                                 No event & dining bookings found.
                             </td>
                         </tr>

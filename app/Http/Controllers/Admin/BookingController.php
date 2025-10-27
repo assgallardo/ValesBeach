@@ -661,6 +661,93 @@ class BookingController extends Controller
     }
 
     /**
+     * Show the form for editing the specified booking.
+     */
+    public function edit(Booking $booking)
+    {
+        $rooms = Room::all();
+        $users = User::where('role', 'guest')->get();
+        
+        return view('admin.bookings.edit', compact('booking', 'rooms', 'users'));
+    }
+
+    /**
+     * Update the specified booking in storage.
+     */
+    public function update(Request $request, Booking $booking)
+    {
+        $request->validate([
+            'room_id' => 'required|exists:rooms,id',
+            'check_in' => 'required|date',
+            'check_out' => 'required|date|after:check_in',
+            'guests' => 'required|integer|min:1',
+            'special_requests' => 'nullable|string|max:1000',
+        ]);
+
+        // Check for conflicting bookings (exclude current booking)
+        $existingBooking = Booking::where('room_id', $request->room_id)
+            ->where('id', '!=', $booking->id)
+            ->where('status', '!=', 'cancelled')
+            ->where(function ($query) use ($request) {
+                $query->whereBetween('check_in', [$request->check_in, $request->check_out])
+                      ->orWhereBetween('check_out', [$request->check_in, $request->check_out])
+                      ->orWhere(function ($q) use ($request) {
+                          $q->where('check_in', '<=', $request->check_in)
+                            ->where('check_out', '>=', $request->check_out);
+                      });
+            })
+            ->first();
+
+        if ($existingBooking) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Room already booked for those dates.'
+                ], 422);
+            }
+            return back()->withErrors(['room_id' => 'Room already booked for those dates.'])->withInput();
+        }
+
+        // Validate guest capacity
+        $room = Room::find($request->room_id);
+        if ($request->guests > $room->capacity) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Maximum {$room->capacity} guests allowed for this room."
+                ], 422);
+            }
+            return back()->withErrors(['guests' => "Maximum {$room->capacity} guests allowed."])->withInput();
+        }
+
+        // Calculate total price
+        $checkIn = Carbon::parse($request->check_in);
+        $checkOut = Carbon::parse($request->check_out);
+        $nights = $checkIn->diffInDays($checkOut);
+        $totalPrice = $room->price * $nights;
+
+        // Update the booking
+        $booking->update([
+            'room_id' => $request->room_id,
+            'check_in' => $request->check_in,
+            'check_out' => $request->check_out,
+            'guests' => $request->guests,
+            'total_price' => $totalPrice,
+            'special_requests' => $request->special_requests,
+        ]);
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Booking updated successfully!',
+                'booking' => $booking->load(['user', 'room'])
+            ]);
+        }
+
+        return redirect()->route('admin.reservations')->with('success', 'Booking updated successfully!');
+    }
+
+    /**
      * Update the status of a booking.
      */
     public function updateStatus(Request $request, Booking $booking)
@@ -901,9 +988,19 @@ class BookingController extends Controller
             $eventDiningQuery->where('status', $request->status);
         }
 
-        if ($request->filled('room_id')) {
-            $allQuery->where('room_id', $request->room_id);
-            $roomQuery->where('room_id', $request->room_id);
+        if ($request->filled('category')) {
+            $allQuery->whereHas('room', function($q) use ($request) {
+                $q->where('category', $request->category);
+            });
+            $roomQuery->whereHas('room', function($q) use ($request) {
+                $q->where('category', $request->category);
+            });
+            $cottageQuery->whereHas('room', function($q) use ($request) {
+                $q->where('category', $request->category);
+            });
+            $eventDiningQuery->whereHas('room', function($q) use ($request) {
+                $q->where('category', $request->category);
+            });
         }
 
         if ($request->filled('date_from')) {
@@ -942,10 +1039,9 @@ class BookingController extends Controller
         $cottageBookings = $cottageQuery->orderBy('check_in', 'desc')->paginate(20, ['*'], 'cottage_page');
         $eventDiningBookings = $eventDiningQuery->orderBy('check_in', 'desc')->paginate(20, ['*'], 'event_page');
 
-        $rooms = \App\Models\Room::all();
         $statuses = ['pending', 'confirmed', 'checked_in', 'checked_out', 'cancelled', 'completed'];
 
-        return view('admin.reservations.index', compact('allBookings', 'bookings', 'cottageBookings', 'eventDiningBookings', 'rooms', 'statuses'));
+        return view('admin.reservations.index', compact('allBookings', 'bookings', 'cottageBookings', 'eventDiningBookings', 'statuses'));
     }
 
     /**
