@@ -108,8 +108,13 @@
                             @foreach($booking->payments->sortByDesc('created_at') as $payment)
                             <div class="bg-gray-700 rounded-lg p-4 border-l-4 
                                 @if($payment->status === 'completed') border-green-500
+                                @elseif($payment->status === 'confirmed') border-blue-500
                                 @elseif($payment->status === 'pending') border-yellow-500
+                                @elseif($payment->status === 'overdue') border-orange-500
+                                @elseif($payment->status === 'processing') border-indigo-500
+                                @elseif($payment->status === 'failed') border-red-700
                                 @elseif($payment->status === 'refunded') border-red-500
+                                @elseif($payment->status === 'cancelled') border-gray-600
                                 @else border-gray-500
                                 @endif">
                                 <div class="flex justify-between items-start mb-2">
@@ -119,8 +124,13 @@
                                     </div>
                                     <span class="px-2 py-1 rounded-full text-xs font-medium
                                         @if($payment->status === 'completed') bg-green-600 text-white
+                                        @elseif($payment->status === 'confirmed') bg-blue-600 text-white
                                         @elseif($payment->status === 'pending') bg-yellow-500 text-black
+                                        @elseif($payment->status === 'overdue') bg-orange-600 text-white
+                                        @elseif($payment->status === 'processing') bg-indigo-600 text-white
+                                        @elseif($payment->status === 'failed') bg-red-700 text-white
                                         @elseif($payment->status === 'refunded') bg-red-600 text-white
+                                        @elseif($payment->status === 'cancelled') bg-gray-600 text-white
                                         @else bg-gray-600 text-white
                                         @endif">
                                         {{ ucfirst($payment->status) }}

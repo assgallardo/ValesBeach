@@ -193,6 +193,29 @@ class FoodOrderController extends Controller
             return redirect()->route('guest.food-orders.menu')->with('error', 'Your cart is empty');
         }
 
+        // Get current booking for date validation
+        $currentBooking = Auth::user()->bookings()
+            ->whereIn('status', ['confirmed', 'checked_in'])
+            ->first();
+
+        // Validate requested delivery time is within booking dates
+        if ($request->requested_delivery_time && $currentBooking) {
+            $requestedTime = \Carbon\Carbon::parse($request->requested_delivery_time);
+            $checkInDate = $currentBooking->check_in_date->startOfDay();
+            $checkOutDate = $currentBooking->check_out_date->endOfDay();
+
+            if ($requestedTime->lt($checkInDate) || $requestedTime->gt($checkOutDate)) {
+                return back()->with('error', 'Delivery time must be within your booking dates (' . 
+                    $currentBooking->check_in_date->format('M j') . ' - ' . 
+                    $currentBooking->check_out_date->format('M j, Y') . ')');
+            }
+
+            // Also ensure it's at least 30 minutes from now
+            if ($requestedTime->lt(now()->addMinutes(30))) {
+                return back()->with('error', 'Delivery time must be at least 30 minutes from now');
+            }
+        }
+
         DB::beginTransaction();        try {
             // Calculate totals
             $subtotal = 0;
@@ -219,14 +242,8 @@ class FoodOrderController extends Controller
 
             // Calculate delivery fee
             $deliveryFee = $request->delivery_type === 'room_service' ? 5.00 : 0.00;
-            $taxRate = 0.08; // 8% tax
-            $taxAmount = ($subtotal + $deliveryFee) * $taxRate;
-            $totalAmount = $subtotal + $deliveryFee + $taxAmount;
-
-            // Get current booking
-            $currentBooking = Auth::user()->bookings()
-                ->whereIn('status', ['confirmed', 'checked_in'])
-                ->first();
+            $taxAmount = 0.00; // No tax for food orders
+            $totalAmount = $subtotal + $deliveryFee;
 
             // Create food order
             $foodOrder = FoodOrder::create([

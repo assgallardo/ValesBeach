@@ -20,39 +20,53 @@ class PaymentController extends Controller
             abort(403, 'Only administrators, managers, and staff can access payment tracking.');
         }
 
-        $query = Payment::with(['booking', 'user', 'booking.room', 'booking.invoice', 'serviceRequest', 'refundedBy']);
+        // Get filter parameters
+        $status = $request->get('status');
+        $paymentMethod = $request->get('payment_method');
+        $paymentType = $request->get('payment_type');
+        $dateFrom = $request->get('date_from');
+        $dateTo = $request->get('date_to');
+        $search = $request->get('search');
 
-        // Filter by status
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
+        // Build query for customer payments (grouped by user)
+        $query = \App\Models\User::whereHas('payments')
+            ->with(['payments' => function($q) use ($status, $paymentMethod, $paymentType, $dateFrom, $dateTo) {
+                // Apply filters to payments
+                if ($status) {
+                    $q->where('status', $status);
+                }
+                if ($paymentMethod) {
+                    $q->where('payment_method', $paymentMethod);
+                }
+                if ($paymentType) {
+                    if ($paymentType === 'booking') {
+                        $q->whereNotNull('booking_id');
+                    } elseif ($paymentType === 'service') {
+                        $q->whereNotNull('service_request_id');
+                    } elseif ($paymentType === 'food_order') {
+                        $q->whereNotNull('food_order_id');
+                    }
+                }
+                if ($dateFrom) {
+                    $q->whereDate('created_at', '>=', $dateFrom);
+                }
+                if ($dateTo) {
+                    $q->whereDate('created_at', '<=', $dateTo);
+                }
+                
+                $q->with(['booking.room', 'serviceRequest.service', 'foodOrder'])
+                  ->orderBy('created_at', 'desc');
+            }]);
 
-        // Filter by payment method
-        if ($request->filled('payment_method')) {
-            $query->where('payment_method', $request->payment_method);
-        }
-
-        // Filter by date range
-        if ($request->filled('date_from')) {
-            $query->whereDate('created_at', '>=', $request->date_from);
-        }
-        if ($request->filled('date_to')) {
-            $query->whereDate('created_at', '<=', $request->date_to);
-        }
-
-        // Search by payment reference or user
-        if ($request->filled('search')) {
-            $search = $request->search;
+        // Apply search
+        if ($search) {
             $query->where(function($q) use ($search) {
-                $q->where('payment_reference', 'LIKE', "%{$search}%")
-                  ->orWhereHas('user', function($userQuery) use ($search) {
-                      $userQuery->where('name', 'LIKE', "%{$search}%")
-                               ->orWhere('email', 'LIKE', "%{$search}%");
-                  });
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%");
             });
         }
 
-        $payments = $query->orderBy('created_at', 'desc')->paginate(15);
+        $customers = $query->orderBy('created_at', 'desc')->paginate(15);
 
         // Payment statistics for managers
         $stats = [
@@ -83,19 +97,35 @@ class PaymentController extends Controller
             ];
         }
 
-        // Get bookings with payments for card display
-        $bookings = \App\Models\Booking::with(['room', 'payments', 'invoice'])
-            ->whereHas('payments')
-            ->orderBy('created_at', 'desc')
-            ->paginate(10);
+        return view('manager.payments.index', compact('customers', 'stats', 'recent_payments', 'payment_trends'));
+    }
 
-        // Get service payments separately
-        $servicePayments = Payment::whereNotNull('service_request_id')
-            ->with(['serviceRequest', 'user'])
-            ->orderBy('created_at', 'desc')
-            ->paginate(10);
+    /**
+     * Show all payments for a specific customer
+     */
+    public function showCustomerPayments($userId)
+    {
+        if (!in_array(Auth::user()->role, ['admin', 'manager', 'staff'])) {
+            abort(403, 'Unauthorized access.');
+        }
 
-        return view('manager.payments.index', compact('payments', 'stats', 'recent_payments', 'payment_trends', 'bookings', 'servicePayments'));
+        $customer = \App\Models\User::with([
+            'payments' => function($q) {
+                $q->with(['booking.room', 'serviceRequest.service', 'foodOrder.orderItems.menuItem'])
+                  ->orderBy('created_at', 'desc');
+            },
+            'bookings' => function($q) {
+                $q->with(['room', 'payments']);
+            },
+            'serviceRequests' => function($q) {
+                $q->with(['service', 'payment']);
+            },
+            'foodOrders' => function($q) {
+                $q->with(['orderItems.menuItem', 'payment']);
+            }
+        ])->findOrFail($userId);
+
+        return view('manager.payments.customer', compact('customer'));
     }
 
     /**
@@ -127,50 +157,87 @@ class PaymentController extends Controller
     public function updateStatus(Request $request, Payment $payment)
     {
         if (!in_array(Auth::user()->role, ['admin', 'manager', 'staff'])) {
+            if ($request->expectsJson()) {
+                return response()->json(['success' => false, 'message' => 'Unauthorized access.'], 403);
+            }
             abort(403, 'Only administrators, managers, and staff can update payment status.');
         }
 
-        // Managers can only update certain statuses
-        $allowedStatuses = Auth::user()->role === 'admin' 
-            ? ['pending', 'processing', 'completed', 'failed', 'refunded', 'cancelled']
-            : ['pending', 'processing', 'completed', 'cancelled']; // Managers cannot mark as failed or refunded
+        try {
+            // Managers can only update certain statuses
+            $allowedStatuses = Auth::user()->role === 'admin' 
+                ? ['pending', 'confirmed', 'processing', 'completed', 'overdue', 'failed', 'refunded', 'cancelled']
+                : ['pending', 'confirmed', 'processing', 'completed', 'overdue', 'cancelled']; // Managers cannot mark as failed or refunded
 
-        $request->validate([
-            'status' => 'required|in:' . implode(',', $allowedStatuses),
-            'transaction_id' => 'nullable|string',
-            'notes' => 'nullable|string'
-        ]);
+            $validated = $request->validate([
+                'status' => 'required|in:' . implode(',', $allowedStatuses),
+                'transaction_id' => 'nullable|string',
+                'notes' => 'nullable|string'
+            ]);
 
-        $payment->update([
-            'status' => $request->status,
-            'transaction_id' => $request->transaction_id,
-            'payment_date' => $request->status === 'completed' ? now() : $payment->payment_date,
-            'notes' => $request->notes
-        ]);
+            $payment->update([
+                'status' => $request->status,
+                'transaction_id' => $request->transaction_id,
+                'payment_date' => $request->status === 'completed' ? now() : $payment->payment_date,
+                'notes' => $request->notes
+            ]);
 
-        // Update booking status if payment is completed
-        if ($request->status === 'completed' && $payment->booking) {
-            // Check if booking is now fully paid
-            if ($payment->booking->isPaid()) {
-                // If booking is checked out, mark as completed
-                if ($payment->booking->status === 'checked_out') {
-                    $payment->booking->update(['status' => 'completed']);
-                } 
-                // If booking is still pending or in other states, confirm it
-                elseif (in_array($payment->booking->status, ['pending', 'processing'])) {
-                    $payment->booking->update(['status' => 'confirmed']);
+            // Update booking status if payment is completed
+            if ($request->status === 'completed' && $payment->booking) {
+                // Check if booking is now fully paid
+                if ($payment->booking->isPaid()) {
+                    // If booking is checked out, mark as completed
+                    if ($payment->booking->status === 'checked_out') {
+                        $payment->booking->update(['status' => 'completed']);
+                    } 
+                    // If booking is still pending or in other states, confirm it
+                    elseif (in_array($payment->booking->status, ['pending', 'processing'])) {
+                        $payment->booking->update(['status' => 'confirmed']);
+                    }
                 }
             }
-        }
-        
-        // Update service request status if payment is completed
-        if ($request->status === 'completed' && $payment->serviceRequest) {
-            if (in_array($payment->serviceRequest->status, ['pending', 'confirmed'])) {
-                $payment->serviceRequest->update(['status' => 'in_progress']);
+            
+            // Update service request status if payment is completed
+            if ($request->status === 'completed' && $payment->serviceRequest) {
+                if (in_array($payment->serviceRequest->status, ['pending', 'confirmed'])) {
+                    $payment->serviceRequest->update(['status' => 'in_progress']);
+                }
             }
-        }
 
-        return back()->with('success', 'Payment status updated successfully.');
+            // Return JSON response for AJAX requests
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Payment status updated successfully.',
+                    'status' => $payment->status
+                ]);
+            }
+
+            return back()->with('success', 'Payment status updated successfully.');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation error: ' . implode(', ', $e->validator->errors()->all())
+                ], 422);
+            }
+            throw $e;
+        } catch (\Exception $e) {
+            \Log::error('Payment status update error (Manager): ' . $e->getMessage(), [
+                'payment_id' => $payment->id,
+                'status' => $request->status,
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'An error occurred: ' . $e->getMessage()
+                ], 500);
+            }
+            
+            return back()->with('error', 'An error occurred while updating payment status.');
+        }
     }
 
     /**
@@ -241,7 +308,7 @@ class PaymentController extends Controller
     }
 
     /**
-     * Export payment data (CSV format)
+     * Export payment data (CSV format - Customer Grouped)
      */
     public function export(Request $request)
     {
@@ -249,61 +316,103 @@ class PaymentController extends Controller
             abort(403, 'Only administrators, managers, and staff can export payment data.');
         }
 
-        $query = Payment::with(['booking', 'user', 'serviceRequest']);
+        // Get the same filtered query as the index method
+        $status = $request->get('status');
+        $paymentMethod = $request->get('payment_method');
+        $dateFrom = $request->get('date_from');
+        $dateTo = $request->get('date_to');
+        $search = $request->get('search');
 
-        // Apply same filters as index
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
-        if ($request->filled('payment_method')) {
-            $query->where('payment_method', $request->payment_method);
-        }
-        if ($request->filled('date_from')) {
-            $query->whereDate('created_at', '>=', $request->date_from);
-        }
-        if ($request->filled('date_to')) {
-            $query->whereDate('created_at', '<=', $request->date_to);
+        $query = \App\Models\User::whereHas('payments')
+            ->with(['payments' => function($query) use ($status, $paymentMethod, $dateFrom, $dateTo) {
+                if ($status) {
+                    $query->where('status', $status);
+                }
+                if ($paymentMethod) {
+                    $query->where('payment_method', $paymentMethod);
+                }
+                if ($dateFrom) {
+                    $query->whereDate('created_at', '>=', $dateFrom);
+                }
+                if ($dateTo) {
+                    $query->whereDate('created_at', '<=', $dateTo);
+                }
+            }]);
+
+        if ($search) {
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%")
+                  ->orWhereHas('payments', function($paymentQuery) use ($search) {
+                      $paymentQuery->where('payment_reference', 'like', "%{$search}%")
+                                   ->orWhere('transaction_id', 'like', "%{$search}%");
+                  });
+            });
         }
 
-        $payments = $query->orderBy('created_at', 'desc')->get();
+        $customers = $query->get();
 
-        $filename = 'payments_export_' . date('Y-m-d_H-i-s') . '.csv';
+        $filename = 'customer_payments_export_' . date('Y-m-d_H-i-s') . '.csv';
         
         $headers = [
             'Content-Type' => 'text/csv',
             'Content-Disposition' => 'attachment; filename="' . $filename . '"',
         ];
 
-        $callback = function() use ($payments) {
+        $callback = function() use ($customers) {
             $file = fopen('php://output', 'w');
             
             // CSV headers
             fputcsv($file, [
-                'Payment Reference',
-                'Customer Name',
-                'Customer Email',
-                'Amount',
-                'Payment Method',
-                'Status',
-                'Type',
-                'Created Date',
-                'Payment Date',
-                'Notes'
+                'Guest Name',
+                'Email',
+                'Role',
+                'Total Bookings',
+                'Total Services',
+                'Total Food Orders',
+                'Total Amount',
+                'Total Payments',
+                'Completed',
+                'Confirmed',
+                'Pending',
+                'Overdue',
+                'Refunded',
+                'Latest Payment Date',
+                'Member Since'
             ]);
 
             // CSV data
-            foreach ($payments as $payment) {
+            foreach ($customers as $customer) {
+                $bookingCount = $customer->payments->where('booking_id', '!=', null)->count();
+                $serviceCount = $customer->payments->where('service_request_id', '!=', null)->count();
+                $foodCount = $customer->payments->where('food_order_id', '!=', null)->count();
+                $totalAmount = $customer->payments->sum('amount');
+                $totalPayments = $customer->payments->count();
+                
+                $completedCount = $customer->payments->where('status', 'completed')->count();
+                $confirmedCount = $customer->payments->where('status', 'confirmed')->count();
+                $pendingCount = $customer->payments->where('status', 'pending')->count();
+                $overdueCount = $customer->payments->where('status', 'overdue')->count();
+                $refundedCount = $customer->payments->where('status', 'refunded')->count();
+                
+                $latestPayment = $customer->payments->sortByDesc('created_at')->first();
+
                 fputcsv($file, [
-                    $payment->payment_reference,
-                    $payment->user->name,
-                    $payment->user->email,
-                    $payment->amount,
-                    $payment->payment_method_display,
-                    ucfirst($payment->status),
-                    $payment->payment_category,
-                    $payment->created_at->format('Y-m-d H:i:s'),
-                    $payment->payment_date ? $payment->payment_date->format('Y-m-d H:i:s') : '',
-                    $payment->notes
+                    $customer->name,
+                    $customer->email,
+                    ucfirst($customer->role),
+                    $bookingCount,
+                    $serviceCount,
+                    $foodCount,
+                    number_format($totalAmount, 2),
+                    $totalPayments,
+                    $completedCount,
+                    $confirmedCount,
+                    $pendingCount,
+                    $overdueCount,
+                    $refundedCount,
+                    $latestPayment ? $latestPayment->created_at->format('Y-m-d H:i:s') : 'N/A',
+                    $customer->created_at->format('Y-m-d')
                 ]);
             }
 

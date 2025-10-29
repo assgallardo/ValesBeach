@@ -154,7 +154,16 @@
                         <div>
                             <p class="text-sm text-gray-400">Payment Status</p>
                             <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold
-                                {{ $serviceRequest->payment->status === 'completed' ? 'bg-green-500 text-white' : 'bg-yellow-500 text-gray-900' }}">
+                                @if($serviceRequest->payment->status === 'completed') bg-green-500 text-white
+                                @elseif($serviceRequest->payment->status === 'confirmed') bg-blue-500 text-white
+                                @elseif($serviceRequest->payment->status === 'pending') bg-yellow-500 text-gray-900
+                                @elseif($serviceRequest->payment->status === 'overdue') bg-orange-500 text-white
+                                @elseif($serviceRequest->payment->status === 'processing') bg-indigo-500 text-white
+                                @elseif($serviceRequest->payment->status === 'failed') bg-red-600 text-white
+                                @elseif($serviceRequest->payment->status === 'refunded') bg-red-500 text-white
+                                @elseif($serviceRequest->payment->status === 'cancelled') bg-gray-600 text-white
+                                @else bg-gray-500 text-white
+                                @endif">
                                 {{ ucfirst($serviceRequest->payment->status) }}
                             </span>
                         </div>
@@ -180,4 +189,6 @@
     </div>
 </div>
 @endsection
+
+
 

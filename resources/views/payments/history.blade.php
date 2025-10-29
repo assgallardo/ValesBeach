@@ -85,71 +85,83 @@
 
                     <!-- Payment List -->
                     <div class="p-6">
-                        <div class="space-y-3">
+                        <div class="space-y-4">
                             @foreach($bookings as $booking)
-                            <div class="bg-gray-700/50 rounded-lg p-3 hover:bg-gray-700 transition-all duration-200 border border-gray-600/50">
-                                <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                            <div class="bg-gray-700/50 rounded-lg p-4 hover:bg-gray-700 transition-all duration-200 border border-gray-600/50">
+                                <!-- Booking Header -->
+                                <div class="flex items-center justify-between mb-3">
                                     <div class="flex-1">
-                                        <!-- Price and Status Badges -->
-                                        <div class="flex items-center gap-2 mb-2">
-                                            <span class="text-xl font-bold text-blue-400">₱{{ number_format($booking->total_price, 2) }}</span>
-                                            @if($booking->remaining_balance <= 0)
-                                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-green-500 text-white">
-                                                    Paid
-                                                </span>
-                                            @else
-                                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-yellow-500 text-gray-900">
-                                                    Pending
-                                                </span>
-                                            @endif
-                                            @php
-                                                $statusConfig = [
-                                                    'completed' => ['bg' => 'bg-purple-600', 'text' => 'Completed'],
-                                                    'confirmed' => ['bg' => 'bg-blue-600', 'text' => 'Confirmed'],
-                                                    'pending' => ['bg' => 'bg-gray-600', 'text' => 'Pending'],
-                                                    'cancelled' => ['bg' => 'bg-red-600', 'text' => 'Cancelled']
-                                                ];
-                                                $config = $statusConfig[$booking->status] ?? ['bg' => 'bg-gray-600', 'text' => ucfirst($booking->status)];
-                                            @endphp
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ $config['bg'] }} text-white">
-                                                {{ $config['text'] }}
-                                            </span>
-                                        </div>
-                                        
-                                        <!-- Compact Info -->
-                                        <div class="text-sm text-gray-300 mb-2">
+                                        <div class="text-sm text-gray-300 mb-1">
                                             <span class="font-medium text-white">{{ $booking->room->name }}</span>
                                             <span class="text-gray-500 mx-1">•</span>
                                             <span class="font-mono text-xs text-blue-400">{{ $booking->booking_reference }}</span>
-                                            <span class="text-gray-500 mx-1">•</span>
-                                            <span class="text-xs">{{ $booking->check_in->format('M d') }} - {{ $booking->check_out->format('M d, Y') }}</span>
                                         </div>
-                                        
-                                        <!-- Compact Payment Info -->
-                                        <div class="flex items-center gap-4 text-xs">
-                                            <div>
-                                                <span class="text-gray-400">Paid:</span>
-                                                <span class="text-green-400 font-semibold ml-1">₱{{ number_format($booking->amount_paid, 2) }}</span>
-                                            </div>
-                                            <div>
-                                                <span class="text-gray-400">Balance:</span>
-                                                <span class="font-semibold ml-1 {{ $booking->remaining_balance > 0 ? 'text-yellow-400' : 'text-green-400' }}">
-                                                    ₱{{ number_format($booking->remaining_balance, 2) }}
-                                                </span>
-                                            </div>
-                                            <div>
-                                                <span class="text-gray-400">Payments:</span>
-                                                <span class="text-blue-400 font-semibold ml-1">{{ $booking->payments->count() }}x</span>
-                                            </div>
+                                        <div class="text-xs text-gray-400">
+                                            {{ $booking->check_in->format('M d') }} - {{ $booking->check_out->format('M d, Y') }}
+                                            <span class="mx-1">•</span>
+                                            Total: <span class="text-blue-400 font-semibold">₱{{ number_format($booking->total_price, 2) }}</span>
+                                            <span class="mx-1">•</span>
+                                            Balance: <span class="{{ $booking->remaining_balance > 0 ? 'text-yellow-400' : 'text-green-400' }} font-semibold">₱{{ number_format($booking->remaining_balance, 2) }}</span>
                                         </div>
                                     </div>
-                                    
                                     <div>
+                                        @php
+                                            $statusConfig = [
+                                                'completed' => ['bg' => 'bg-purple-600', 'text' => 'Completed'],
+                                                'confirmed' => ['bg' => 'bg-blue-600', 'text' => 'Confirmed'],
+                                                'pending' => ['bg' => 'bg-gray-600', 'text' => 'Pending'],
+                                                'cancelled' => ['bg' => 'bg-red-600', 'text' => 'Cancelled']
+                                            ];
+                                            $config = $statusConfig[$booking->status] ?? ['bg' => 'bg-gray-600', 'text' => ucfirst($booking->status)];
+                                        @endphp
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ $config['bg'] }} text-white">
+                                            {{ $config['text'] }}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <!-- Individual Payment Transactions -->
+                                @if($booking->payments && $booking->payments->count() > 0)
+                                <div class="space-y-2 pl-4 border-l-2 border-blue-600/30">
+                                    @foreach($booking->payments as $payment)
+                                    <div class="flex items-center justify-between bg-gray-800/50 rounded p-2">
+                                        <div class="flex items-center gap-3 flex-1">
+                                            <span class="text-lg font-bold text-blue-400">₱{{ number_format($payment->amount, 2) }}</span>
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold
+                                                @if($payment->status === 'completed') bg-green-500 text-white
+                                                @elseif($payment->status === 'confirmed') bg-blue-500 text-white
+                                                @elseif($payment->status === 'pending') bg-yellow-500 text-gray-900
+                                                @elseif($payment->status === 'overdue') bg-orange-500 text-white
+                                                @elseif($payment->status === 'processing') bg-indigo-500 text-white
+                                                @elseif($payment->status === 'failed') bg-red-600 text-white
+                                                @elseif($payment->status === 'refunded') bg-red-500 text-white
+                                                @elseif($payment->status === 'cancelled') bg-gray-600 text-white
+                                                @else bg-gray-500 text-white
+                                                @endif">
+                                                {{ ucfirst($payment->status) }}
+                                            </span>
+                                            <span class="text-xs text-gray-400">{{ $payment->payment_reference }}</span>
+                                            <span class="text-xs text-gray-500">{{ $payment->created_at->format('M d, Y') }}</span>
+                                        </div>
                                         <a href="{{ route('guest.bookings.show', $booking) }}" 
-                                           class="inline-flex items-center justify-center px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm">
-                                            <i class="fas fa-eye mr-1.5"></i>View
+                                           class="inline-flex items-center justify-center px-2 py-1 bg-blue-600/20 text-blue-400 rounded hover:bg-blue-600/30 transition-colors text-xs">
+                                            <i class="fas fa-eye"></i>
                                         </a>
                                     </div>
+                                    @endforeach
+                                </div>
+                                @else
+                                <div class="text-center py-2 text-gray-500 text-sm italic">
+                                    No payments recorded yet
+                                </div>
+                                @endif
+
+                                <!-- View Button -->
+                                <div class="mt-3 flex justify-end">
+                                    <a href="{{ route('guest.bookings.show', $booking) }}" 
+                                       class="inline-flex items-center justify-center px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm">
+                                        <i class="fas fa-eye mr-1.5"></i>View
+                                    </a>
                                 </div>
                             </div>
                             @endforeach
@@ -194,7 +206,16 @@
                                         <div class="flex items-center gap-2 mb-2">
                                             <span class="text-xl font-bold text-green-400">₱{{ number_format($payment->amount, 2) }}</span>
                                             <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold
-                                                {{ $payment->status === 'completed' ? 'bg-green-500 text-white' : 'bg-yellow-500 text-gray-900' }}">
+                                                @if($payment->status === 'completed') bg-green-500 text-white
+                                                @elseif($payment->status === 'confirmed') bg-blue-500 text-white
+                                                @elseif($payment->status === 'pending') bg-yellow-500 text-gray-900
+                                                @elseif($payment->status === 'overdue') bg-orange-500 text-white
+                                                @elseif($payment->status === 'processing') bg-indigo-500 text-white
+                                                @elseif($payment->status === 'failed') bg-red-600 text-white
+                                                @elseif($payment->status === 'refunded') bg-red-500 text-white
+                                                @elseif($payment->status === 'cancelled') bg-gray-600 text-white
+                                                @else bg-gray-500 text-white
+                                                @endif">
                                                 {{ ucfirst($payment->status) }}
                                             </span>
                                         </div>
@@ -276,7 +297,16 @@
                                         <div class="flex items-center gap-2 mb-2">
                                             <span class="text-xl font-bold text-orange-400">₱{{ number_format($payment->amount, 2) }}</span>
                                             <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold
-                                                {{ $payment->status === 'completed' ? 'bg-green-500 text-white' : 'bg-yellow-500 text-gray-900' }}">
+                                                @if($payment->status === 'completed') bg-green-500 text-white
+                                                @elseif($payment->status === 'confirmed') bg-blue-500 text-white
+                                                @elseif($payment->status === 'pending') bg-yellow-500 text-gray-900
+                                                @elseif($payment->status === 'overdue') bg-orange-500 text-white
+                                                @elseif($payment->status === 'processing') bg-indigo-500 text-white
+                                                @elseif($payment->status === 'failed') bg-red-600 text-white
+                                                @elseif($payment->status === 'refunded') bg-red-500 text-white
+                                                @elseif($payment->status === 'cancelled') bg-gray-600 text-white
+                                                @else bg-gray-500 text-white
+                                                @endif">
                                                 {{ ucfirst($payment->status) }}
                                             </span>
                                             @if($payment->foodOrder)

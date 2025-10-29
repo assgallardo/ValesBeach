@@ -97,6 +97,14 @@ class FoodOrder extends Model
     }
 
     /**
+     * Get the payment for this food order.
+     */
+    public function payment()
+    {
+        return $this->hasOne(Payment::class);
+    }
+
+    /**
      * Get the payments for this food order.
      */
     public function payments()

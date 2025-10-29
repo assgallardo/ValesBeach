@@ -95,8 +95,10 @@
                     <select name="status" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-green-50 focus:outline-none focus:ring-2 focus:ring-green-500">
                         <option value="">All Status</option>
                         <option value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}>Pending</option>
-                        <option value="processing" {{ request('status') === 'processing' ? 'selected' : '' }}>Processing</option>
+                        <option value="confirmed" {{ request('status') === 'confirmed' ? 'selected' : '' }}>Confirmed</option>
                         <option value="completed" {{ request('status') === 'completed' ? 'selected' : '' }}>Completed</option>
+                        <option value="overdue" {{ request('status') === 'overdue' ? 'selected' : '' }}>Overdue</option>
+                        <option value="processing" {{ request('status') === 'processing' ? 'selected' : '' }}>Processing</option>
                         <option value="failed" {{ request('status') === 'failed' ? 'selected' : '' }}>Failed</option>
                         <option value="refunded" {{ request('status') === 'refunded' ? 'selected' : '' }}>Refunded</option>
                         <option value="cancelled" {{ request('status') === 'cancelled' ? 'selected' : '' }}>Cancelled</option>
@@ -152,189 +154,179 @@
 
             <!-- Search Bar -->
             <div class="mt-4">
-                <form method="GET" action="{{ route('admin.payments.index') }}">
+                <form method="GET" action="{{ route('admin.payments.index') }}" id="searchForm">
                     @foreach(request()->except('search') as $key => $value)
                         <input type="hidden" name="{{ $key }}" value="{{ $value }}">
                     @endforeach
                     <div class="relative">
-                        <input type="text" name="search" placeholder="Search by payment reference, guest name, or email..." 
+                        <input type="text" 
+                               name="search" 
+                               id="searchInput"
+                               placeholder="Search by payment reference, guest name, or email..." 
                                value="{{ request('search') }}"
-                               class="w-full bg-gray-700 border border-gray-600 rounded-lg pl-10 pr-4 py-2 text-green-50 focus:outline-none focus:ring-2 focus:ring-green-500">
+                               class="w-full bg-gray-700 border border-gray-600 rounded-lg pl-10 pr-24 py-2 text-green-50 focus:outline-none focus:ring-2 focus:ring-green-500">
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <i class="fas fa-search text-gray-400"></i>
+                        </div>
+                        <div class="absolute inset-y-0 right-0 flex items-center pr-2 gap-1">
+                            @if(request('search'))
+                                <a href="{{ route('admin.payments.index', request()->except('search')) }}" 
+                                   class="px-2 py-1 text-xs bg-gray-600 text-gray-300 rounded hover:bg-gray-500 transition-colors"
+                                   title="Clear search">
+                                    <i class="fas fa-times"></i>
+                                </a>
+                            @endif
+                            <button type="submit" 
+                                    class="px-3 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 transition-colors">
+                                Search
+                            </button>
                         </div>
                     </div>
                 </form>
             </div>
         </div>
 
-        <!-- Payments Table -->
+        <!-- Customer Payments Table -->
         <div class="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
             <div class="px-6 py-4 border-b border-gray-700 flex flex-col sm:flex-row sm:items-center sm:justify-between">
                 <h3 class="text-lg font-semibold text-green-50">Payment Transactions</h3>
-                @if($payments->count() > 0)
+                @if($customers->count() > 0)
                     <p class="text-sm text-gray-400 mt-2 sm:mt-0">
-                        Showing {{ $payments->firstItem() }} to {{ $payments->lastItem() }} of {{ $payments->total() }} results
+                        Showing {{ $customers->firstItem() }} to {{ $customers->lastItem() }} of {{ $customers->total() }} customers
                     </p>
                 @endif
             </div>
 
-            @if($payments->count() > 0)
+            @if($customers->count() > 0)
                 <div>
                     <table class="w-full table-fixed">
                         <thead class="bg-gray-750">
                             <tr>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase w-[16%]">Guest</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase w-[12%]">Payment Ref</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase w-[18%]">Type & Service</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase w-[11%]">Amount</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase w-[10%]">Method</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase w-[9%]">Status</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase w-[10%]">Date</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase w-[14%]">Actions</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase w-[20%]">Guest</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase w-[15%]">Types</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase w-[12%]">Total Amount</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase w-[10%]">Payments</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase w-[15%]">Status</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase w-[13%]">Latest Date</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase w-[15%]">Actions</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-700">
-                            @foreach($payments as $payment)
+                            @foreach($customers as $customer)
+                                @php
+                                    $bookingPayments = $customer->payments->filter(fn($p) => $p->booking_id);
+                                    $servicePayments = $customer->payments->filter(fn($p) => $p->service_request_id);
+                                    $foodPayments = $customer->payments->filter(fn($p) => $p->food_order_id);
+                                    $totalAmount = $customer->payments->sum('amount');
+                                    $latestPayment = $customer->payments->first();
+                                    
+                                    // Group payments by status
+                                    $statusGroups = $customer->payments->groupBy('status');
+                                    $pendingCount = $statusGroups->get('pending', collect())->count();
+                                    $confirmedCount = $statusGroups->get('confirmed', collect())->count();
+                                    $completedCount = $statusGroups->get('completed', collect())->count();
+                                    $overdueCount = $statusGroups->get('overdue', collect())->count();
+                                    $refundedCount = $statusGroups->get('refunded', collect())->count();
+                                @endphp
                             <tr class="hover:bg-gray-750 transition-colors">
                                 <!-- Guest Info -->
                                 <td class="px-4 py-3">
-                                    <div class="font-medium text-green-50 text-sm truncate" title="{{ $payment->user->name ?? 'N/A' }}">
-                                        {{ $payment->user->name ?? 'N/A' }}
+                                    <div class="font-medium text-green-50 text-sm truncate" title="{{ $customer->name }}">
+                                        {{ $customer->name }}
                                     </div>
-                                    <div class="text-xs text-gray-400 truncate" title="{{ $payment->user->email ?? 'N/A' }}">
-                                        {{ $payment->user->email ?? 'N/A' }}
+                                    <div class="text-xs text-gray-400 truncate" title="{{ $customer->email }}">
+                                        {{ $customer->email }}
                                     </div>
                                 </td>
 
-                                <!-- Payment Details -->
+                                <!-- Payment Types -->
                                 <td class="px-4 py-3">
-                                    <div class="text-sm text-blue-400 truncate" title="{{ $payment->payment_reference }}">
-                                        {{ $payment->payment_reference }}
+                                    <div class="flex flex-col gap-1">
+                                        @if($bookingPayments->count() > 0)
+                                            <div class="flex items-center gap-2">
+                                                <i class="fas fa-bed text-blue-400 text-xs"></i>
+                                                <span class="text-xs text-gray-300">{{ $bookingPayments->count() }} Booking{{ $bookingPayments->count() > 1 ? 's' : '' }}</span>
+                                            </div>
+                                        @endif
+                                        @if($servicePayments->count() > 0)
+                                            <div class="flex items-center gap-2">
+                                                <i class="fas fa-concierge-bell text-purple-400 text-xs"></i>
+                                                <span class="text-xs text-gray-300">{{ $servicePayments->count() }} Service{{ $servicePayments->count() > 1 ? 's' : '' }}</span>
+                                            </div>
+                                        @endif
+                                        @if($foodPayments->count() > 0)
+                                            <div class="flex items-center gap-2">
+                                                <i class="fas fa-utensils text-orange-400 text-xs"></i>
+                                                <span class="text-xs text-gray-300">{{ $foodPayments->count() }} Food Order{{ $foodPayments->count() > 1 ? 's' : '' }}</span>
+                                            </div>
+                                        @endif
                                     </div>
                                 </td>
 
-                                <!-- Type & Service -->
-                                <td class="px-4 py-3">
-                                    @if($payment->booking)
-                                        <div class="flex items-start gap-2">
-                                            <i class="fas fa-bed text-blue-400 mt-0.5"></i>
-                                            <div class="text-sm overflow-hidden">
-                                                <div class="font-medium text-green-50 truncate">Booking</div>
-                                                <div class="text-xs text-gray-400 truncate" title="{{ $payment->booking->room->name ?? 'N/A' }}">
-                                                    {{ $payment->booking->room->name ?? 'N/A' }}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    @elseif($payment->serviceRequest)
-                                        <div class="flex items-start gap-2">
-                                            <i class="fas fa-concierge-bell text-purple-400 mt-0.5"></i>
-                                            <div class="text-sm overflow-hidden">
-                                                <div class="font-medium text-green-50 truncate">Service</div>
-                                                <div class="text-xs text-gray-400 truncate" title="{{ $payment->serviceRequest->service->name ?? 'N/A' }}">
-                                                    {{ Str::limit($payment->serviceRequest->service->name ?? 'Service Request', 20) }}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    @elseif($payment->foodOrder)
-                                        <div class="flex items-start gap-2">
-                                            <i class="fas fa-utensils text-orange-400 mt-0.5"></i>
-                                            <div class="text-sm overflow-hidden">
-                                                <div class="font-medium text-green-50 truncate">Food</div>
-                                                <div class="text-xs text-gray-400 truncate">Order #{{ $payment->foodOrder->order_number }}</div>
-                                            </div>
-                                        </div>
-                                    @else
-                                        <div class="flex items-center gap-2">
-                                            <i class="fas fa-question-circle text-gray-400"></i>
-                                            <span class="text-sm text-gray-400">Other</span>
-                                        </div>
-                                    @endif
-                                </td>
-
-                                <!-- Amount -->
+                                <!-- Total Amount -->
                                 <td class="px-4 py-3">
                                     <div class="text-sm font-bold text-green-400">
-                                        ₱{{ number_format($payment->amount, 2) }}
+                                        ₱{{ number_format($totalAmount, 2) }}
                                     </div>
-                                    @if($payment->refund_amount > 0)
-                                        <div class="text-xs text-red-400">
-                                            -₱{{ number_format($payment->refund_amount, 2) }}
-                                        </div>
-                                        <div class="text-xs font-medium text-gray-300">
-                                            Net: ₱{{ number_format($payment->amount - $payment->refund_amount, 2) }}
-                                        </div>
-                                    @endif
                                 </td>
 
-                                <!-- Method -->
+                                <!-- Number of Payments -->
                                 <td class="px-4 py-3">
-                                    <div class="text-sm text-gray-300 truncate">
-                                        {{ $payment->payment_method_display }}
+                                    <div class="text-sm text-gray-300">
+                                        {{ $customer->payments->count() }} payment{{ $customer->payments->count() > 1 ? 's' : '' }}
                                     </div>
                                 </td>
 
                                 <!-- Status -->
                                 <td class="px-4 py-3">
-                                    @php
-                                        $statusConfig = match($payment->status) {
-                                            'completed' => ['bg' => 'bg-green-600', 'text' => 'text-white'],
-                                            'pending' => ['bg' => 'bg-yellow-600', 'text' => 'text-white'],
-                                            'processing' => ['bg' => 'bg-blue-600', 'text' => 'text-white'],
-                                            'failed' => ['bg' => 'bg-red-600', 'text' => 'text-white'],
-                                            'refunded' => ['bg' => 'bg-gray-600', 'text' => 'text-white'],
-                                            'cancelled' => ['bg' => 'bg-gray-700', 'text' => 'text-gray-300'],
-                                            default => ['bg' => 'bg-gray-700', 'text' => 'text-gray-300']
-                                        };
-                                    @endphp
-                                    <span class="inline-block px-2 py-1 text-xs {{ $statusConfig['bg'] }} {{ $statusConfig['text'] }} rounded">
-                                        {{ ucfirst($payment->status) }}
-                                    </span>
+                                    <div class="flex flex-col gap-1">
+                                        @if($completedCount > 0)
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-600 text-white">
+                                                {{ $completedCount }} Completed
+                                            </span>
+                                        @endif
+                                        @if($confirmedCount > 0)
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-600 text-white">
+                                                {{ $confirmedCount }} Confirmed
+                                            </span>
+                                        @endif
+                                        @if($pendingCount > 0)
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-600 text-white">
+                                                {{ $pendingCount }} Pending
+                                            </span>
+                                        @endif
+                                        @if($overdueCount > 0)
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-orange-600 text-white">
+                                                {{ $overdueCount }} Overdue
+                                            </span>
+                                        @endif
+                                        @if($refundedCount > 0)
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-600 text-white">
+                                                {{ $refundedCount }} Refunded
+                                            </span>
+                                        @endif
+                                    </div>
                                 </td>
 
-                                <!-- Date -->
+                                <!-- Latest Date -->
                                 <td class="px-4 py-3">
-                                    <div class="text-sm text-green-50">
-                                        {{ $payment->created_at->format('M d, Y') }}
-                                    </div>
-                                    <div class="text-xs text-gray-400">
-                                        {{ $payment->created_at->format('h:i A') }}
-                                    </div>
+                                    @if($latestPayment)
+                                        <div class="text-sm text-green-50">
+                                            {{ $latestPayment->created_at->format('M d, Y') }}
+                                        </div>
+                                        <div class="text-xs text-gray-400">
+                                            {{ $latestPayment->created_at->format('h:i A') }}
+                                        </div>
+                                    @endif
                                 </td>
 
                                 <!-- Actions -->
                                 <td class="px-4 py-3">
-                                    <div class="flex flex-wrap gap-1">
-                                        <a href="{{ route('admin.payments.show', $payment) }}" 
-                                           class="inline-flex items-center px-2 py-1 text-xs bg-gray-700 text-gray-300 rounded hover:bg-gray-600 transition-colors border border-gray-600" 
-                                           title="View">
-                                            <i class="fas fa-eye text-blue-400"></i>
-                                        </a>
-                                        
-                                        @if($payment->status === 'pending')
-                                            <button onclick="updatePaymentStatus({{ $payment->id }}, 'completed')"
-                                                    class="inline-flex items-center px-2 py-1 text-xs bg-gray-700 text-gray-300 rounded hover:bg-gray-600 transition-colors border border-gray-600" 
-                                                    title="Complete">
-                                                <i class="fas fa-check text-green-400"></i>
-                                            </button>
-                                        @endif
-
-                                        @if($payment->canBeRefunded())
-                                            <button onclick="showRefundModal({{ $payment->id }}, {{ $payment->getRemainingRefundableAmount() }})"
-                                                    class="inline-flex items-center px-2 py-1 text-xs bg-gray-700 text-gray-300 rounded hover:bg-gray-600 transition-colors border border-gray-600" 
-                                                    title="Refund">
-                                                <i class="fas fa-undo text-yellow-400"></i>
-                                            </button>
-                                        @endif
-
-                                        @if($payment->booking && $payment->booking->invoice)
-                                            <a href="{{ route('invoices.show', $payment->booking->invoice) }}" 
-                                               class="inline-flex items-center px-2 py-1 text-xs bg-gray-700 text-gray-300 rounded hover:bg-gray-600 transition-colors border border-gray-600" 
-                                               title="Invoice">
-                                                <i class="fas fa-file-invoice text-purple-400"></i>
-                                            </a>
-                                        @endif
-                                    </div>
+                                    <a href="{{ route('admin.payments.customer', $customer->id) }}" 
+                                       class="inline-flex items-center px-3 py-1.5 text-xs bg-green-600 text-white rounded hover:bg-green-700 transition-colors" 
+                                       title="View All Payments">
+                                        <i class="fas fa-eye mr-1"></i> View Details
+                                    </a>
                                 </td>
                             </tr>
                             @endforeach
@@ -345,16 +337,16 @@
                 <!-- Pagination -->
                 <div class="px-6 py-4 border-t border-gray-700 flex flex-col sm:flex-row items-center justify-between">
                     <div class="text-sm text-gray-400 mb-4 sm:mb-0">
-                        Showing {{ $payments->firstItem() }} to {{ $payments->lastItem() }} of {{ $payments->total() }} payments
+                        Showing {{ $customers->firstItem() }} to {{ $customers->lastItem() }} of {{ $customers->total() }} customers
                     </div>
                     <div class="flex-1 flex justify-end">
-                        {{ $payments->appends(request()->query())->links() }}
+                        {{ $customers->appends(request()->query())->links() }}
                     </div>
                 </div>
             @else
                 <div class="px-6 py-12 text-center">
                     <i class="fas fa-receipt text-6xl text-gray-600 mb-4"></i>
-                    <h3 class="text-xl font-semibold text-green-50 mb-2">No payments found</h3>
+                    <h3 class="text-xl font-semibold text-green-50 mb-2">No customers with payments found</h3>
                     <p class="text-gray-400">Try adjusting your search filters or check back later.</p>
                 </div>
             @endif
@@ -413,8 +405,33 @@ function toggleFilterPanel() {
     panel.classList.toggle('hidden');
 }
 
+// Search functionality with debounce
+let searchTimeout;
+const searchInput = document.getElementById('searchInput');
+const searchForm = document.getElementById('searchForm');
+
+if (searchInput) {
+    // Submit on Enter key
+    searchInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            searchForm.submit();
+        }
+    });
+
+    // Optional: Auto-submit after user stops typing (1 second delay)
+    searchInput.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(function() {
+            if (searchInput.value.length >= 2 || searchInput.value.length === 0) {
+                searchForm.submit();
+            }
+        }, 1000); // Wait 1 second after user stops typing
+    });
+}
+
 function updatePaymentStatus(paymentId, status) {
-    if (!status || !['pending', 'completed', 'failed', 'refunded', 'cancelled'].includes(status)) {
+    if (!status || !['pending', 'confirmed', 'completed', 'overdue', 'processing', 'failed', 'refunded', 'cancelled'].includes(status)) {
         console.error('Invalid payment status:', status);
         alert('Invalid payment status selected');
         return;
@@ -452,6 +469,54 @@ function updatePaymentStatus(paymentId, status) {
         
         document.body.appendChild(form);
         form.submit();
+    }
+}
+
+// New function for dropdown status updates
+function updatePaymentStatusDropdown(paymentId, newStatus) {
+    const validStatuses = ['pending', 'confirmed', 'completed', 'overdue', 'processing', 'failed', 'refunded', 'cancelled'];
+    
+    if (!validStatuses.includes(newStatus)) {
+        console.error('Invalid payment status:', newStatus);
+        alert('Invalid payment status selected');
+        return;
+    }
+
+    if (confirm('Are you sure you want to update this payment status to "' + newStatus.charAt(0).toUpperCase() + newStatus.slice(1) + '"?')) {
+        console.log('Updating payment status:', {
+            paymentId: paymentId,
+            status: newStatus,
+            action: `/admin/payments/${paymentId}/status`
+        });
+
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/admin/payments/${paymentId}/status`;
+        
+        const csrfToken = document.createElement('input');
+        csrfToken.type = 'hidden';
+        csrfToken.name = '_token';
+        csrfToken.value = '{{ csrf_token() }}';
+        
+        const methodField = document.createElement('input');
+        methodField.type = 'hidden';
+        methodField.name = '_method';
+        methodField.value = 'PATCH';
+        
+        const statusField = document.createElement('input');
+        statusField.type = 'hidden';
+        statusField.name = 'status';
+        statusField.value = newStatus;
+        
+        form.appendChild(csrfToken);
+        form.appendChild(methodField);
+        form.appendChild(statusField);
+        
+        document.body.appendChild(form);
+        form.submit();
+    } else {
+        // Reset the dropdown to original value if user cancels
+        location.reload();
     }
 }
 

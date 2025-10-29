@@ -20,12 +20,17 @@ class Invoice extends Model
         'tax_rate',
         'tax_amount',
         'total_amount',
+        'amount_paid',
+        'balance_due',
         'status',
+        'invoice_date',
         'issue_date',
         'due_date',
         'paid_date',
         'notes',
-        'line_items'
+        'line_items',
+        'items',
+        'created_by'
     ];
 
     /**
@@ -36,10 +41,14 @@ class Invoice extends Model
         'tax_rate' => 'decimal:2',
         'tax_amount' => 'decimal:2',
         'total_amount' => 'decimal:2',
+        'amount_paid' => 'decimal:2',
+        'balance_due' => 'decimal:2',
+        'invoice_date' => 'date',
         'issue_date' => 'date',
         'due_date' => 'date',
         'paid_date' => 'date',
-        'line_items' => 'array'
+        'line_items' => 'array',
+        'items' => 'array'
     ];
 
     /**

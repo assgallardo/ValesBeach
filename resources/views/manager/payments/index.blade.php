@@ -153,198 +153,190 @@
         </div>
     </div>
 
+    <!-- Quick Search Bar -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-body py-2">
+                    <form method="GET" action="{{ route('manager.payments.index') }}" id="managerSearchForm">
+                        @foreach(request()->except('search') as $key => $value)
+                            <input type="hidden" name="{{ $key }}" value="{{ $value }}">
+                        @endforeach
+                        <div class="input-group">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text bg-white">
+                                    <i class="fas fa-search text-muted"></i>
+                                </span>
+                            </div>
+                            <input type="text" 
+                                   name="search" 
+                                   id="managerSearchInput"
+                                   class="form-control border-left-0" 
+                                   placeholder="Search by payment reference, guest name, or email..."
+                                   value="{{ request('search') }}">
+                            @if(request('search'))
+                                <div class="input-group-append">
+                                    <a href="{{ route('manager.payments.index', request()->except('search')) }}" 
+                                       class="btn btn-outline-secondary"
+                                       title="Clear search">
+                                        <i class="fas fa-times"></i>
+                                    </a>
+                                </div>
+                            @endif
+                            <div class="input-group-append">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-search"></i> Search
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="row">
         <!-- Booking Payments (Grouped) -->
         <div class="col-lg-8">
             <div class="card shadow mb-4">
                 <div class="card-header py-3 d-flex justify-content-between align-items-center">
                     <h6 class="m-0 font-weight-bold text-primary">
-                        <i class="fas fa-bed mr-2"></i>Booking Payments
+                        <i class="fas fa-users mr-2"></i>Customer Payments
                     </h6>
-                    <span class="badge badge-primary badge-pill">{{ $bookings->total() }} Bookings</span>
+                    <span class="badge badge-primary badge-pill">{{ $customers->total() }} Customers</span>
                 </div>
                 <div class="card-body">
-                    @if($bookings->count() > 0)
-                        <div class="row">
-                            @foreach($bookings as $booking)
-                            <div class="col-md-6 mb-3">
-                                <div class="card border-left-{{ $booking->remaining_balance > 0 ? 'warning' : 'success' }} h-100">
-                                    <div class="card-body p-3">
-                                        <!-- Booking Header -->
-                                        <div class="d-flex justify-content-between align-items-start mb-2">
-                                            <div class="flex-grow-1">
-                                                <h6 class="font-weight-bold mb-1">
-                                                    <i class="fas fa-bed text-primary mr-1"></i>
-                                                    {{ $booking->room->name }}
-                                                </h6>
-                                                <div class="small text-muted">
-                                                    <i class="fas fa-hashtag"></i> {{ $booking->booking_reference }}
-                                                </div>
-                                            </div>
-                                            <!-- Payment Status Badge -->
-                                            @if($booking->payment_status === 'cancelled')
-                                                <span class="badge badge-secondary px-2 py-1">
-                                                    <i class="fas fa-ban"></i> CANCELLED
-                                                </span>
-                                            @elseif($booking->remaining_balance <= 0 || $booking->payment_status === 'paid')
-                                                <span class="badge badge-success px-2 py-1">
-                                                    <i class="fas fa-check-circle"></i> FULLY PAID
-                                                </span>
-                                            @elseif($booking->payment_status === 'unpaid')
-                                                <span class="badge badge-danger px-2 py-1">
-                                                    <i class="fas fa-times-circle"></i> UNPAID
-                                                </span>
-                                            @else
-                                                <span class="badge badge-warning px-2 py-1">
-                                                    <i class="fas fa-exclamation-circle"></i> PARTIAL
-                                                </span>
+                    @if($customers->count() > 0)
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Guest</th>
+                                        <th>Payment Types</th>
+                                        <th>Total Amount</th>
+                                        <th>Transactions</th>
+                                        <th>Status</th>
+                                        <th>Latest Payment</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                            @foreach($customers as $customer)
+                                @php
+                                    $bookingPayments = $customer->payments->filter(fn($p) => $p->booking_id);
+                                    $servicePayments = $customer->payments->filter(fn($p) => $p->service_request_id);
+                                    $foodPayments = $customer->payments->filter(fn($p) => $p->food_order_id);
+                                    $totalAmount = $customer->payments->sum('amount');
+                                    $latestPayment = $customer->payments->first();
+                                    
+                                    // Group payments by status
+                                    $statusGroups = $customer->payments->groupBy('status');
+                                    $pendingCount = $statusGroups->get('pending', collect())->count();
+                                    $confirmedCount = $statusGroups->get('confirmed', collect())->count();
+                                    $completedCount = $statusGroups->get('completed', collect())->count();
+                                    $overdueCount = $statusGroups->get('overdue', collect())->count();
+                                    $refundedCount = $statusGroups->get('refunded', collect())->count();
+                                @endphp
+                                <tr>
+                                    <!-- Guest Info -->
+                                    <td>
+                                        <div class="font-weight-bold">{{ $customer->name }}</div>
+                                        <div class="small text-muted">{{ $customer->email }}</div>
+                                    </td>
+                                    
+                                    <!-- Payment Types -->
+                                    <td>
+                                        @if($bookingPayments->count() > 0)
+                                            <div><i class="fas fa-bed text-primary"></i> {{ $bookingPayments->count() }} Booking{{ $bookingPayments->count() > 1 ? 's' : '' }}</div>
+                                        @endif
+                                        @if($servicePayments->count() > 0)
+                                            <div><i class="fas fa-concierge-bell text-purple"></i> {{ $servicePayments->count() }} Service{{ $servicePayments->count() > 1 ? 's' : '' }}</div>
+                                        @endif
+                                        @if($foodPayments->count() > 0)
+                                            <div><i class="fas fa-utensils text-warning"></i> {{ $foodPayments->count() }} Food</div>
+                                        @endif
+                                    </td>
+                                    
+                                    <!-- Total Amount -->
+                                    <td>
+                                        <strong class="text-success">₱{{ number_format($totalAmount, 2) }}</strong>
+                                    </td>
+                                    
+                                    <!-- Transactions -->
+                                    <td>
+                                        <span class="badge badge-info">{{ $customer->payments->count() }} payment{{ $customer->payments->count() > 1 ? 's' : '' }}</span>
+                                    </td>
+                                    
+                                    <!-- Status -->
+                                    <td>
+                                        <div class="d-flex flex-column gap-1">
+                                            @if($completedCount > 0)
+                                                <span class="badge badge-success badge-sm">{{ $completedCount }} Completed</span>
                                             @endif
-                                                </div>
-                                                
-                                        <!-- Guest Info -->
-                                        <div class="mb-2 pb-2 border-bottom">
-                                            <div class="small">
-                                                <i class="fas fa-user text-muted mr-1"></i>
-                                                <strong>{{ $booking->user->name }}</strong>
-                                                    </div>
-                                            <div class="small text-muted">{{ $booking->user->email }}</div>
-                                                    </div>
-
-                                        <!-- Booking Dates -->
-                                        <div class="mb-2 pb-2 border-bottom">
-                                            <div class="small">
-                                                <i class="fas fa-calendar text-muted mr-1"></i>
-                                                {{ $booking->check_in->format('M d') }} - {{ $booking->check_out->format('M d, Y') }}
-                                                <span class="text-muted">({{ $booking->check_in->diffInDays($booking->check_out) }} nights)</span>
-                                                        </div>
-                                                        </div>
-
-                                        <!-- Payment Amount Display (Prominent) -->
-                                        <div class="text-center mb-3 p-3 bg-light rounded">
-                                            <div class="text-xs text-muted mb-1">PAYMENT AMOUNT</div>
-                                            <div class="h4 mb-2 font-weight-bold text-success">
-                                                ₱{{ number_format($booking->amount_paid, 2) }}
-                                                    </div>
-                                            <div class="small text-muted">
-                                                of ₱{{ number_format($booking->total_price, 2) }}
-                                            </div>
-                                            @if($booking->remaining_balance > 0)
-                                                <div class="mt-2 pt-2 border-top">
-                                                    <div class="text-xs text-muted">REMAINING BALANCE</div>
-                                                    <div class="h6 mb-0 font-weight-bold text-warning">
-                                                        ₱{{ number_format($booking->remaining_balance, 2) }}
-                                                    </div>
-                                                    </div>
-                                                @endif
+                                            @if($confirmedCount > 0)
+                                                <span class="badge badge-primary badge-sm">{{ $confirmedCount }} Confirmed</span>
+                                            @endif
+                                            @if($pendingCount > 0)
+                                                <span class="badge badge-warning badge-sm">{{ $pendingCount }} Pending</span>
+                                            @endif
+                                            @if($overdueCount > 0)
+                                                <span class="badge badge-danger badge-sm">{{ $overdueCount }} Overdue</span>
+                                            @endif
+                                            @if($refundedCount > 0)
+                                                <span class="badge badge-secondary badge-sm">{{ $refundedCount }} Refunded</span>
+                                            @endif
                                         </div>
-
-                                        <!-- Payment Status (Prominent) -->
-                                        <div class="mb-3 text-center">
-                                            @if($booking->remaining_balance <= 0 || $booking->payment_status === 'paid')
-                                                <div class="alert alert-success mb-2 py-2" role="alert">
-                                                    <i class="fas fa-check-circle mr-1"></i>
-                                                    <strong>PAYMENT COMPLETED</strong>
-                                                    </div>
-                                            @else
-                                                <div class="alert alert-warning mb-2 py-2" role="alert">
-                                                    <i class="fas fa-exclamation-circle mr-1"></i>
-                                                    <strong>PARTIALLY PAID</strong>
-                                                    </div>
-                                                @endif
-                                        </div>
-
-                                        <!-- Payment Count & Booking Status -->
-                                        <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
-                                            <span class="badge badge-info badge-pill">
-                                                {{ $booking->payments->count() }} Payment{{ $booking->payments->count() > 1 ? 's' : '' }}
-                                                </span>
-                                            @php
-                                                $statusConfig = [
-                                                    'completed' => ['color' => 'success', 'icon' => 'check-circle', 'label' => 'Completed'],
-                                                    'confirmed' => ['color' => 'info', 'icon' => 'check', 'label' => 'Confirmed'],
-                                                    'pending' => ['color' => 'warning', 'icon' => 'clock', 'label' => 'Pending'],
-                                                    'cancelled' => ['color' => 'danger', 'icon' => 'times-circle', 'label' => 'Cancelled']
-                                                ];
-                                                $config = $statusConfig[$booking->status] ?? ['color' => 'secondary', 'icon' => 'info-circle', 'label' => ucfirst($booking->status)];
-                                                @endphp
-                                            <span class="badge badge-{{ $config['color'] }}">
-                                                <i class="fas fa-{{ $config['icon'] }}"></i> {{ $config['label'] }}
-                                                </span>
-                                                    </div>
-
-                                        <!-- Action Buttons -->
-                                        <div class="d-flex flex-column gap-2">
-                                            <a href="{{ route('manager.bookings.show', $booking) }}" 
-                                               class="btn btn-sm btn-outline-primary">
-                                                <i class="fas fa-eye"></i> View Details
-                                            </a>
-                                            
-                                            <!-- Invoice Actions -->
-                                            @if($booking->invoice)
-                                                <a href="{{ route('invoices.show', $booking->invoice) }}" 
-                                                   class="btn btn-sm btn-outline-purple">
-                                                    <i class="fas fa-file-invoice"></i> View Invoice
-                                                </a>
-                                            @elseif($booking->amount_paid > 0)
-                                                <form action="{{ route('invoices.generate', $booking) }}" method="POST" class="w-100">
-                                                    @csrf
-                                                    <button type="submit" 
-                                                            class="btn btn-sm btn-outline-success w-100"
-                                                            onclick="return confirm('Generate invoice for {{ $booking->booking_reference }}?');">
-                                                        <i class="fas fa-file-invoice-dollar"></i> Generate Invoice
-                                                            </button>
-                                                </form>
-                                                        @endif
-                                                        
-                                            @if($booking->status === 'completed' && $booking->amount_paid > 0)
-                                                <button type="button" 
-                                                        class="btn btn-sm btn-outline-warning"
-                                                        onclick="showBookingRefundModal({{ $booking->id }}, {{ $booking->amount_paid }}, '{{ $booking->booking_reference }}')">
-                                                    <i class="fas fa-undo"></i> Process Refund
-                                                            </button>
-                                            @else
-                                                <button type="button" 
-                                                        class="btn btn-sm btn-outline-secondary"
-                                                        disabled
-                                                        title="Refund only available for completed bookings">
-                                                    <i class="fas fa-ban"></i> Refund Unavailable
-                                                            </button>
-                                                        @endif
-                                                    </div>
-                                                </div>
-                                                    </div>
-                                                </div>
+                                    </td>
+                                    
+                                    <!-- Latest Payment -->
+                                    <td>
+                                        @if($latestPayment)
+                                            <div>{{ $latestPayment->created_at->format('M d, Y') }}</div>
+                                            <div class="small text-muted">{{ $latestPayment->created_at->format('h:i A') }}</div>
+                                        @endif
+                                    </td>
+                                    
+                                    <!-- Action -->
+                                    <td>
+                                        <a href="{{ route('manager.payments.customer', $customer->id) }}" class="btn btn-sm btn-primary">
+                                            <i class="fas fa-eye"></i> View All
+                                        </a>
+                                    </td>
+                                </tr>
                                     @endforeach
+                                </tbody>
+                            </table>
                         </div>
 
                         <!-- Pagination -->
                         <div class="d-flex justify-content-center mt-3">
-                            {{ $bookings->links() }}
+                            {{ $customers->links() }}
                         </div>
                     @else
                         <div class="text-center py-4">
                             <div class="mb-3">
-                                <i class="fas fa-bed fa-3x text-gray-300"></i>
+                                <i class="fas fa-users fa-3x text-gray-300"></i>
                             </div>
-                            <h5 class="text-gray-600">No Booking Payments Found</h5>
-                            <p class="text-muted">There are no booking payments matching your criteria.</p>
+                            <h5 class="text-gray-600">No Customers Found</h5>
+                            <p class="text-muted">There are no customers with payments matching your criteria.</p>
                         </div>
                     @endif
                 </div>
             </div>
+        </div>
 
-            <!-- Service Payments Section -->
-            @if($servicePayments->count() > 0)
+        <!-- Recent Activity -->
+        <div class="col-lg-4">
+            @if($recent_payments->count() > 0)
             <div class="card shadow mb-4">
                 <div class="card-header py-3 d-flex justify-content-between align-items-center">
                     <h6 class="m-0 font-weight-bold text-info">
-                        <i class="fas fa-concierge-bell mr-2"></i>Service Payments
+                        <i class="fas fa-history mr-2"></i>Recent Activity
                     </h6>
-                    <span class="badge badge-info badge-pill">{{ $servicePayments->total() }} Services</span>
                 </div>
                 <div class="card-body">
-                    <div class="row">
-                        @foreach($servicePayments as $payment)
+                    <div class="list-group list-group-flush">
+                        @foreach($recent_payments as $payment)
                         <div class="col-md-6 mb-3">
                             <div class="card border-left-info h-100">
                                 <div class="card-body p-3">
@@ -512,7 +504,7 @@
                     <div class="form-group">
                         <label>Search</label>
                         <input type="text" name="search" class="form-control" 
-                               placeholder="Booking ref, guest name, email, room..." 
+                               placeholder="Payment ref, guest name, email, room name..." 
                                value="{{ request('search') }}">
                     </div>
                 </div>
@@ -593,6 +585,31 @@
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
+// Manager Search functionality with debounce
+let managerSearchTimeout;
+const managerSearchInput = document.getElementById('managerSearchInput');
+const managerSearchForm = document.getElementById('managerSearchForm');
+
+if (managerSearchInput) {
+    // Submit on Enter key
+    managerSearchInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            managerSearchForm.submit();
+        }
+    });
+
+    // Optional: Auto-submit after user stops typing (1 second delay)
+    managerSearchInput.addEventListener('input', function() {
+        clearTimeout(managerSearchTimeout);
+        managerSearchTimeout = setTimeout(function() {
+            if (managerSearchInput.value.length >= 2 || managerSearchInput.value.length === 0) {
+                managerSearchForm.submit();
+            }
+        }, 1000); // Wait 1 second after user stops typing
+    });
+}
+
 // Payment Trends Chart
 const ctx = document.getElementById('paymentTrendsChart');
 if (ctx) {

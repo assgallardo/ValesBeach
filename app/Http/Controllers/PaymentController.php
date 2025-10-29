@@ -69,14 +69,14 @@ class PaymentController extends Controller
         try {
             $paymentAmount = $request->payment_amount;
             
-            // Create payment record - mark as completed immediately for all payment methods
+            // Create payment record - default status is pending (admin must confirm)
             $payment = Payment::create([
                 'user_id' => auth()->id(),
                 'booking_id' => $booking->id,
                 'payment_reference' => $this->generatePaymentReference(),
                 'amount' => $paymentAmount,
                 'payment_method' => $request->payment_method,
-                'status' => 'completed', // All guest payments are completed immediately
+                'status' => 'pending', // Default status is pending, admin/manager must update status
                 'payment_date' => now(),
                 'notes' => $request->notes,
                 'transaction_id' => $request->transaction_id ?? null,
@@ -318,7 +318,7 @@ class PaymentController extends Controller
     }
 
     /**
-     * Export payments data to CSV
+     * Export payments data to CSV (Customer Grouped Format)
      */
     public function export(Request $request)
     {
@@ -334,80 +334,91 @@ class PaymentController extends Controller
         $dateTo = $request->get('date_to');
         $search = $request->get('search');
 
-        $query = Payment::with(['booking.room', 'serviceRequest.service', 'foodOrder.orderItems.menuItem', 'user', 'refundedBy']);
-
-        if ($status) {
-            $query->where('status', $status);
-        }
-
-        if ($paymentMethod) {
-            $query->where('payment_method', $paymentMethod);
-        }
-
-        if ($dateFrom) {
-            $query->whereDate('created_at', '>=', $dateFrom);
-        }
-
-        if ($dateTo) {
-            $query->whereDate('created_at', '<=', $dateTo);
-        }
+        $query = \App\Models\User::whereHas('payments')
+            ->with(['payments' => function($query) use ($status, $paymentMethod, $dateFrom, $dateTo) {
+                if ($status) {
+                    $query->where('status', $status);
+                }
+                if ($paymentMethod) {
+                    $query->where('payment_method', $paymentMethod);
+                }
+                if ($dateFrom) {
+                    $query->whereDate('created_at', '>=', $dateFrom);
+                }
+                if ($dateTo) {
+                    $query->whereDate('created_at', '<=', $dateTo);
+                }
+            }]);
 
         if ($search) {
             $query->where(function($q) use ($search) {
-                $q->where('payment_reference', 'like', "%{$search}%")
-                  ->orWhereHas('user', function($userQuery) use ($search) {
-                      $userQuery->where('name', 'like', "%{$search}%")
-                               ->orWhere('email', 'like', "%{$search}%");
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%")
+                  ->orWhereHas('payments', function($paymentQuery) use ($search) {
+                      $paymentQuery->where('payment_reference', 'like', "%{$search}%")
+                                   ->orWhere('transaction_id', 'like', "%{$search}%");
                   });
             });
         }
 
-        $payments = $query->orderBy('created_at', 'desc')->get();
+        $customers = $query->get();
 
         // Create CSV content
         $csvData = [];
         $csvData[] = [
-            'Payment Reference',
-            'User Name',
-            'User Email',
-            'Payment Type',
-            'Amount',
-            'Refund Amount',
-            'Net Amount',
-            'Payment Method',
-            'Status',
-            'Transaction ID',
-            'Payment Date',
-            'Created At',
-            'Refund Reason',
-            'Refunded By',
-            'Refunded At',
-            'Notes'
+            'Guest Name',
+            'Email',
+            'Role',
+            'Total Bookings',
+            'Total Services',
+            'Total Food Orders',
+            'Total Amount',
+            'Total Payments',
+            'Completed',
+            'Confirmed',
+            'Pending',
+            'Overdue',
+            'Refunded',
+            'Latest Payment Date',
+            'Member Since'
         ];
 
-        foreach ($payments as $payment) {
+        foreach ($customers as $customer) {
+            $bookingCount = $customer->payments->where('booking_id', '!=', null)->count();
+            $serviceCount = $customer->payments->where('service_request_id', '!=', null)->count();
+            $foodCount = $customer->payments->where('food_order_id', '!=', null)->count();
+            $totalAmount = $customer->payments->sum('amount');
+            $totalPayments = $customer->payments->count();
+            
+            $completedCount = $customer->payments->where('status', 'completed')->count();
+            $confirmedCount = $customer->payments->where('status', 'confirmed')->count();
+            $pendingCount = $customer->payments->where('status', 'pending')->count();
+            $overdueCount = $customer->payments->where('status', 'overdue')->count();
+            $refundedCount = $customer->payments->where('status', 'refunded')->count();
+            
+            $latestPayment = $customer->payments->sortByDesc('created_at')->first();
+
             $csvData[] = [
-                $payment->payment_reference,
-                $payment->user->name ?? 'N/A',
-                $payment->user->email ?? 'N/A',
-                $payment->payment_category ?? 'N/A',
-                number_format($payment->amount, 2),
-                number_format($payment->refund_amount ?? 0, 2),
-                number_format($payment->amount - ($payment->refund_amount ?? 0), 2),
-                ucfirst($payment->payment_method),
-                ucfirst($payment->status),
-                $payment->transaction_id ?? 'N/A',
-                $payment->payment_date ? $payment->payment_date->format('Y-m-d H:i:s') : 'N/A',
-                $payment->created_at->format('Y-m-d H:i:s'),
-                $payment->refund_reason ?? 'N/A',
-                $payment->refundedBy->name ?? 'N/A',
-                $payment->refunded_at ? $payment->refunded_at->format('Y-m-d H:i:s') : 'N/A',
-                $payment->notes ?? 'N/A'
+                $customer->name,
+                $customer->email,
+                ucfirst($customer->role),
+                $bookingCount,
+                $serviceCount,
+                $foodCount,
+                number_format($totalAmount, 2),
+                $totalPayments,
+                $completedCount,
+                $confirmedCount,
+                $pendingCount,
+                $overdueCount,
+                $refundedCount,
+                $latestPayment ? $latestPayment->created_at->format('Y-m-d H:i:s') : 'N/A',
+                $customer->created_at->format('Y-m-d')
             ];
         }
 
         // Generate CSV file
-        $filename = 'payments_export_' . now()->format('Y-m-d_H-i-s') . '.csv';
+        $filename = 'customer_payments_export_' . now()->format('Y-m-d_H-i-s') . '.csv';
         
         $callback = function() use ($csvData) {
             $file = fopen('php://output', 'w');
@@ -677,11 +688,15 @@ class PaymentController extends Controller
     {
         $user = Auth::user();
         if (!in_array($user->role, ['admin', 'manager', 'staff'])) {
+            if ($request->expectsJson()) {
+                return response()->json(['success' => false, 'message' => 'Unauthorized access.'], 403);
+            }
             abort(403, 'Unauthorized access.');
         }
 
-        $request->validate([
-            'status' => 'required|in:pending,processing,completed,failed,refunded,cancelled',
+        try {
+            $validated = $request->validate([
+                'status' => 'required|in:pending,confirmed,completed,overdue,processing,failed,refunded,cancelled',
             'transaction_id' => 'nullable|string',
             'notes' => 'nullable|string'
         ]);
@@ -709,7 +724,40 @@ class PaymentController extends Controller
             }
         }
 
+            // Return JSON response for AJAX requests
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Payment status updated successfully.',
+                    'status' => $payment->status
+                ]);
+            }
+
         return back()->with('success', 'Payment status updated successfully.');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation error: ' . implode(', ', $e->validator->errors()->all())
+                ], 422);
+            }
+            throw $e;
+        } catch (\Exception $e) {
+            \Log::error('Payment status update error: ' . $e->getMessage(), [
+                'payment_id' => $payment->id,
+                'status' => $request->status,
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'An error occurred: ' . $e->getMessage()
+                ], 500);
+            }
+            
+            return back()->with('error', 'An error occurred while updating payment status.');
+        }
     }
 
     public function index(Request $request)
@@ -731,69 +779,45 @@ class PaymentController extends Controller
         $dateTo = $request->get('date_to');
         $search = $request->get('search');
 
-        // Build query with relationships
-        $query = Payment::with([
-            'booking.room', 
-            'serviceRequest.service', 
-            'foodOrder.orderItems.menuItem',
-            'user'
-        ]);
-
-        // Apply filters
+        // Build query for customer payments (grouped by user)
+        $query = \App\Models\User::whereHas('payments')
+            ->with(['payments' => function($q) use ($status, $paymentMethod, $paymentType, $dateFrom, $dateTo) {
+                // Apply filters to payments
         if ($status) {
-            $query->where('status', $status);
+                    $q->where('status', $status);
         }
-
         if ($paymentMethod) {
-            $query->where('payment_method', $paymentMethod);
+                    $q->where('payment_method', $paymentMethod);
         }
-
         if ($paymentType) {
             if ($paymentType === 'booking') {
-                $query->whereNotNull('booking_id');
+                        $q->whereNotNull('booking_id');
             } elseif ($paymentType === 'service') {
-                $query->whereNotNull('service_request_id');
+                        $q->whereNotNull('service_request_id');
             } elseif ($paymentType === 'food_order') {
-                $query->whereNotNull('food_order_id');
+                        $q->whereNotNull('food_order_id');
             }
         }
-
         if ($dateFrom) {
-            $query->whereDate('created_at', '>=', $dateFrom);
+                    $q->whereDate('created_at', '>=', $dateFrom);
         }
-
         if ($dateTo) {
-            $query->whereDate('created_at', '<=', $dateTo);
+                    $q->whereDate('created_at', '<=', $dateTo);
         }
 
+                $q->with(['booking.room', 'serviceRequest.service', 'foodOrder'])
+                  ->orderBy('created_at', 'desc');
+            }]);
+
+        // Apply search
         if ($search) {
             $query->where(function($q) use ($search) {
-                $q->where('payment_reference', 'like', "%{$search}%")
-                  ->orWhere('transaction_id', 'like', "%{$search}%")
-                  ->orWhereHas('user', function($userQuery) use ($search) {
-                      $userQuery->where('name', 'like', "%{$search}%")
+                $q->where('name', 'like', "%{$search}%")
                                ->orWhere('email', 'like', "%{$search}%");
-                  })
-                  ->orWhereHas('booking', function($bookingQuery) use ($search) {
-                      $bookingQuery->where('booking_reference', 'like', "%{$search}%");
-                  });
             });
         }
 
-        $payments = $query->orderBy('created_at', 'desc')->paginate(20);
-
-        // Get all bookings grouped by user (for complete guest data)
-        $userIds = $payments->pluck('user_id')->unique();
-        
-        if ($userIds->isNotEmpty()) {
-            $allBookings = Booking::with(['room', 'payments', 'invoice'])
-                ->whereIn('user_id', $userIds)
-                ->where('status', '!=', 'cancelled')
-                ->get()
-                ->groupBy('user_id');
-        } else {
-            $allBookings = collect();
-        }
+        $customers = $query->orderBy('created_at', 'desc')->paginate(20);
 
         // Calculate comprehensive statistics
         $stats = [
@@ -822,10 +846,331 @@ class PaymentController extends Controller
 
         // Return appropriate view based on route prefix
         if ($routePrefix === 'manager') {
-            return view('manager.payments.index', compact('payments', 'stats', 'allBookings'));
+            return view('manager.payments.index', compact('customers', 'stats'));
         } else {
-            return view('admin.payments.index', compact('payments', 'stats', 'allBookings'));
+            return view('admin.payments.index', compact('customers', 'stats'));
         }
+    }
+    
+    /**
+     * Show all payments for a specific customer
+     */
+    public function showCustomerPayments($userId)
+    {
+        $user = Auth::user();
+        if (!in_array($user->role, ['admin', 'manager', 'staff'])) {
+            abort(403, 'Unauthorized access.');
+        }
+
+        $customer = \App\Models\User::with([
+            'payments' => function($q) {
+                $q->with(['booking.room', 'serviceRequest.service', 'foodOrder.orderItems.menuItem'])
+                  ->orderBy('created_at', 'desc');
+            },
+            'bookings' => function($q) {
+                $q->with(['room', 'payments']);
+            },
+            'serviceRequests' => function($q) {
+                $q->with(['service', 'payment']);
+            },
+            'foodOrders' => function($q) {
+                $q->with(['orderItems.menuItem', 'payment']);
+            }
+        ])->findOrFail($userId);
+
+        $routePrefix = request()->route()->getPrefix();
+        
+        if ($routePrefix === 'manager') {
+            return view('manager.payments.customer', compact('customer'));
+        } else {
+            return view('admin.payments.customer', compact('customer'));
+        }
+    }
+
+    /**
+     * Show invoice preview/edit form for customer
+     */
+    public function generateCustomerInvoice($userId)
+    {
+        $user = Auth::user();
+        if (!in_array($user->role, ['admin', 'manager', 'staff'])) {
+            abort(403, 'Unauthorized access.');
+        }
+
+        $customer = \App\Models\User::with([
+            'bookings.room',
+            'bookings.payments',
+            'serviceRequests.service',
+            'serviceRequests.payment',
+            'foodOrders.orderItems.menuItem',
+            'foodOrders.payment'
+        ])->findOrFail($userId);
+
+        // Build invoice data
+        $items = [];
+        $totalAmount = 0;
+        $totalPaid = 0;
+
+        // Add bookings
+        foreach ($customer->bookings as $booking) {
+            if ($booking->total_price > 0) {
+                $paid = $booking->payments->sum('amount');
+                $balance = $booking->total_price - $paid;
+                
+                $items[] = [
+                    'type' => 'booking',
+                    'description' => $booking->room->name ?? 'Room Booking',
+                    'reference' => $booking->booking_reference ?? 'N/A',
+                    'details' => \Carbon\Carbon::parse($booking->check_in_date)->format('M d') . ' - ' . 
+                                \Carbon\Carbon::parse($booking->check_out_date)->format('M d, Y'),
+                    'amount' => $booking->total_price,
+                    'paid' => $paid,
+                    'balance' => $balance
+                ];
+                
+                $totalAmount += $booking->total_price;
+                $totalPaid += $paid;
+            }
+        }
+
+        // Add services
+        foreach ($customer->serviceRequests as $serviceRequest) {
+            // Get the price from the service or payment
+            $servicePrice = $serviceRequest->service->price ?? 0;
+            $paid = $serviceRequest->payment ? $serviceRequest->payment->amount : 0;
+            
+            // If there's a payment but no service price, use the payment amount as the price
+            if ($paid > 0 && $servicePrice == 0) {
+                $servicePrice = $paid;
+            }
+            
+            if ($servicePrice > 0) {
+                $balance = $servicePrice - $paid;
+                
+                $items[] = [
+                    'type' => 'service',
+                    'description' => $serviceRequest->service->name ?? 'Service Request',
+                    'reference' => 'SR-' . $serviceRequest->id,
+                    'details' => $serviceRequest->special_requests ?? 'Service request',
+                    'amount' => $servicePrice,
+                    'paid' => $paid,
+                    'balance' => $balance
+                ];
+                
+                $totalAmount += $servicePrice;
+                $totalPaid += $paid;
+            }
+        }
+
+        // Add food orders
+        foreach ($customer->foodOrders as $foodOrder) {
+            if ($foodOrder->total_amount > 0) {
+                $paid = $foodOrder->payment ? $foodOrder->payment->amount : 0;
+                $balance = $foodOrder->total_amount - $paid;
+                
+                $itemsList = $foodOrder->orderItems->map(function($item) {
+                    return $item->menuItem->name ?? 'Item';
+                })->take(3)->implode(', ');
+                
+                if ($foodOrder->orderItems->count() > 3) {
+                    $itemsList .= '...';
+                }
+                
+                $items[] = [
+                    'type' => 'food',
+                    'description' => 'Food Order #' . $foodOrder->order_number,
+                    'reference' => $foodOrder->order_number,
+                    'details' => $itemsList,
+                    'amount' => $foodOrder->total_amount,
+                    'paid' => $paid,
+                    'balance' => $balance
+                ];
+                
+                $totalAmount += $foodOrder->total_amount;
+                $totalPaid += $paid;
+            }
+        }
+
+        $totalBalance = $totalAmount - $totalPaid;
+
+        return view('invoices.customer-invoice-edit', compact('customer', 'items', 'totalAmount', 'totalPaid', 'totalBalance'));
+    }
+
+    /**
+     * Save and generate final customer invoice
+     */
+    public function saveCustomerInvoice(Request $request, $userId)
+    {
+        $user = Auth::user();
+        if (!in_array($user->role, ['admin', 'manager', 'staff'])) {
+            abort(403, 'Unauthorized access.');
+        }
+
+        $customer = \App\Models\User::findOrFail($userId);
+
+        $validated = $request->validate([
+            'items' => 'nullable|array',
+            'items.*.type' => 'required|string',
+            'items.*.description' => 'required|string',
+            'items.*.reference' => 'nullable|string',
+            'items.*.details' => 'nullable|string',
+            'items.*.amount' => 'required|numeric|min:0',
+            'items.*.paid' => 'required|numeric|min:0',
+            'notes' => 'nullable|string|max:2000',
+            'due_date' => 'nullable|date'
+        ]);
+
+        // If no items provided, return with error
+        if (empty($validated['items'])) {
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'Please add at least one item to the invoice.');
+        }
+
+        // Calculate totals
+        $totalAmount = 0;
+        $totalPaid = 0;
+        $items = [];
+
+        foreach ($validated['items'] as $item) {
+            $amount = floatval($item['amount']);
+            $paid = floatval($item['paid']);
+            $balance = $amount - $paid;
+
+            $items[] = [
+                'type' => $item['type'],
+                'description' => $item['description'],
+                'reference' => $item['reference'] ?? '',
+                'details' => $item['details'] ?? '',
+                'amount' => $amount,
+                'paid' => $paid,
+                'balance' => $balance
+            ];
+
+            $totalAmount += $amount;
+            $totalPaid += $paid;
+        }
+
+        $totalBalance = $totalAmount - $totalPaid;
+
+        // Create invoice
+        $invoice = \App\Models\Invoice::create([
+            'user_id' => $customer->id,
+            'invoice_number' => 'INV-' . strtoupper(uniqid()),
+            'invoice_date' => now(),
+            'due_date' => $validated['due_date'] ?? now()->addDays(7),
+            'subtotal' => $totalAmount,
+            'tax_amount' => 0,
+            'total_amount' => $totalAmount,
+            'amount_paid' => $totalPaid,
+            'balance_due' => $totalBalance,
+            'status' => $totalBalance <= 0 ? 'paid' : 'sent',
+            'notes' => $validated['notes'] ?? '',
+            'items' => $items,
+            'created_by' => auth()->id()
+        ]);
+
+        return redirect()->route('invoices.show', $invoice->id)
+            ->with('success', 'Invoice generated successfully!');
+    }
+
+    /**
+     * Show edit form for existing customer invoice
+     */
+    public function editCustomerInvoice($invoiceId)
+    {
+        $user = Auth::user();
+        if (!in_array($user->role, ['admin', 'manager', 'staff'])) {
+            abort(403, 'Unauthorized access.');
+        }
+
+        $invoice = \App\Models\Invoice::with('user')->findOrFail($invoiceId);
+        
+        // Check if this is a customer combined invoice (has items array)
+        if (!$invoice->items) {
+            return redirect()->back()->with('error', 'This invoice type cannot be edited.');
+        }
+
+        $customer = $invoice->user;
+        $items = $invoice->items;
+        $totalAmount = $invoice->total_amount;
+        $totalPaid = $invoice->amount_paid;
+        $totalBalance = $invoice->balance_due;
+
+        return view('invoices.customer-invoice-edit', compact('customer', 'items', 'totalAmount', 'totalPaid', 'totalBalance', 'invoice'));
+    }
+
+    /**
+     * Update existing customer invoice
+     */
+    public function updateCustomerInvoice(Request $request, $invoiceId)
+    {
+        $user = Auth::user();
+        if (!in_array($user->role, ['admin', 'manager', 'staff'])) {
+            abort(403, 'Unauthorized access.');
+        }
+
+        $invoice = \App\Models\Invoice::findOrFail($invoiceId);
+
+        $validated = $request->validate([
+            'items' => 'nullable|array',
+            'items.*.type' => 'required|string',
+            'items.*.description' => 'required|string',
+            'items.*.reference' => 'nullable|string',
+            'items.*.details' => 'nullable|string',
+            'items.*.amount' => 'required|numeric|min:0',
+            'items.*.paid' => 'required|numeric|min:0',
+            'notes' => 'nullable|string|max:2000',
+            'due_date' => 'nullable|date'
+        ]);
+
+        // If no items provided, return with error
+        if (empty($validated['items'])) {
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'Please add at least one item to the invoice.');
+        }
+
+        // Calculate totals
+        $totalAmount = 0;
+        $totalPaid = 0;
+        $items = [];
+
+        foreach ($validated['items'] as $item) {
+            $amount = floatval($item['amount']);
+            $paid = floatval($item['paid']);
+            $balance = $amount - $paid;
+
+            $items[] = [
+                'type' => $item['type'],
+                'description' => $item['description'],
+                'reference' => $item['reference'] ?? '',
+                'details' => $item['details'] ?? '',
+                'amount' => $amount,
+                'paid' => $paid,
+                'balance' => $balance
+            ];
+
+            $totalAmount += $amount;
+            $totalPaid += $paid;
+        }
+
+        $totalBalance = $totalAmount - $totalPaid;
+
+        // Update invoice
+        $invoice->update([
+            'due_date' => $validated['due_date'] ?? $invoice->due_date,
+            'subtotal' => $totalAmount,
+            'total_amount' => $totalAmount,
+            'amount_paid' => $totalPaid,
+            'balance_due' => $totalBalance,
+            'status' => $totalBalance <= 0 ? 'paid' : 'sent',
+            'notes' => $validated['notes'] ?? '',
+            'items' => $items
+        ]);
+
+        return redirect()->route('invoices.show', $invoice->id)
+            ->with('success', 'Invoice updated successfully!');
     }
 
     /**
@@ -888,8 +1233,8 @@ class PaymentController extends Controller
                 'payment_reference' => $this->generatePaymentReference(),
                 'amount' => $amount,
                 'payment_method' => $request->payment_method,
-                'status' => $request->payment_method === 'cash' ? 'completed' : 'pending',
-                'payment_date' => $request->payment_method === 'cash' ? now() : null,
+                'status' => 'pending', // Default status is pending, admin/manager must update status
+                'payment_date' => now(),
                 'notes' => $request->notes,
             ]);
 

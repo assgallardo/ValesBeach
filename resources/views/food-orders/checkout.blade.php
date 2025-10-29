@@ -117,11 +117,49 @@
                         <label for="requested_delivery_time" class="block text-sm font-medium text-gray-300 mb-2">
                             Preferred Delivery Time (Optional)
                         </label>
-                        <input type="datetime-local" name="requested_delivery_time" id="requested_delivery_time" 
-                               value="{{ old('requested_delivery_time') }}"
-                               min="{{ now()->addMinutes(30)->format('Y-m-d\TH:i') }}"
-                               class="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:ring-2 focus:ring-green-500 focus:border-transparent">
-                        <p class="text-sm text-gray-400 mt-2">Leave blank for ASAP delivery (estimated 30-45 minutes)</p>
+                        @if($currentBooking)
+                            @php
+                                // Set minimum time to 30 minutes from now, but not before check-in date
+                                $minTime = now()->addMinutes(30);
+                                $checkInStart = $currentBooking->check_in_date->startOfDay();
+                                $checkOutEnd = $currentBooking->check_out_date->endOfDay();
+                                
+                                // If current time + 30 min is before check-in, use check-in date
+                                if ($minTime->lt($checkInStart)) {
+                                    $minTime = $checkInStart;
+                                }
+                                
+                                // If current time + 30 min is after check-out, show warning
+                                $isAfterCheckout = $minTime->gt($checkOutEnd);
+                            @endphp
+                            
+                            @if(!$isAfterCheckout)
+                                <input type="datetime-local" name="requested_delivery_time" id="requested_delivery_time" 
+                                       value="{{ old('requested_delivery_time') }}"
+                                       min="{{ $minTime->format('Y-m-d\TH:i') }}"
+                                       max="{{ $checkOutEnd->format('Y-m-d\TH:i') }}"
+                                       class="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                                <p class="text-sm text-gray-400 mt-2">
+                                    Leave blank for ASAP delivery (estimated 30-45 minutes). 
+                                    Delivery available during your booking period: 
+                                    <span class="text-green-400">{{ $currentBooking->check_in_date->format('M j') }} - {{ $currentBooking->check_out_date->format('M j, Y') }}</span>
+                                </p>
+                            @else
+                                <div class="bg-yellow-900/30 border border-yellow-600/50 rounded-lg p-4">
+                                    <p class="text-yellow-200 text-sm">
+                                        Your booking has ended. Scheduled delivery is not available. Order will be delivered ASAP.
+                                    </p>
+                                </div>
+                            @endif
+                        @else
+                            <input type="datetime-local" name="requested_delivery_time" id="requested_delivery_time" 
+                                   value="{{ old('requested_delivery_time') }}"
+                                   min="{{ now()->addMinutes(30)->format('Y-m-d\TH:i') }}"
+                                   class="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                            <p class="text-sm text-gray-400 mt-2">
+                                Leave blank for ASAP delivery (estimated 30-45 minutes)
+                            </p>
+                        @endif
                         @error('requested_delivery_time')
                         <p class="text-red-400 text-sm mt-2">{{ $message }}</p>
                         @enderror
@@ -199,10 +237,6 @@
                             <span class="text-gray-300">Delivery Fee</span>
                             <span class="font-semibold text-white" id="delivery-fee">₱0.00</span>
                         </div>
-                        <div class="flex justify-between items-center">
-                            <span class="text-gray-300">Tax (8%)</span>
-                            <span class="font-semibold text-white" id="tax-amount">₱0.00</span>
-                        </div>
                         <div class="border-t border-gray-700 pt-3">
                             <div class="flex justify-between items-center p-4 bg-gradient-to-r from-green-900/50 to-green-800/50 rounded-lg">
                                 <span class="text-lg font-bold text-white">Total</span>
@@ -274,15 +308,11 @@ function toggleDeliveryLocation() {
     // Calculate delivery fee
     const deliveryFee = deliveryType === 'room_service' ? 5.00 : 0.00;
 
-    // Calculate tax (8% on subtotal + delivery fee)
-    const taxAmount = (subtotal + deliveryFee) * 0.08;
-
-    // Calculate total
-    const total = subtotal + deliveryFee + taxAmount;
+    // Calculate total (without tax)
+    const total = subtotal + deliveryFee;
 
     // Update display
     document.getElementById('delivery-fee').textContent = '₱' + deliveryFee.toFixed(2);
-    document.getElementById('tax-amount').textContent = '₱' + taxAmount.toFixed(2);
     document.getElementById('final-total').textContent = '₱' + total.toFixed(2);
 }
 </script>

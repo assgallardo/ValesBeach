@@ -172,7 +172,12 @@ Route::middleware(['auth', 'user.status'])->group(function () {
 // Admin Payment & Billing Routes
 Route::prefix('admin')->name('admin.')->middleware(['auth', 'user.status', 'role:admin,manager,staff'])->group(function () {
     // Payment management
-    Route::get('/payments', [PaymentController::class, 'adminIndex'])->name('payments.index');
+    Route::get('/payments', [PaymentController::class, 'index'])->name('payments.index');
+    Route::get('/payments/customer/{user}', [PaymentController::class, 'showCustomerPayments'])->name('payments.customer');
+    Route::get('/payments/customer/{user}/invoice', [PaymentController::class, 'generateCustomerInvoice'])->name('payments.customer.invoice');
+    Route::post('/payments/customer/{user}/invoice', [PaymentController::class, 'saveCustomerInvoice'])->name('payments.customer.invoice.save');
+    Route::get('/invoices/{invoice}/edit', [PaymentController::class, 'editCustomerInvoice'])->name('invoices.edit');
+    Route::patch('/invoices/{invoice}', [PaymentController::class, 'updateCustomerInvoice'])->name('invoices.update');
     Route::get('/payments/{payment}', [PaymentController::class, 'adminShow'])->name('payments.show');
     Route::patch('/payments/{payment}/status', [PaymentController::class, 'updateStatus'])->name('payments.status');
     
@@ -305,6 +310,7 @@ Route::prefix('manager')->name('manager.')->middleware(['auth', 'user.status', '
     
     // Payment tracking routes - use the Manager namespace
     Route::get('/payments', [ManagerPaymentController::class, 'index'])->name('payments.index');
+    Route::get('/payments/customer/{user}', [ManagerPaymentController::class, 'showCustomerPayments'])->name('payments.customer');
     Route::get('/payments/{payment}', [ManagerPaymentController::class, 'show'])->name('payments.show');
     Route::patch('/payments/{payment}/status', [ManagerPaymentController::class, 'updateStatus'])->name('payments.status');
     Route::get('/payments-analytics', [ManagerPaymentController::class, 'analytics'])->name('payments.analytics');

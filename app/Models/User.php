@@ -153,6 +153,14 @@ class User extends Authenticatable
     }
 
     /**
+     * Get service requests created by this user (guest)
+     */
+    public function serviceRequests()
+    {
+        return $this->hasMany(ServiceRequest::class, 'user_id');
+    }
+
+    /**
      * Get service requests assigned to this user
      */
     public function assignedServiceRequests()
