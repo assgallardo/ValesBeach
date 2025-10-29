@@ -134,10 +134,24 @@ class InvoiceController extends Controller
             abort(403, 'Unauthorized access to this invoice.');
         }
 
-        // Load necessary relationships
-        $invoice->load(['booking.room', 'booking.payments', 'user']);
+        // Load necessary relationships - including all payments for the user
+        $invoice->load([
+            'booking.room', 
+            'booking.payments', 
+            'user',
+            'user.payments' => function($query) {
+                $query->orderBy('created_at', 'desc');
+            }
+        ]);
 
-        return view('invoices.show', compact('invoice'));
+        // Get the general payment method (most common one used by the user)
+        $userPayments = $invoice->user->payments ?? collect();
+        $paymentMethodCounts = $userPayments->groupBy('payment_method')->map->count();
+        $generalPaymentMethod = $paymentMethodCounts->isNotEmpty() 
+            ? $paymentMethodCounts->sortDesc()->keys()->first() 
+            : null;
+
+        return view('invoices.show', compact('invoice', 'generalPaymentMethod'));
     }
 
     /**
@@ -154,9 +168,16 @@ class InvoiceController extends Controller
         // Load necessary relationships
         $invoice->load(['booking.room', 'booking.payments', 'user']);
 
+        // Get the general payment method (most common one used by the user)
+        $userPayments = $invoice->user->payments ?? collect();
+        $paymentMethodCounts = $userPayments->groupBy('payment_method')->map->count();
+        $generalPaymentMethod = $paymentMethodCounts->isNotEmpty() 
+            ? $paymentMethodCounts->sortDesc()->keys()->first() 
+            : null;
+
         // For now, return the printable view
         // In production, you would use a PDF library like DomPDF or wkhtmltopdf
-        return view('invoices.pdf', compact('invoice'));
+        return view('invoices.pdf', compact('invoice', 'generalPaymentMethod'));
     }
 
     /**
@@ -392,6 +413,20 @@ class InvoiceController extends Controller
         
         if (!$invoiceData) {
             return redirect()->route('payments.history')->with('error', 'Invoice data not found. Please generate a new invoice.');
+        }
+
+        // Load user payments for display in invoice
+        $user = Auth::user();
+        if ($user) {
+            $user->load('payments');
+            // Attach payments to invoice data
+            $invoiceData['user_payments'] = $user->payments->sortByDesc('created_at')->take(10)->values();
+            
+            // Get the general payment method (most common one used by the user)
+            $paymentMethodCounts = $user->payments->groupBy('payment_method')->map->count();
+            $invoiceData['general_payment_method'] = $paymentMethodCounts->isNotEmpty() 
+                ? $paymentMethodCounts->sortDesc()->keys()->first() 
+                : null;
         }
 
         return view('invoices.combined', ['invoice' => (object) $invoiceData]);

@@ -18,6 +18,54 @@
                 </div>
             <div class="flex gap-3">
                 @if($bookings->isNotEmpty() || $servicePayments->isNotEmpty() || $foodOrderPayments->isNotEmpty())
+                <!-- Payment Method Selector -->
+                <div class="relative inline-block">
+                    <button type="button"
+                            id="paymentMethodBtn"
+                            onclick="togglePaymentMethodMenu()"
+                            class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">
+                        <i class="fas fa-credit-card mr-2"></i>
+                        <span id="paymentMethodText">Select Payment Method</span>
+                        <i class="fas fa-chevron-down ml-2 text-sm"></i>
+                    </button>
+                    
+                    <!-- Dropdown Menu -->
+                    <div id="paymentMethodMenu" 
+                         class="absolute right-0 mt-2 w-56 bg-gray-800 rounded-lg shadow-xl border border-gray-700 hidden z-50">
+                        <div class="py-2">
+                            <a href="#" onclick="selectPaymentMethod('cash', 'Cash', event)" 
+                               class="block px-4 py-2 text-white hover:bg-gray-700 transition-colors flex items-center">
+                                <i class="fas fa-money-bill-wave mr-2 w-5"></i>
+                                <span>Cash</span>
+                            </a>
+                            <a href="#" onclick="selectPaymentMethod('card', 'Card', event)" 
+                               class="block px-4 py-2 text-white hover:bg-gray-700 transition-colors flex items-center">
+                                <i class="fas fa-credit-card mr-2 w-5"></i>
+                                <span>Card</span>
+                            </a>
+                            <a href="#" onclick="selectPaymentMethod('gcash', 'GCash', event)" 
+                               class="block px-4 py-2 text-white hover:bg-gray-700 transition-colors flex items-center">
+                                <i class="fas fa-mobile-alt mr-2 w-5"></i>
+                                <span>GCash</span>
+                            </a>
+                            <a href="#" onclick="selectPaymentMethod('bank_transfer', 'Bank Transfer', event)" 
+                               class="block px-4 py-2 text-white hover:bg-gray-700 transition-colors flex items-center">
+                                <i class="fas fa-university mr-2 w-5"></i>
+                                <span>Bank Transfer</span>
+                            </a>
+                            <a href="#" onclick="selectPaymentMethod('paymaya', 'PayMaya', event)" 
+                               class="block px-4 py-2 text-white hover:bg-gray-700 transition-colors flex items-center">
+                                <i class="fas fa-wallet mr-2 w-5"></i>
+                                <span>PayMaya</span>
+                            </a>
+                            <a href="#" onclick="selectPaymentMethod('online', 'Online', event)" 
+                               class="block px-4 py-2 text-white hover:bg-gray-700 transition-colors flex items-center">
+                                <i class="fas fa-globe mr-2 w-5"></i>
+                                <span>Online</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
                 <form action="{{ route('invoices.generate-combined') }}" method="POST" class="inline">
                     @csrf
                     @foreach($bookings as $booking)
@@ -58,6 +106,27 @@
             </div>
         @else
             <div class="space-y-6">
+                <!-- Payment Method Badge -->
+                @if($generalPaymentMethod)
+                <div class="flex items-center justify-between bg-gray-800 rounded-lg border border-gray-700 p-4 mb-6">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-indigo-600/20 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-credit-card text-indigo-400 text-lg"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-400">Payment Method</p>
+                            <p class="text-xs text-gray-500">All payments processed via</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-full text-sm font-semibold shadow-lg">
+                            <i class="fas fa-check-circle mr-2 text-xs"></i>
+                            {{ ucfirst(str_replace('_', ' ', $generalPaymentMethod)) }}
+                        </span>
+                    </div>
+                </div>
+                @endif
+
                 <!-- Booking Payments Card -->
                 @if($bookings->isNotEmpty())
                 <div class="bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl overflow-hidden border border-gray-700 shadow-xl">
@@ -230,10 +299,6 @@
                                         <!-- Compact Payment Info -->
                                         <div class="flex items-center gap-4 text-xs">
                                             <div>
-                                                <span class="text-gray-400">Method:</span>
-                                                <span class="text-gray-200 ml-1">{{ ucfirst(str_replace('_', ' ', $payment->payment_method)) }}</span>
-                                            </div>
-                                            <div>
                                                 <span class="text-gray-400">Date:</span>
                                                 <span class="text-gray-200 ml-1">{{ $payment->created_at->format('M d, Y') }}</span>
                                             </div>
@@ -345,10 +410,6 @@
                                         <!-- Compact Payment Info -->
                                         <div class="flex items-center gap-4 text-xs">
                                             <div>
-                                                <span class="text-gray-400">Method:</span>
-                                                <span class="text-gray-200 ml-1">{{ ucfirst(str_replace('_', ' ', $payment->payment_method)) }}</span>
-                                            </div>
-                                            <div>
                                                 <span class="text-gray-400">Date:</span>
                                                 <span class="text-gray-200 ml-1">{{ $payment->created_at->format('M d, Y') }}</span>
                                             </div>
@@ -422,5 +483,126 @@
             </div>
         @endif
     </div>
+
+<script>
+let paymentMethodMenuOpen = false;
+
+function togglePaymentMethodMenu() {
+    const menu = document.getElementById('paymentMethodMenu');
+    paymentMethodMenuOpen = !paymentMethodMenuOpen;
+    
+    if (paymentMethodMenuOpen) {
+        menu.classList.remove('hidden');
+    } else {
+        menu.classList.add('hidden');
+    }
+}
+
+function selectPaymentMethod(method, methodName, event) {
+    event.preventDefault();
+    
+    // Close the menu
+    document.getElementById('paymentMethodMenu').classList.add('hidden');
+    paymentMethodMenuOpen = false;
+    
+    // Update button text
+    document.getElementById('paymentMethodText').textContent = methodName;
+    
+    // Show confirmation
+    if (!confirm(`Update ALL your payments to "${methodName}"?`)) {
+        // Reset button text if cancelled
+        document.getElementById('paymentMethodText').textContent = 'Select Payment Method';
+        return;
+    }
+    
+    // Show loading state
+    const button = document.getElementById('paymentMethodBtn');
+    const originalText = button.innerHTML;
+    button.disabled = true;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Updating...';
+
+    const url = '{{ route("payments.bulkUpdateMethod") }}';
+    const csrfToken = document.querySelector('meta[name="csrf-token"]');
+    
+    if (!csrfToken || !csrfToken.content) {
+        alert('Error: CSRF token not found. Please refresh the page and try again.');
+        button.disabled = false;
+        button.innerHTML = originalText;
+        document.getElementById('paymentMethodText').textContent = 'Select Payment Method';
+        return;
+    }
+    
+    // Create form data
+    const formData = new FormData();
+    formData.append('payment_method', method);
+    
+    // Make the request
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': csrfToken.content,
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: formData
+    })
+    .then(response => {
+        // First try to get response as text to see what we're dealing with
+        return response.text().then(text => {
+            console.log('Response status:', response.status);
+            console.log('Response text:', text);
+            
+            try {
+                const data = JSON.parse(text);
+                
+                if (!response.ok) {
+                    const errorMsg = data.message || data.error || `Server error: ${response.status}`;
+                    throw new Error(errorMsg);
+                }
+                
+                return data;
+            } catch (parseError) {
+                if (!response.ok) {
+                    throw new Error(`Server error (${response.status}): ${text.substring(0, 100)}`);
+                }
+                throw new Error('Invalid JSON response from server');
+            }
+        });
+    })
+    .then(data => {
+        console.log('Success response:', data);
+        
+        if (data.success) {
+            alert(data.message || `Payment method updated successfully for ${data.updated_count || 0} payment(s).`);
+            location.reload();
+        } else {
+            const errorMsg = data.message || 'Failed to update payment methods';
+            throw new Error(errorMsg);
+        }
+    })
+    .catch(error => {
+        console.error('Full error:', error);
+        console.error('Error message:', error.message);
+        console.error('Error stack:', error.stack);
+        
+        const errorMsg = error.message || 'An unexpected error occurred. Please try again.';
+        alert('Error: ' + errorMsg);
+        button.disabled = false;
+        button.innerHTML = originalText;
+        document.getElementById('paymentMethodText').textContent = 'Select Payment Method';
+    });
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function(event) {
+    const button = document.getElementById('paymentMethodBtn');
+    const menu = document.getElementById('paymentMethodMenu');
+    
+    if (!button.contains(event.target) && !menu.contains(event.target)) {
+        menu.classList.add('hidden');
+        paymentMethodMenuOpen = false;
+    }
+});
+</script>
 
 @endsection

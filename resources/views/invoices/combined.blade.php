@@ -1,4 +1,4 @@
-@extends('layouts.guest')
+@extends('layouts.invoice')
 
 @section('title', 'Combined Invoice')
 
@@ -109,6 +109,12 @@
                                 <span>Balance Due:</span>
                                 <span>₱{{ number_format($invoice->total_balance, 2) }}</span>
                             </div>
+                            @if(isset($invoice->general_payment_method) && $invoice->general_payment_method)
+                            <div class="flex justify-between py-2 border-t border-gray-200 pt-3 mt-2">
+                                <span class="text-gray-600 font-medium">Payment Method:</span>
+                                <span class="text-gray-900 font-semibold">{{ ucfirst(str_replace('_', ' ', $invoice->general_payment_method)) }}</span>
+                            </div>
+                            @endif
                         </div>
                     </div>
                 </div>
@@ -135,6 +141,7 @@
                     </div>
                 </div>
                 @endif
+
 
                 <!-- Notes -->
                 <div class="mt-8 pt-8 border-t border-gray-200">

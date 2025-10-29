@@ -237,34 +237,16 @@
                     <td>Total:</td>
                     <td style="text-align: right; color: #059669;">{{ $invoice->formatted_total_amount }}</td>
                 </tr>
+                @if(isset($generalPaymentMethod) && $generalPaymentMethod)
+                <tr style="border-top: 1px solid #e5e7eb; padding-top: 10px;">
+                    <td style="font-weight: 600; padding-top: 10px;">Payment Method:</td>
+                    <td style="text-align: right; font-weight: 600; padding-top: 10px;">{{ ucfirst(str_replace('_', ' ', $generalPaymentMethod)) }}</td>
+                </tr>
+                @endif
             </table>
         </div>
     </div>
 
-    <!-- Payment History -->
-    @if($invoice->booking->payments->count() > 0)
-    <div class="payment-history">
-        <h3>Payment History</h3>
-        @foreach($invoice->booking->payments->where('status', 'completed') as $payment)
-        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-            <span>{{ $payment->created_at->format('M d, Y') }} - {{ $payment->payment_method_display }}</span>
-            <span><strong>{{ $payment->formatted_amount }}</strong></span>
-        </div>
-        @endforeach
-        
-        <hr style="margin: 15px 0;">
-        <div style="display: flex; justify-content: space-between; font-weight: bold;">
-            <span>Total Paid:</span>
-            <span style="color: #10b981;">{{ $invoice->booking->formatted_total_paid }}</span>
-        </div>
-        @if($invoice->booking->remaining_balance > 0)
-        <div style="display: flex; justify-content: space-between; font-weight: bold; color: #ef4444;">
-            <span>Balance Due:</span>
-            <span>{{ $invoice->booking->formatted_remaining_balance }}</span>
-        </div>
-        @endif
-    </div>
-    @endif
 
     <!-- Notes -->
     @if($invoice->notes)

@@ -125,6 +125,14 @@
                                            name="items[{{ $index }}][reference]" 
                                            value="{{ $item['reference'] }}"
                                            class="w-full px-2 py-1 text-sm bg-gray-700 border border-gray-600 rounded text-green-50">
+                                    @if(isset($item['payment_id']))
+                                    <input type="hidden" 
+                                           name="items[{{ $index }}][payment_id]" 
+                                           value="{{ $item['payment_id'] }}">
+                                    <input type="hidden" 
+                                           name="items[{{ $index }}][payment_reference]" 
+                                           value="{{ $item['payment_reference'] ?? '' }}">
+                                    @endif
                                 </td>
                                 <td class="px-4 py-3">
                                     <input type="text" 
@@ -310,13 +318,30 @@ function addInvoiceItem() {
 }
 
 function removeInvoiceItem(button) {
-    if (!confirm('Are you sure you want to remove this item?')) {
+    const row = button.closest('tr');
+    const itemType = row.querySelector('.item-type')?.value || '';
+    const hasPaymentId = row.querySelector('input[name*="[payment_id]"]')?.value;
+    
+    // Special confirmation for extra charges since they delete payment records
+    let confirmMessage = 'Are you sure you want to remove this item?';
+    if (itemType === 'extra' && hasPaymentId) {
+        confirmMessage = 'Are you sure you want to remove this extra charge? This will permanently delete the payment record and it will disappear from Customer Payment Details.';
+    }
+    
+    if (!confirm(confirmMessage)) {
         return;
     }
     
-    const row = button.closest('tr');
+    // Remove the row
     row.remove();
+    
+    // Recalculate totals
     calculateTotals();
+    
+    // Show feedback for extra charges
+    if (itemType === 'extra' && hasPaymentId) {
+        console.log('Extra charge row removed. Payment will be deleted when invoice is saved.');
+    }
 }
 
 function calculateRowBalance(input) {

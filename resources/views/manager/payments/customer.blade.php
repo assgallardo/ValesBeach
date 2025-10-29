@@ -5,12 +5,20 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <!-- Header -->
         <div class="mb-8">
-            <div class="flex items-center gap-3 mb-2">
-                <a href="{{ route('manager.payments.index') }}" 
-                   class="text-gray-400 hover:text-white transition-colors">
-                    <i class="fas fa-arrow-left"></i>
+            <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center gap-3">
+                    <a href="{{ route('manager.payments.index') }}" 
+                       class="text-gray-400 hover:text-white transition-colors">
+                        <i class="fas fa-arrow-left"></i>
+                    </a>
+                    <h1 class="text-3xl font-bold text-green-50">Customer Payment Details</h1>
+                </div>
+                <a href="{{ route('admin.payments.customer.invoice', $customer->id) }}" 
+                   class="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                   target="_blank">
+                    <i class="fas fa-file-invoice-dollar mr-2"></i>
+                    Generate Invoice
                 </a>
-                <h1 class="text-3xl font-bold text-green-50">Customer Payment Details</h1>
             </div>
             <p class="text-gray-400">View all payment transactions for this customer</p>
         </div>
@@ -43,7 +51,7 @@
         </div>
 
         <!-- Payment Summary Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
             <!-- Bookings -->
             <div class="bg-gray-800 rounded-lg border border-gray-700 p-6">
                 <div class="flex items-center gap-3 mb-3">
@@ -98,6 +106,25 @@
                 </div>
                 <div class="text-sm text-gray-400 mt-1">
                     {{ $customer->payments->where('food_order_id', '!=', null)->count() }} order{{ $customer->payments->where('food_order_id', '!=', null)->count() !== 1 ? 's' : '' }}
+                </div>
+            </div>
+
+            <!-- Extra Charges -->
+            <div class="bg-gray-800 rounded-lg border border-gray-700 p-6">
+                <div class="flex items-center gap-3 mb-3">
+                    <div class="p-3 bg-yellow-600 bg-opacity-20 rounded-lg">
+                        <i class="fas fa-receipt text-yellow-400 text-xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold text-green-50">Extra Charges</h3>
+                        <p class="text-sm text-gray-400">Additional charges</p>
+                    </div>
+                </div>
+                <div class="text-2xl font-bold text-green-400">
+                    ₱{{ number_format($customer->payments->whereNull('booking_id')->whereNull('service_request_id')->whereNull('food_order_id')->sum('amount'), 2) }}
+                </div>
+                <div class="text-sm text-gray-400 mt-1">
+                    {{ $customer->payments->whereNull('booking_id')->whereNull('service_request_id')->whereNull('food_order_id')->count() }} charge{{ $customer->payments->whereNull('booking_id')->whereNull('service_request_id')->whereNull('food_order_id')->count() !== 1 ? 's' : '' }}
                 </div>
             </div>
         </div>
@@ -164,6 +191,30 @@
                                                     <div class="text-xs text-gray-500">
                                                         {{ $payment->foodOrder->orderItems->count() }} item{{ $payment->foodOrder->orderItems->count() > 1 ? 's' : '' }}
                                                     </div>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    @elseif(!$payment->booking && !$payment->serviceRequest && !$payment->foodOrder)
+                                        @php
+                                            $paymentDetails = $payment->payment_details ?? [];
+                                            $isExtraCharge = isset($paymentDetails['extra_charge']) && $paymentDetails['extra_charge'];
+                                            $description = $paymentDetails['description'] ?? 'Extra Charge';
+                                            $reference = $paymentDetails['reference'] ?? '';
+                                            $details = $paymentDetails['details'] ?? '';
+                                        @endphp
+                                        <div class="flex items-start gap-2">
+                                            <i class="fas fa-receipt text-yellow-400 mt-0.5"></i>
+                                            <div>
+                                                <div class="font-medium text-green-50 text-sm">Extra Charge</div>
+                                                <div class="text-xs text-gray-400">{{ $description }}</div>
+                                                @if($reference)
+                                                    <div class="text-xs text-gray-500">Ref: {{ $reference }}</div>
+                                                @endif
+                                                @if($details)
+                                                    <div class="text-xs text-gray-500">{{ $details }}</div>
+                                                @endif
+                                                @if(isset($paymentDetails['invoice_number']))
+                                                    <div class="text-xs text-blue-400">Invoice: {{ $paymentDetails['invoice_number'] }}</div>
                                                 @endif
                                             </div>
                                         </div>
@@ -240,6 +291,14 @@
                                            title="View Details">
                                             <i class="fas fa-eye text-blue-400"></i>
                                         </a>
+                                        
+                                        @if(!$payment->booking && !$payment->serviceRequest && !$payment->foodOrder && strpos($payment->payment_reference, 'EXT-') === 0)
+                                            <button onclick="deleteExtraCharge({{ $payment->id }}, this)" 
+                                                    class="inline-flex items-center px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700 transition-colors" 
+                                                    title="Delete Extra Charge">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        @endif
                                     </div>
                                 </td>
                             </tr>
@@ -361,6 +420,73 @@ function showRefundModal(paymentId, maxAmount) {
 function closeRefundModal() {
     document.getElementById('refundModal').classList.add('hidden');
     document.getElementById('refundForm').reset();
+}
+
+function deleteExtraCharge(paymentId, button) {
+    if (!confirm('Are you sure you want to delete this extra charge? This action cannot be undone and it will also disappear from the Generate Invoice table.')) {
+        return;
+    }
+    
+    const row = button.closest('tr');
+    const originalButton = button.innerHTML;
+    button.disabled = true;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    
+    const url = `{{ route('admin.payments.extraCharge.delete', ':id') }}`.replace(':id', paymentId);
+    const csrfToken = document.querySelector('meta[name="csrf-token"]');
+    
+    fetch(url, {
+        method: 'DELETE',
+        headers: {
+            'X-CSRF-TOKEN': csrfToken.content,
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => {
+        return response.text().then(text => {
+            console.log('Response status:', response.status);
+            console.log('Response text:', text);
+            
+            try {
+                const data = JSON.parse(text);
+                
+                if (!response.ok) {
+                    const errorMsg = data.message || data.error || `Server error: ${response.status}`;
+                    throw new Error(errorMsg);
+                }
+                
+                return data;
+            } catch (parseError) {
+                if (!response.ok) {
+                    throw new Error(`Server error (${response.status}): ${text.substring(0, 100)}`);
+                }
+                throw new Error('Invalid JSON response from server');
+            }
+        });
+    })
+    .then(data => {
+        if (data.success) {
+            // Remove the row from the table with animation
+            row.style.transition = 'opacity 0.3s';
+            row.style.opacity = '0';
+            
+            setTimeout(() => {
+                row.remove();
+                
+                // Reload page to update summary cards and totals
+                location.reload();
+            }, 300);
+        } else {
+            throw new Error(data.message || 'Failed to delete extra charge');
+        }
+    })
+    .catch(error => {
+        console.error('Error details:', error);
+        alert('Error: ' + (error.message || 'An unexpected error occurred. Please try again.'));
+        button.disabled = false;
+        button.innerHTML = originalButton;
+    });
 }
 </script>
 @endsection

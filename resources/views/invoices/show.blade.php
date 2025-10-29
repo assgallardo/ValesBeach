@@ -1,4 +1,4 @@
-@extends(auth()->user()->role === 'admin' ? 'layouts.admin' : (auth()->user()->role === 'manager' ? 'layouts.manager' : (auth()->user()->role === 'staff' ? 'layouts.staff' : 'layouts.guest')))
+@extends('layouts.invoice')
 
 @section('title', 'Invoice - ' . $invoice->invoice_number)
 
@@ -215,37 +215,16 @@
                                     <span>₱{{ number_format($invoice->balance_due ?? 0, 2) }}</span>
                                 </div>
                             @endif
+                            @if(isset($generalPaymentMethod) && $generalPaymentMethod)
+                            <div class="flex justify-between py-2 border-t border-gray-300 pt-3 mt-2">
+                                <span class="text-gray-600 font-medium">Payment Method:</span>
+                                <span class="text-gray-900 font-semibold">{{ ucfirst(str_replace('_', ' ', $generalPaymentMethod)) }}</span>
+                            </div>
+                            @endif
                         </div>
                     </div>
                 </div>
 
-                <!-- Payment Information -->
-                @if($invoice->booking_id && $invoice->booking && $invoice->booking->payments->count() > 0)
-                <div class="mt-8 p-4 bg-gray-50 rounded-lg">
-                    <h4 class="font-semibold text-gray-800 mb-3">Payment History</h4>
-                    <div class="space-y-2">
-                        @foreach($invoice->booking->payments->where('status', 'completed') as $payment)
-                        <div class="flex justify-between text-sm">
-                            <span>{{ $payment->created_at->format('M d, Y') }} - {{ $payment->payment_method_display }}</span>
-                            <span class="font-medium">{{ $payment->formatted_amount }}</span>
-                        </div>
-                        @endforeach
-                    </div>
-                    
-                    <div class="mt-3 pt-3 border-t border-gray-300">
-                        <div class="flex justify-between font-medium">
-                            <span>Total Paid:</span>
-                            <span class="text-green-600">{{ $invoice->booking->formatted_total_paid }}</span>
-                        </div>
-                        @if($invoice->booking->remaining_balance > 0)
-                        <div class="flex justify-between text-red-600 font-medium">
-                            <span>Balance Due:</span>
-                            <span>{{ $invoice->booking->formatted_remaining_balance }}</span>
-                        </div>
-                        @endif
-                    </div>
-                </div>
-                @endif
 
                 <!-- Notes -->
                 @if($invoice->notes)

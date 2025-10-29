@@ -154,10 +154,13 @@ Route::middleware(['auth', 'user.status'])->group(function () {
     // Payment processing
     Route::get('/bookings/{booking}/payment', [PaymentController::class, 'create'])->name('payments.create');
     Route::post('/bookings/{booking}/payment', [PaymentController::class, 'store'])->name('payments.store');
+    // Specific routes must come before parameterized routes
+    Route::post('/payments/bulk-update-method', [PaymentController::class, 'bulkUpdatePaymentMethod'])->name('payments.bulkUpdateMethod');
+    Route::get('/payments/history', [PaymentController::class, 'history'])->name('payments.history');
     Route::get('/payments/{payment}/confirmation', [PaymentController::class, 'confirmation'])->name('payments.confirmation');
     Route::get('/payments/{payment}/edit', [PaymentController::class, 'edit'])->name('payments.edit');
     Route::patch('/payments/{payment}', [PaymentController::class, 'update'])->name('payments.update');
-    Route::get('/payments/history', [PaymentController::class, 'history'])->name('payments.history');
+    // This must be last to avoid catching specific routes
     Route::get('/payments/{payment}', [PaymentController::class, 'show'])->name('payments.show');
     
     // Invoice management
@@ -184,6 +187,9 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'user.status', 'role
     // Refund management
     Route::get('/payments/{payment}/refund', [PaymentController::class, 'showRefundForm'])->name('payments.refund.form');
     Route::post('/payments/{payment}/refund', [PaymentController::class, 'processRefund'])->name('payments.refund.process');
+    
+    // Delete extra charge payment
+    Route::delete('/payments/{payment}/extra-charge', [PaymentController::class, 'deleteExtraCharge'])->name('payments.extraCharge.delete');
     
     // Invoice management
     Route::get('/invoices', [InvoiceController::class, 'adminIndex'])->name('invoices.index');
@@ -534,13 +540,12 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'user.status', 'role
     Route::get('/payments-export', [PaymentController::class, 'export'])->name('payments.export'); // Note: moved export to avoid route conflicts
 });
 
-// Guest payment routes
+// Guest payment routes (additional routes that don't conflict)
 Route::middleware(['auth'])->group(function () {
     Route::get('/payments/create/{booking}', [PaymentController::class, 'create'])->name('payments.create');
     Route::post('/payments/store/{booking}', [PaymentController::class, 'store'])->name('payments.store');
     Route::get('/payments/confirmation/{payment}', [PaymentController::class, 'confirmation'])->name('payments.confirmation');
-    Route::get('/payments/history', [PaymentController::class, 'history'])->name('payments.history');
-    Route::get('/payments/{payment}', [PaymentController::class, 'show'])->name('payments.show');
+    Route::patch('/payments/{payment}/method', [PaymentController::class, 'updatePaymentMethod'])->name('payments.updateMethod');
 });
 
 // Admin, Manager, and Staff shared routes

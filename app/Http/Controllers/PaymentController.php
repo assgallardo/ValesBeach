@@ -286,7 +286,23 @@ class PaymentController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
-        return view('payments.history', compact('bookings', 'servicePayments', 'foodOrderPayments'));
+        // Get extra charge payments (payments without booking_id, service_request_id, or food_order_id)
+        // These are typically extra charges added via invoice generation
+        $extraChargePayments = auth()->user()->payments()
+            ->whereNull('booking_id')
+            ->whereNull('service_request_id')
+            ->whereNull('food_order_id')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        // Get the general payment method (most common one used by the user)
+        $allPayments = auth()->user()->payments;
+        $paymentMethodCounts = $allPayments->groupBy('payment_method')->map->count();
+        $generalPaymentMethod = $paymentMethodCounts->isNotEmpty() 
+            ? $paymentMethodCounts->sortDesc()->keys()->first() 
+            : null;
+
+        return view('payments.history', compact('bookings', 'servicePayments', 'foodOrderPayments', 'extraChargePayments', 'generalPaymentMethod'));
     }
 
     /**
@@ -991,6 +1007,49 @@ class PaymentController extends Controller
             }
         }
 
+        // Add extra charges (payments with payment_reference starting with 'EXT-')
+        $extraChargePayments = \App\Models\Payment::where('user_id', $customer->id)
+            ->whereNull('booking_id')
+            ->whereNull('service_request_id')
+            ->whereNull('food_order_id')
+            ->where('payment_reference', 'LIKE', 'EXT-%')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $loadedPaymentIds = [];
+        foreach ($extraChargePayments as $extraPayment) {
+            $paymentDetails = $extraPayment->payment_details ?? [];
+            $description = $paymentDetails['description'] ?? 'Extra Charge';
+            $reference = $paymentDetails['reference'] ?? ($extraPayment->payment_reference ?? 'N/A');
+            $details = $paymentDetails['details'] ?? '';
+            $invoiceNumber = $paymentDetails['invoice_number'] ?? '';
+            
+            $amount = $extraPayment->amount ?? 0;
+            $paid = ($extraPayment->status === 'completed') ? $amount : 0;
+            $balance = $amount - $paid;
+            
+            $items[] = [
+                'type' => 'extra',
+                'description' => $description,
+                'reference' => $reference,
+                'details' => $details,
+                'amount' => $amount,
+                'paid' => $paid,
+                'balance' => $balance,
+                'payment_id' => $extraPayment->id, // Store payment ID for deletion
+                'payment_reference' => $extraPayment->payment_reference,
+                'invoice_number' => $invoiceNumber
+            ];
+            
+            $loadedPaymentIds[] = $extraPayment->id;
+            
+            $totalAmount += $amount;
+            $totalPaid += $paid;
+        }
+        
+        // Store loaded payment IDs in session so we know which ones to delete if removed
+        session(['generated_invoice_payment_ids' => $loadedPaymentIds]);
+
         $totalBalance = $totalAmount - $totalPaid;
 
         return view('invoices.customer-invoice-edit', compact('customer', 'items', 'totalAmount', 'totalPaid', 'totalBalance'));
@@ -1016,6 +1075,8 @@ class PaymentController extends Controller
             'items.*.details' => 'nullable|string',
             'items.*.amount' => 'required|numeric|min:0',
             'items.*.paid' => 'required|numeric|min:0',
+            'items.*.payment_id' => 'nullable|integer|exists:payments,id',
+            'items.*.payment_reference' => 'nullable|string',
             'notes' => 'nullable|string|max:2000',
             'due_date' => 'nullable|date'
         ]);
@@ -1070,6 +1131,141 @@ class PaymentController extends Controller
             'created_by' => auth()->id()
         ]);
 
+        // Get all existing extra charge payment IDs that were loaded into the form
+        // This includes payments that were shown in the invoice items table
+        $existingExtraPaymentIds = [];
+        $submittedItems = $request->input('items', []);
+        if (!empty($submittedItems)) {
+            foreach ($submittedItems as $submittedItem) {
+                if (isset($submittedItem['payment_id']) && !empty($submittedItem['payment_id'])) {
+                    $existingExtraPaymentIds[] = $submittedItem['payment_id'];
+                }
+            }
+        }
+        
+        // Also get all current extra charge payments from database for comparison
+        $allCurrentExtraPaymentIds = \App\Models\Payment::where('user_id', $customer->id)
+            ->whereNull('booking_id')
+            ->whereNull('service_request_id')
+            ->whereNull('food_order_id')
+            ->where('payment_reference', 'LIKE', 'EXT-%')
+            ->pluck('id')
+            ->toArray();
+        
+        $newExtraPaymentIds = [];
+        
+        // Create Payment records for extra charges (type='extra')
+        foreach ($validated['items'] as $item) {
+            if ($item['type'] === 'extra' && floatval($item['amount']) > 0) {
+                $amount = floatval($item['amount']);
+                $paid = floatval($item['paid']);
+                
+                // If payment_id exists, update it; otherwise create new
+                if (!empty($item['payment_id'])) {
+                    $payment = Payment::find($item['payment_id']);
+                    if ($payment && $payment->user_id === $customer->id) {
+                        $payment->update([
+                            'amount' => $amount,
+                            'status' => $paid >= $amount ? 'completed' : 'pending',
+                            'payment_date' => $paid > 0 ? now() : null,
+                            'notes' => sprintf(
+                                'Invoice #%s - Extra Charge: %s%s%s',
+                                $invoice->invoice_number,
+                                $item['description'],
+                                $item['reference'] ? ' (Ref: ' . $item['reference'] . ')' : '',
+                                $item['details'] ? ' - ' . $item['details'] : ''
+                            ),
+                            'payment_details' => [
+                                'invoice_id' => $invoice->id,
+                                'invoice_number' => $invoice->invoice_number,
+                                'extra_charge' => true,
+                                'description' => $item['description'],
+                                'reference' => $item['reference'] ?? '',
+                                'details' => $item['details'] ?? ''
+                            ]
+                        ]);
+                        $newExtraPaymentIds[] = $payment->id;
+                        continue;
+                    }
+                }
+                
+                // Create payment record for extra charge
+                $payment = Payment::create([
+                    'user_id' => $customer->id,
+                    'booking_id' => null,
+                    'service_request_id' => null,
+                    'food_order_id' => null,
+                    'payment_reference' => 'EXT-' . strtoupper(uniqid()),
+                    'amount' => $amount,
+                    'payment_method' => 'cash', // Default, can be updated later
+                    'status' => $paid >= $amount ? 'completed' : 'pending',
+                    'payment_date' => $paid > 0 ? now() : null,
+                    'notes' => sprintf(
+                        'Invoice #%s - Extra Charge: %s%s%s',
+                        $invoice->invoice_number,
+                        $item['description'],
+                        $item['reference'] ? ' (Ref: ' . $item['reference'] . ')' : '',
+                        $item['details'] ? ' - ' . $item['details'] : ''
+                    ),
+                    'payment_details' => [
+                        'invoice_id' => $invoice->id,
+                        'invoice_number' => $invoice->invoice_number,
+                        'extra_charge' => true,
+                        'description' => $item['description'],
+                        'reference' => $item['reference'] ?? '',
+                        'details' => $item['details'] ?? ''
+                    ]
+                ]);
+                $newExtraPaymentIds[] = $payment->id;
+            }
+        }
+        
+        // Delete extra charge payments that were removed from invoice
+        // Get payments that were loaded in the generateCustomerInvoice page but are not in submitted items
+        $loadedExtraPaymentIds = [];
+        if (session()->has('generated_invoice_payment_ids')) {
+            $loadedExtraPaymentIds = session('generated_invoice_payment_ids');
+        }
+        
+        // Delete payments that were loaded but not submitted (removed by user from the form)
+        // First check: payments that were loaded but are missing from submission
+        $paymentIdsToDelete = [];
+        
+        if (!empty($loadedExtraPaymentIds)) {
+            // Only delete payments that were explicitly loaded and shown in the form
+            $paymentIdsToDelete = array_diff($loadedExtraPaymentIds, $newExtraPaymentIds);
+        } else {
+            // Fallback: if no session data, compare all current extra charge payments
+            // with what was submitted - anything missing should be deleted
+            $paymentIdsToDelete = array_diff($allCurrentExtraPaymentIds, $newExtraPaymentIds);
+        }
+        
+        if (!empty($paymentIdsToDelete)) {
+            \Log::info('Deleting extra charge payments from saveCustomerInvoice', [
+                'payment_ids' => $paymentIdsToDelete,
+                'customer_id' => $customer->id,
+                'loaded_ids' => $loadedExtraPaymentIds,
+                'new_ids' => $newExtraPaymentIds,
+                'all_current_ids' => $allCurrentExtraPaymentIds
+            ]);
+            
+            $deletedCount = Payment::whereIn('id', $paymentIdsToDelete)
+                ->where('user_id', $customer->id)
+                ->whereNull('booking_id')
+                ->whereNull('service_request_id')
+                ->whereNull('food_order_id')
+                ->where('payment_reference', 'LIKE', 'EXT-%')
+                ->delete();
+            
+            \Log::info('Deleted extra charge payments count from saveCustomerInvoice', [
+                'deleted_count' => $deletedCount,
+                'requested_to_delete' => count($paymentIdsToDelete)
+            ]);
+        }
+        
+        // Clear the session after invoice is saved
+        session()->forget('generated_invoice_payment_ids');
+
         return redirect()->route('invoices.show', $invoice->id)
             ->with('success', 'Invoice generated successfully!');
     }
@@ -1092,7 +1288,47 @@ class PaymentController extends Controller
         }
 
         $customer = $invoice->user;
-        $items = $invoice->items;
+        $items = $invoice->items ?? [];
+        
+        $loadedPaymentIds = [];
+        
+        // Enhance extra charge items with payment_id if they exist
+        foreach ($items as &$item) {
+            if ($item['type'] === 'extra') {
+                // First check if payment_id is already stored in invoice items
+                if (isset($item['payment_id']) && !empty($item['payment_id'])) {
+                    $loadedPaymentIds[] = $item['payment_id'];
+                    continue;
+                }
+                
+                // Otherwise try to find the payment by reference or description
+                if (isset($item['reference'])) {
+                    $extraPayment = \App\Models\Payment::where('user_id', $customer->id)
+                        ->whereNull('booking_id')
+                        ->whereNull('service_request_id')
+                        ->whereNull('food_order_id')
+                        ->where(function($query) use ($item) {
+                            $query->where('payment_reference', 'LIKE', 'EXT-%')
+                                  ->where(function($q) use ($item) {
+                                      $q->where('payment_reference', $item['reference'])
+                                        ->orWhereJsonContains('payment_details->reference', $item['reference']);
+                                  });
+                        })
+                        ->first();
+                    
+                    if ($extraPayment) {
+                        $item['payment_id'] = $extraPayment->id;
+                        $item['payment_reference'] = $extraPayment->payment_reference;
+                        $loadedPaymentIds[] = $extraPayment->id;
+                    }
+                }
+            }
+        }
+        unset($item); // Break reference
+        
+        // Store loaded payment IDs in session for deletion tracking when editing
+        session(['generated_invoice_payment_ids' => $loadedPaymentIds]);
+        
         $totalAmount = $invoice->total_amount;
         $totalPaid = $invoice->amount_paid;
         $totalBalance = $invoice->balance_due;
@@ -1110,7 +1346,8 @@ class PaymentController extends Controller
             abort(403, 'Unauthorized access.');
         }
 
-        $invoice = \App\Models\Invoice::findOrFail($invoiceId);
+        $invoice = \App\Models\Invoice::with('user')->findOrFail($invoiceId);
+        $customer = $invoice->user;
 
         $validated = $request->validate([
             'items' => 'nullable|array',
@@ -1141,7 +1378,7 @@ class PaymentController extends Controller
             $paid = floatval($item['paid']);
             $balance = $amount - $paid;
 
-            $items[] = [
+            $itemData = [
                 'type' => $item['type'],
                 'description' => $item['description'],
                 'reference' => $item['reference'] ?? '',
@@ -1150,12 +1387,42 @@ class PaymentController extends Controller
                 'paid' => $paid,
                 'balance' => $balance
             ];
+            
+            // Include payment_id for extra charges so we can track them
+            if ($item['type'] === 'extra' && !empty($item['payment_id'])) {
+                $itemData['payment_id'] = $item['payment_id'];
+                if (!empty($item['payment_reference'])) {
+                    $itemData['payment_reference'] = $item['payment_reference'];
+                }
+            }
+            
+            $items[] = $itemData;
 
             $totalAmount += $amount;
             $totalPaid += $paid;
         }
 
         $totalBalance = $totalAmount - $totalPaid;
+
+        // Get existing invoice items to compare (not needed for deletion logic, but keep for reference)
+        $existingItems = $invoice->items ?? [];
+        $existingExtraPaymentIds = [];
+        foreach ($existingItems as $existingItem) {
+            if ($existingItem['type'] === 'extra' && isset($existingItem['payment_id'])) {
+                $existingExtraPaymentIds[] = $existingItem['payment_id'];
+            }
+        }
+        
+        // Get all current extra charge payment IDs
+        $allCurrentExtraPaymentIds = \App\Models\Payment::where('user_id', $customer->id)
+            ->whereNull('booking_id')
+            ->whereNull('service_request_id')
+            ->whereNull('food_order_id')
+            ->where('payment_reference', 'LIKE', 'EXT-%')
+            ->pluck('id')
+            ->toArray();
+        
+        $newExtraPaymentIds = [];
 
         // Update invoice
         $invoice->update([
@@ -1169,8 +1436,278 @@ class PaymentController extends Controller
             'items' => $items
         ]);
 
+        // Create/Update Payment records for extra charges
+        foreach ($validated['items'] as $item) {
+            if ($item['type'] === 'extra' && floatval($item['amount']) > 0) {
+                $amount = floatval($item['amount']);
+                
+                // If payment_id exists, update it; otherwise create new
+                if (!empty($item['payment_id'])) {
+                    $payment = Payment::find($item['payment_id']);
+                    if ($payment && $payment->user_id === $customer->id) {
+                        $payment->update([
+                            'amount' => $amount,
+                            'status' => floatval($item['paid']) >= $amount ? 'completed' : 'pending',
+                            'payment_date' => floatval($item['paid']) > 0 ? now() : null,
+                            'notes' => sprintf(
+                                'Invoice #%s - Extra Charge: %s%s%s',
+                                $invoice->invoice_number,
+                                $item['description'],
+                                $item['reference'] ? ' (Ref: ' . $item['reference'] . ')' : '',
+                                $item['details'] ? ' - ' . $item['details'] : ''
+                            ),
+                            'payment_details' => [
+                                'invoice_id' => $invoice->id,
+                                'invoice_number' => $invoice->invoice_number,
+                                'extra_charge' => true,
+                                'description' => $item['description'],
+                                'reference' => $item['reference'] ?? '',
+                                'details' => $item['details'] ?? ''
+                            ]
+                        ]);
+                        $newExtraPaymentIds[] = $payment->id;
+                        continue;
+                    }
+                }
+                
+                // Create new payment record for extra charge
+                $paid = floatval($item['paid']);
+                
+                // Create payment record for new extra charge
+                $payment = Payment::create([
+                    'user_id' => $invoice->user_id,
+                    'booking_id' => null,
+                    'service_request_id' => null,
+                    'food_order_id' => null,
+                    'payment_reference' => 'EXT-' . strtoupper(uniqid()),
+                    'amount' => $amount,
+                    'payment_method' => 'cash', // Default, can be updated later
+                    'status' => $paid >= $amount ? 'completed' : 'pending',
+                    'payment_date' => $paid > 0 ? now() : null,
+                    'notes' => sprintf(
+                        'Invoice #%s - Extra Charge: %s%s%s',
+                        $invoice->invoice_number,
+                        $item['description'],
+                        $item['reference'] ? ' (Ref: ' . $item['reference'] . ')' : '',
+                        $item['details'] ? ' - ' . $item['details'] : ''
+                    ),
+                    'payment_details' => [
+                        'invoice_id' => $invoice->id,
+                        'invoice_number' => $invoice->invoice_number,
+                        'extra_charge' => true,
+                        'description' => $item['description'],
+                        'reference' => $item['reference'] ?? '',
+                        'details' => $item['details'] ?? ''
+                    ]
+                ]);
+                $newExtraPaymentIds[] = $payment->id;
+            }
+        }
+        
+        // Delete extra charge payments that were removed from invoice
+        // Get payments that were loaded in the edit page (from invoice items or session)
+        $loadedExtraPaymentIds = [];
+        if (session()->has('generated_invoice_payment_ids')) {
+            $loadedExtraPaymentIds = session('generated_invoice_payment_ids');
+        }
+        
+        // Also check existing invoice items for payment_ids
+        foreach ($existingItems as $existingItem) {
+            if ($existingItem['type'] === 'extra' && isset($existingItem['payment_id'])) {
+                if (!in_array($existingItem['payment_id'], $loadedExtraPaymentIds)) {
+                    $loadedExtraPaymentIds[] = $existingItem['payment_id'];
+                }
+            }
+        }
+        
+        // Delete payments that were loaded but not submitted (removed by user from the form)
+        $paymentIdsToDelete = [];
+        if (!empty($loadedExtraPaymentIds)) {
+            // Only delete payments that were explicitly loaded into the form
+            $paymentIdsToDelete = array_diff($loadedExtraPaymentIds, $newExtraPaymentIds);
+        } else {
+            // Fallback: compare all current extra charge payments with submitted ones
+            $paymentIdsToDelete = array_diff($allCurrentExtraPaymentIds, $newExtraPaymentIds);
+        }
+        
+        if (!empty($paymentIdsToDelete)) {
+            \Log::info('Deleting extra charge payments from updateCustomerInvoice', [
+                'payment_ids' => $paymentIdsToDelete,
+                'customer_id' => $customer->id,
+                'invoice_id' => $invoice->id,
+                'loaded_ids' => $loadedExtraPaymentIds,
+                'new_ids' => $newExtraPaymentIds,
+                'all_current_ids' => $allCurrentExtraPaymentIds
+            ]);
+            
+            $deletedCount = Payment::whereIn('id', $paymentIdsToDelete)
+                ->where('user_id', $customer->id)
+                ->whereNull('booking_id')
+                ->whereNull('service_request_id')
+                ->whereNull('food_order_id')
+                ->where('payment_reference', 'LIKE', 'EXT-%')
+                ->delete();
+            
+            \Log::info('Deleted extra charge payments count from updateCustomerInvoice', [
+                'deleted_count' => $deletedCount,
+                'requested_to_delete' => count($paymentIdsToDelete)
+            ]);
+        }
+        
+        // Clear the session after invoice is updated
+        session()->forget('generated_invoice_payment_ids');
+
         return redirect()->route('invoices.show', $invoice->id)
             ->with('success', 'Invoice updated successfully!');
+    }
+
+    /**
+     * Update payment method for a payment (Guest accessible)
+     */
+    public function updatePaymentMethod(Request $request, Payment $payment)
+    {
+        // Ensure the payment belongs to the authenticated user
+        if ($payment->user_id !== auth()->id()) {
+            abort(403, 'Unauthorized access to this payment.');
+        }
+
+        $validated = $request->validate([
+            'payment_method' => 'required|in:cash,card,bank_transfer,gcash,paymaya,online',
+        ]);
+
+        $payment->update([
+            'payment_method' => $validated['payment_method'],
+        ]);
+
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Payment method updated successfully.',
+                'payment_method' => $payment->payment_method,
+                'payment_method_display' => $payment->payment_method_display
+            ]);
+        }
+
+        return back()->with('success', 'Payment method updated successfully.');
+    }
+
+    /**
+     * Delete an extra charge payment
+     */
+    public function deleteExtraCharge(Payment $payment)
+    {
+        $user = Auth::user();
+        if (!in_array($user->role, ['admin', 'manager', 'staff'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized access.'
+            ], 403);
+        }
+
+        // Verify this is an extra charge payment
+        $isExtraCharge = $payment->booking_id === null 
+            && $payment->service_request_id === null 
+            && $payment->food_order_id === null
+            && strpos($payment->payment_reference, 'EXT-') === 0;
+
+        if (!$isExtraCharge) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This is not an extra charge payment and cannot be deleted.'
+            ], 400);
+        }
+
+        // Verify payment belongs to a customer (safety check)
+        if (!$payment->user_id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid payment record.'
+            ], 400);
+        }
+
+        try {
+            $paymentId = $payment->id;
+            $customerId = $payment->user_id;
+            
+            // Delete the payment
+            $payment->delete();
+
+            \Log::info('Extra charge payment deleted', [
+                'payment_id' => $paymentId,
+                'customer_id' => $customerId,
+                'deleted_by' => auth()->id()
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Extra charge deleted successfully.',
+                'payment_id' => $paymentId
+            ], 200);
+
+        } catch (\Exception $e) {
+            \Log::error('Failed to delete extra charge payment: ' . $e->getMessage(), [
+                'payment_id' => $payment->id,
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to delete extra charge: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Bulk update payment method for all user's payments (Guest accessible)
+     */
+    public function bulkUpdatePaymentMethod(Request $request)
+    {
+        try {
+            // Validate the request
+            $validated = $request->validate([
+                'payment_method' => 'required|in:cash,card,bank_transfer,gcash,paymaya,online',
+            ]);
+
+            // Get authenticated user
+            $userId = auth()->id();
+            if (!$userId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'User not authenticated.'
+                ], 401);
+            }
+
+            // Update all payments belonging to the authenticated user
+            $updatedCount = Payment::where('user_id', $userId)
+                ->update(['payment_method' => $validated['payment_method']]);
+
+            // Always return JSON for this endpoint
+            return response()->json([
+                'success' => true,
+                'message' => "Payment method updated for {$updatedCount} payment(s) successfully.",
+                'updated_count' => $updatedCount
+            ], 200);
+            
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            $errors = $e->validator->errors();
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation error: ' . implode(', ', $errors->all()),
+                'errors' => $errors
+            ], 422);
+        } catch (\Exception $e) {
+            \Log::error('Bulk update payment method error: ' . $e->getMessage(), [
+                'user_id' => auth()->id(),
+                'payment_method' => $request->input('payment_method'),
+                'request_all' => $request->all(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
