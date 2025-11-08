@@ -14,6 +14,7 @@ class UserController extends Controller
      */
     public function index(Request $request)
     {
+        // Query only non-deleted users (soft delete aware)
         $query = User::query();
 
         // Apply filters
@@ -35,7 +36,7 @@ class UserController extends Controller
         $sortOrder = $request->input('sort_order', 'desc');
         $query->orderBy($sortField, $sortOrder);
 
-        // Get paginated results
+        // Get paginated results (automatically excludes soft-deleted users)
         $users = $query->paginate(10)->withQueryString();
 
         // Get available roles and statuses for filter dropdowns
@@ -163,7 +164,7 @@ class UserController extends Controller
     }
 
     /**
-     * Remove the specified user from database
+     * Soft delete the specified user (hide from list but keep in database)
      */
     public function destroy($id)
     {
@@ -177,11 +178,12 @@ class UserController extends Controller
             ], 403);
         }
 
+        // Soft delete - user is hidden but data is preserved
         $user->delete();
 
         return response()->json([
             'success' => true,
-            'message' => 'User deleted successfully!'
+            'message' => 'User deleted successfully! (User data preserved for historical records)'
         ]);
     }
 

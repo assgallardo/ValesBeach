@@ -218,6 +218,14 @@ class Payment extends Model
     }
 
     /**
+     * Get refundable amount attribute (accessor for views)
+     */
+    public function getRefundableAmountAttribute()
+    {
+        return $this->getRemainingRefundableAmount();
+    }
+
+    /**
      * Get formatted refund amount
      */
     public function getFormattedRefundAmountAttribute()
@@ -246,7 +254,11 @@ class Payment extends Model
      */
     public function scopeRefundable($query)
     {
-        return $query->where('status', 'completed')->where('refund_amount', '<', DB::raw('amount'))->orWhereNull('refund_amount');
+        return $query->where('status', 'completed')
+            ->where(function($q) {
+                $q->where('refund_amount', '<', DB::raw('amount'))
+                  ->orWhereNull('refund_amount');
+            });
     }
 
     /**

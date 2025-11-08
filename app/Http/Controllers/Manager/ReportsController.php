@@ -109,6 +109,32 @@ class ReportsController extends Controller
                 ->avg('total_price'),
         ];
 
+        // Calculate Revenue Totals
+        $revenueStats = [
+            // Rooms/Bookings Revenue
+            'rooms_revenue' => Payment::whereNotNull('booking_id')
+                ->where('status', 'completed')
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->sum('amount'),
+            
+            // Food Revenue
+            'food_revenue' => Payment::whereNotNull('food_order_id')
+                ->where('status', 'completed')
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->sum('amount'),
+            
+            // Services Revenue
+            'services_revenue' => Payment::whereNotNull('service_request_id')
+                ->where('status', 'completed')
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->sum('amount'),
+        ];
+        
+        // Calculate Overall Total Revenue
+        $revenueStats['total_revenue'] = $revenueStats['rooms_revenue'] + 
+                                         $revenueStats['food_revenue'] + 
+                                         $revenueStats['services_revenue'];
+
         // Revenue by category for quick overview
         $revenueByCategory = Room::join('bookings', 'rooms.id', '=', 'bookings.room_id')
             ->whereIn('bookings.status', ['completed', 'checked_out'])
@@ -134,6 +160,7 @@ class ReportsController extends Controller
             'dailyTrends',
             'roomSalesOverview',
             'revenueByCategory',
+            'revenueStats',
             'routePrefix'
         ));
     }
@@ -921,4 +948,229 @@ class ReportsController extends Controller
             'routePrefix'
         ));
     }
+
+    /**
+     * Customer Reports - Repeat Customers
+     */
+    public function repeatCustomers(Request $request)
+    {
+        $dateRange = $this->getDateRange($request);
+        $startDate = $dateRange['start'];
+        $endDate = $dateRange['end'];
+
+        // Get customers with multiple bookings
+        $repeatCustomers = User::where('role', 'guest')
+            ->withCount([
+                'bookings as total_bookings' => function ($query) use ($startDate, $endDate) {
+                    $query->whereBetween('created_at', [$startDate, $endDate]);
+                },
+                'bookings as completed_bookings' => function ($query) use ($startDate, $endDate) {
+                    $query->where('status', 'checked_out')
+                          ->whereBetween('created_at', [$startDate, $endDate]);
+                }
+            ])
+            ->withSum([
+                'payments as total_spent' => function ($query) use ($startDate, $endDate) {
+                    $query->where('status', 'completed')
+                          ->whereBetween('created_at', [$startDate, $endDate]);
+                }
+            ], 'amount')
+            ->having('total_bookings', '>=', 2)
+            ->orderByDesc('total_bookings')
+            ->paginate(20);
+
+        // Statistics
+        $stats = [
+            'total_customers' => User::where('role', 'guest')->count(),
+            'repeat_customers' => User::where('role', 'guest')
+                ->has('bookings', '>=', 2)
+                ->count(),
+            'one_time_customers' => User::where('role', 'guest')
+                ->has('bookings', '=', 1)
+                ->count(),
+            'avg_bookings_per_customer' => round(Booking::count() / max(User::where('role', 'guest')->count(), 1), 2),
+        ];
+
+        $stats['retention_rate'] = $stats['total_customers'] > 0 
+            ? round(($stats['repeat_customers'] / $stats['total_customers']) * 100, 1) 
+            : 0;
+
+        $routePrefix = $this->getRoutePrefix();
+
+        return view('manager.reports.repeat-customers', compact(
+            'repeatCustomers',
+            'stats',
+            'startDate',
+            'endDate',
+            'routePrefix'
+        ));
+    }
+
+    /**
+     * Customer Reports - Customer Preferences
+     */
+    public function customerPreferences(Request $request)
+    {
+        $dateRange = $this->getDateRange($request);
+        $startDate = $dateRange['start'];
+        $endDate = $dateRange['end'];
+
+        // Room Type Preferences
+        $roomPreferences = Booking::join('rooms', 'bookings.room_id', '=', 'rooms.id')
+            ->whereBetween('bookings.created_at', [$startDate, $endDate])
+            ->selectRaw('
+                rooms.category,
+                COUNT(*) as booking_count,
+                COUNT(DISTINCT bookings.user_id) as unique_customers
+            ')
+            ->groupBy('rooms.category')
+            ->orderByDesc('booking_count')
+            ->get();
+
+        // Service Preferences
+        $servicePreferences = ServiceRequest::join('services', 'service_requests.service_id', '=', 'services.id')
+            ->whereBetween('service_requests.created_at', [$startDate, $endDate])
+            ->selectRaw('
+                services.category,
+                services.name,
+                COUNT(*) as request_count,
+                COUNT(DISTINCT service_requests.user_id) as unique_customers
+            ')
+            ->groupBy('services.category', 'services.name')
+            ->orderByDesc('request_count')
+            ->get();
+
+        // Food Preferences (Top Menu Items)
+        $foodPreferences = FoodOrder::join('order_items', 'food_orders.id', '=', 'order_items.food_order_id')
+            ->join('menu_items', 'order_items.menu_item_id', '=', 'menu_items.id')
+            ->join('menu_categories', 'menu_items.category_id', '=', 'menu_categories.id')
+            ->whereBetween('food_orders.created_at', [$startDate, $endDate])
+            ->selectRaw('
+                menu_categories.name as category,
+                menu_items.name as item_name,
+                SUM(order_items.quantity) as total_orders,
+                COUNT(DISTINCT food_orders.user_id) as unique_customers
+            ')
+            ->groupBy('menu_categories.name', 'menu_items.name')
+            ->orderByDesc('total_orders')
+            ->take(20)
+            ->get();
+
+        // Peak Booking Times
+        $bookingTimes = Booking::whereBetween('created_at', [$startDate, $endDate])
+            ->selectRaw('
+                CASE CAST(strftime("%w", check_in) AS INTEGER)
+                    WHEN 0 THEN "Sunday"
+                    WHEN 1 THEN "Monday"
+                    WHEN 2 THEN "Tuesday"
+                    WHEN 3 THEN "Wednesday"
+                    WHEN 4 THEN "Thursday"
+                    WHEN 5 THEN "Friday"
+                    WHEN 6 THEN "Saturday"
+                END as day_name,
+                COUNT(*) as booking_count
+            ')
+            ->groupBy('day_name')
+            ->orderByRaw('CAST(strftime("%w", check_in) AS INTEGER)')
+            ->get();
+
+        $routePrefix = $this->getRoutePrefix();
+
+        return view('manager.reports.customer-preferences', compact(
+            'roomPreferences',
+            'servicePreferences',
+            'foodPreferences',
+            'bookingTimes',
+            'startDate',
+            'endDate',
+            'routePrefix'
+        ));
+    }
+
+    /**
+     * Customer Reports - Payment Methods Analysis
+     */
+    public function paymentMethods(Request $request)
+    {
+        $dateRange = $this->getDateRange($request);
+        $startDate = $dateRange['start'];
+        $endDate = $dateRange['end'];
+
+        // Payment Method Breakdown
+        $paymentMethodStats = Payment::where('status', 'completed')
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->selectRaw('
+                payment_method,
+                COUNT(*) as transaction_count,
+                SUM(amount) as total_amount,
+                AVG(amount) as avg_transaction
+            ')
+            ->groupBy('payment_method')
+            ->orderByDesc('total_amount')
+            ->get();
+
+        // Payment Methods by Source (Booking, Food, Service)
+        $paymentsBySource = [
+            'bookings' => Payment::whereNotNull('booking_id')
+                ->where('status', 'completed')
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->selectRaw('payment_method, COUNT(*) as count, SUM(amount) as total')
+                ->groupBy('payment_method')
+                ->get(),
+            'food_orders' => Payment::whereNotNull('food_order_id')
+                ->where('status', 'completed')
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->selectRaw('payment_method, COUNT(*) as count, SUM(amount) as total')
+                ->groupBy('payment_method')
+                ->get(),
+            'services' => Payment::whereNotNull('service_request_id')
+                ->where('status', 'completed')
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->selectRaw('payment_method, COUNT(*) as count, SUM(amount) as total')
+                ->groupBy('payment_method')
+                ->get(),
+        ];
+
+        // Daily Payment Trends
+        $dailyPayments = Payment::where('status', 'completed')
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->selectRaw('
+                DATE(created_at) as date,
+                payment_method,
+                COUNT(*) as count,
+                SUM(amount) as total
+            ')
+            ->groupBy('date', 'payment_method')
+            ->orderBy('date')
+            ->get();
+
+        // Statistics
+        $stats = [
+            'total_transactions' => Payment::where('status', 'completed')
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->count(),
+            'total_revenue' => Payment::where('status', 'completed')
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->sum('amount'),
+            'avg_transaction' => Payment::where('status', 'completed')
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->avg('amount') ?? 0,
+            'most_popular_method' => $paymentMethodStats->isNotEmpty() 
+                ? $paymentMethodStats->first()->payment_method 
+                : 'N/A',
+        ];
+
+        $routePrefix = $this->getRoutePrefix();
+
+        return view('manager.reports.payment-methods', compact(
+            'paymentMethodStats',
+            'paymentsBySource',
+            'dailyPayments',
+            'stats',
+            'startDate',
+            'endDate',
+            'routePrefix'
+        ));
+    }
 }
+

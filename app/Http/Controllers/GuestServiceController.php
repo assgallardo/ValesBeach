@@ -80,152 +80,46 @@ class GuestServiceController extends Controller
         ]);
 
         try {
-            // Get available columns in the table
-            $tableColumns = \Schema::getColumnListing('service_requests');
-            \Log::info('Available columns in service_requests table:', $tableColumns);
-
-            // Show user what columns exist for debugging
-            if (empty($tableColumns)) {
-                return back()->withInput()
-                            ->with('error', 'Service requests table not found. Please contact administrator.');
-            }
-
-            // Build data array with only basic required fields first
-            $serviceRequestData = [];
-
-            // Add fields based on what exists
-            if (in_array('service_id', $tableColumns)) {
-                $serviceRequestData['service_id'] = $validated['service_id'];
-            }
-
-            if (in_array('description', $tableColumns)) {
-                $serviceRequestData['description'] = $validated['description'] ?? "Service booking for {$validated['service_type']}";
-            }
-
-            if (in_array('status', $tableColumns)) {
-                $serviceRequestData['status'] = 'pending';
-            }
-
-            if (in_array('priority', $tableColumns)) {
-                $serviceRequestData['priority'] = 'medium';
-            }
-
-            if (in_array('requested_at', $tableColumns)) {
-                $serviceRequestData['requested_at'] = now();
-            }
-
-            // Set user ID in all available columns (both guest_id and user_id might exist)
-            $userId = Auth::id();
+            // Get the service to get its details
+            $service = Service::findOrFail($validated['service_id']);
             
-            if (in_array('user_id', $tableColumns)) {
-                $serviceRequestData['user_id'] = $userId;
-            }
-            
-            if (in_array('guest_id', $tableColumns)) {
-                $serviceRequestData['guest_id'] = $userId;
-            }
-            
-            if (in_array('customer_id', $tableColumns)) {
-                $serviceRequestData['customer_id'] = $userId;
-            }
-
-            // Add other fields only if columns exist
-            $optionalFields = [
+            // Create service request with proper fields matching the migration
+            $serviceRequest = ServiceRequest::create([
+                'service_id' => $validated['service_id'],
+                'guest_id' => Auth::id(),
                 'guest_name' => Auth::user()->name,
                 'guest_email' => Auth::user()->email,
                 'room_id' => Auth::user()->room_id ?? null,
-                'deadline' => $validated['scheduled_date'],
-            ];
-
-            // Try different column name variations
-            $columnVariations = [
-                'service_type' => ['service_type', 'type', 'service_name'],
-                'scheduled_date' => ['scheduled_date', 'scheduled_at', 'booking_date', 'appointment_date'],
-                'guests_count' => ['guests_count', 'guest_count', 'number_of_guests', 'pax'],
-                'manager_notes' => ['manager_notes', 'notes', 'special_requests', 'comments'],
-            ];
-
-            // Add service type
-            foreach ($columnVariations['service_type'] as $column) {
-                if (in_array($column, $tableColumns)) {
-                    $serviceRequestData[$column] = $validated['service_type'];
-                    break;
-                }
-            }
-
-            // Add scheduled date
-            foreach ($columnVariations['scheduled_date'] as $column) {
-                if (in_array($column, $tableColumns)) {
-                    $serviceRequestData[$column] = $validated['scheduled_date'];
-                    break;
-                }
-            }
-
-            // Add guest count
-            foreach ($columnVariations['guests_count'] as $column) {
-                if (in_array($column, $tableColumns)) {
-                    $serviceRequestData[$column] = $validated['guests_count'];
-                    break;
-                }
-            }
-
-            // Add special requests
-            if ($validated['special_requests']) {
-                foreach ($columnVariations['manager_notes'] as $column) {
-                    if (in_array($column, $tableColumns)) {
-                        $serviceRequestData[$column] = $validated['special_requests'];
-                        break;
-                    }
-                }
-            }
-
-            // Add optional fields
-            foreach ($optionalFields as $field => $value) {
-                if (in_array($field, $tableColumns)) {
-                    $serviceRequestData[$field] = $value;
-                }
-            }
-
-            // Add room_number if column exists and user doesn't have room_id
-            if (in_array('room_number', $tableColumns) && !isset($serviceRequestData['room_number'])) {
-                $serviceRequestData['room_number'] = Auth::user()->room_number ?? 'TBD';
-            }
-
-            \Log::info('Creating service request with data:', $serviceRequestData);
-            \Log::info('Available table columns:', $tableColumns);
-
-            // Make sure we have at least the minimum required data
-            if (empty($serviceRequestData)) {
-                return back()->withInput()
-                            ->with('error', 'No compatible columns found. Available columns: ' . implode(', ', $tableColumns));
-            }
-
-            $serviceRequest = ServiceRequest::create($serviceRequestData);
+                'service_type' => $validated['service_type'],
+                'description' => $validated['description'] ?? "Service booking for {$validated['service_type']}",
+                'scheduled_date' => $validated['scheduled_date'],
+                'deadline' => $validated['scheduled_date'], // Same as scheduled date initially
+                'guests_count' => $validated['guests_count'],
+                'manager_notes' => $validated['special_requests'] ?? null,
+                'status' => 'pending',
+                'priority' => 'medium',
+            ]);
             
             \Log::info('Service request created successfully:', $serviceRequest->toArray());
 
             // Create a payment record for the service request
-            // Get the actual service price from the Service model
-            $service = Service::find($validated['service_id']);
-            $serviceAmount = $service ? $service->price : 0;
-            
             try {
                 Payment::create([
                     'service_request_id' => $serviceRequest->id,
-                    'user_id' => $serviceRequest->user_id ?? $serviceRequest->guest_id, // Use user_id first, fallback to guest_id
-                    'amount' => $serviceAmount,
-                    'payment_method' => 'cash', // Default payment method
-                    'status' => 'pending', // Service requests payment is pending until guest pays
+                    'user_id' => $serviceRequest->guest_id,
+                    'amount' => $service->price,
+                    'payment_method' => 'cash',
+                    'status' => 'pending',
                     'payment_date' => now(),
-                    'notes' => 'Service request payment - ' . ($serviceRequest->service_type ?? 'Service')
+                    'notes' => "Service request payment - {$service->name}"
                 ]);
                 
-                \Log::info('Payment record created for service request:', [
+                \Log::info('Payment record created for service request', [
                     'service_request_id' => $serviceRequest->id,
-                    'amount' => $serviceAmount
+                    'amount' => $service->price
                 ]);
             } catch (\Exception $e) {
-                \Log::error('Failed to create payment record for service request:', [
+                \Log::error('Failed to create payment record for service request', [
                     'service_request_id' => $serviceRequest->id,
                     'error' => $e->getMessage()
                 ]);
@@ -236,27 +130,23 @@ class GuestServiceController extends Controller
                            ->with('success', 'Your service request has been submitted successfully! We will contact you soon to confirm your booking.');
 
         } catch (\Illuminate\Database\QueryException $e) {
-            \Log::error('Database error creating service request:', [
+            \Log::error('Database error creating service request', [
                 'error' => $e->getMessage(),
                 'sql' => $e->getSql() ?? 'N/A',
-                'data' => $serviceRequestData ?? null,
-                'available_columns' => $tableColumns ?? []
             ]);
             
             return back()->withInput()
-                        ->with('error', 'Database error: ' . $e->getMessage() . ' | Available columns: ' . implode(', ', $tableColumns ?? []));
+                        ->with('error', 'Database error: Unable to create service request. Please try again or contact support.');
                         
         } catch (\Exception $e) {
-            \Log::error('General error creating service request:', [
+            \Log::error('General error creating service request', [
                 'error' => $e->getMessage(),
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),
-                'data' => $serviceRequestData ?? null,
-                'available_columns' => $tableColumns ?? []
             ]);
             
             return back()->withInput()
-                        ->with('error', 'Error: ' . $e->getMessage() . ' | Available columns: ' . implode(', ', $tableColumns ?? []));
+                        ->with('error', 'An error occurred while processing your request. Please try again.');
         }
     }
 

@@ -196,6 +196,19 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'user.status', 'role
     Route::get('/invoices/create', [InvoiceController::class, 'create'])->name('invoices.create');
     Route::patch('/invoices/{invoice}/status', [InvoiceController::class, 'updateStatus'])->name('invoices.updateStatus');
     Route::post('/invoices/{invoice}/remind', [InvoiceController::class, 'sendReminder'])->name('invoices.remind');
+    
+    // Customer Reports routes (NEW) - Admin uses same controller as Manager
+    Route::get('/reports/repeat-customers', [ManagerReportsController::class, 'repeatCustomers'])->name('reports.repeat-customers');
+    Route::get('/reports/customer-preferences', [ManagerReportsController::class, 'customerPreferences'])->name('reports.customer-preferences');
+    Route::get('/reports/payment-methods', [ManagerReportsController::class, 'paymentMethods'])->name('reports.payment-methods');
+    
+    // Housekeeping Management routes (NEW) - Admin access
+    Route::get('/housekeeping', [App\Http\Controllers\Manager\HousekeepingController::class, 'index'])->name('housekeeping.index');
+    Route::post('/housekeeping/{housekeeping}/assign', [App\Http\Controllers\Manager\HousekeepingController::class, 'assign'])->name('housekeeping.assign');
+    Route::post('/housekeeping/{housekeeping}/status', [App\Http\Controllers\Manager\HousekeepingController::class, 'updateStatus'])->name('housekeeping.status');
+    Route::post('/housekeeping/{housekeeping}/priority', [App\Http\Controllers\Manager\HousekeepingController::class, 'updatePriority'])->name('housekeeping.priority');
+    Route::post('/housekeeping/{housekeeping}/notes', [App\Http\Controllers\Manager\HousekeepingController::class, 'addNotes'])->name('housekeeping.notes');
+    Route::delete('/housekeeping/{housekeeping}', [App\Http\Controllers\Manager\HousekeepingController::class, 'destroy'])->name('housekeeping.destroy');
 });
 
 // Authentication Routes
@@ -333,6 +346,19 @@ Route::prefix('manager')->name('manager.')->middleware(['auth', 'user.status', '
     Route::get('/reports/room-sales', [ManagerReportsController::class, 'roomSales'])->name('reports.room-sales');
     Route::get('/reports/food-sales', [ManagerReportsController::class, 'foodSales'])->name('reports.food-sales');
     Route::get('/reports/service-sales', [ManagerReportsController::class, 'serviceSales'])->name('reports.service-sales');
+    
+    // Customer Reports routes (NEW)
+    Route::get('/reports/repeat-customers', [ManagerReportsController::class, 'repeatCustomers'])->name('reports.repeat-customers');
+    Route::get('/reports/customer-preferences', [ManagerReportsController::class, 'customerPreferences'])->name('reports.customer-preferences');
+    Route::get('/reports/payment-methods', [ManagerReportsController::class, 'paymentMethods'])->name('reports.payment-methods');
+    
+    // Housekeeping Management routes (NEW)
+    Route::get('/housekeeping', [App\Http\Controllers\Manager\HousekeepingController::class, 'index'])->name('housekeeping.index');
+    Route::post('/housekeeping/{housekeeping}/assign', [App\Http\Controllers\Manager\HousekeepingController::class, 'assign'])->name('housekeeping.assign');
+    Route::post('/housekeeping/{housekeeping}/status', [App\Http\Controllers\Manager\HousekeepingController::class, 'updateStatus'])->name('housekeeping.status');
+    Route::post('/housekeeping/{housekeeping}/priority', [App\Http\Controllers\Manager\HousekeepingController::class, 'updatePriority'])->name('housekeeping.priority');
+    Route::post('/housekeeping/{housekeeping}/notes', [App\Http\Controllers\Manager\HousekeepingController::class, 'addNotes'])->name('housekeeping.notes');
+    Route::delete('/housekeeping/{housekeeping}', [App\Http\Controllers\Manager\HousekeepingController::class, 'destroy'])->name('housekeeping.destroy');
     
     // Other manager routes...
     Route::get('/dashboard', [App\Http\Controllers\ManagerController::class, 'dashboard'])->name('dashboard');
@@ -502,8 +528,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Guest service routes
     Route::get('/guest/services', [GuestServiceController::class, 'index'])->name('guest.services.index');
     Route::get('/guest/services/history', [GuestServiceController::class, 'history'])->name('guest.services.history');
-    Route::get('/guest/services/{id}', [GuestServiceController::class, 'show'])->name('guest.services.show');
-    Route::post('/guest/services/{id}/cancel', [GuestServiceController::class, 'cancel'])->name('guest.services.cancel');
+    Route::get('/guest/services/{service}', [GuestServiceController::class, 'show'])->name('guest.services.show');
+    Route::post('/guest/services/request/{serviceRequest}/cancel', [GuestServiceController::class, 'cancel'])->name('guest.services.cancel');
 });
 
 // Guest routes

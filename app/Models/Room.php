@@ -45,6 +45,14 @@ class Room extends Model
     }
 
     /**
+     * Get the housekeeping requests for the room.
+     */
+    public function housekeepingRequests(): HasMany
+    {
+        return $this->hasMany(\App\Models\HousekeepingRequest::class);
+    }
+
+    /**
      * Get the images for the room.
      */
     public function images(): HasMany

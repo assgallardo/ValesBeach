@@ -97,6 +97,14 @@ class Booking extends Model
         return $this->hasOne(Invoice::class);
     }
 
+    /**
+     * Get the housekeeping requests for the booking.
+     */
+    public function housekeepingRequests()
+    {
+        return $this->hasMany(\App\Models\HousekeepingRequest::class);
+    }
+
     // Dynamic accessors with proper date handling
     /**
      * Get the check-in date.

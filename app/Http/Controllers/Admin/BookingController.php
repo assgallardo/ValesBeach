@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Booking;
 use App\Models\Room;
 use App\Models\User;
+use App\Models\HousekeepingRequest;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
@@ -25,6 +26,11 @@ class BookingController extends Controller
                 if ($booking) {
                     $oldStatus = $booking->status;
                     $booking->update(['status' => $request->new_status]);
+                    
+                    // Automatically trigger housekeeping when guest checks out
+                    if ($request->new_status === 'checked_out' && $oldStatus !== 'checked_out') {
+                        $this->triggerHousekeeping($booking);
+                    }
                     
                     // Set success message for display
                     $successMessage = "✅ Booking #{$booking->id} status updated from " . ucfirst(str_replace('_', ' ', $oldStatus)) . " to " . ucfirst(str_replace('_', ' ', $request->new_status));
@@ -763,11 +769,43 @@ class BookingController extends Controller
             return redirect()->back()->withErrors(['status' => 'Cannot cancel completed bookings.']);
         }
 
+        $oldStatus = $booking->status;
+        
         $booking->update([
             'status' => $request->status
         ]);
 
+        // Automatically trigger housekeeping when guest checks out
+        if ($request->status === 'checked_out' && $oldStatus !== 'checked_out') {
+            $this->triggerHousekeeping($booking);
+        }
+
         return redirect()->back()->with('success', 'Booking updated.');
+    }
+
+    /**
+     * Automatically create a housekeeping request when a guest checks out.
+     */
+    private function triggerHousekeeping(Booking $booking)
+    {
+        // Check if housekeeping request already exists for this booking
+        $existingRequest = HousekeepingRequest::where('booking_id', $booking->id)->first();
+        
+        if (!$existingRequest) {
+            HousekeepingRequest::create([
+                'booking_id' => $booking->id,
+                'room_id' => $booking->room_id,
+                'status' => HousekeepingRequest::STATUS_PENDING,
+                'priority' => HousekeepingRequest::PRIORITY_NORMAL,
+                'triggered_at' => now(),
+                'notes' => 'Automatically generated after guest checkout from Booking #' . $booking->id,
+            ]);
+            
+            \Log::info('Housekeeping request automatically created', [
+                'booking_id' => $booking->id,
+                'room_id' => $booking->room_id,
+            ]);
+        }
     }
 
     /**

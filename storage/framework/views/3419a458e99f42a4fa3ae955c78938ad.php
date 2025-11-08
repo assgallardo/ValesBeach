@@ -1,8 +1,6 @@
-@extends('layouts.admin')
+<?php $__env->startSection('title', 'Service Reports Dashboard'); ?>
 
-@section('title', 'Service Reports Dashboard')
-
-@section('content')
+<?php $__env->startSection('content'); ?>
 <div class="min-h-screen bg-gray-900 py-6">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <!-- Header -->
@@ -29,15 +27,15 @@
                         </button>
                         <div id="exportDropdown" class="absolute right-0 mt-2 w-56 bg-gray-800 border border-gray-700 rounded-lg shadow-lg z-10 hidden">
                             <div class="py-1">
-                                <a href="{{ route('manager.reports.export', ['type' => 'overview'] + request()->query()) }}" 
+                                <a href="<?php echo e(route('manager.reports.export', ['type' => 'overview'] + request()->query())); ?>" 
                                    class="flex items-center px-4 py-2 text-gray-300 hover:bg-gray-700 hover:text-green-400 transition-colors">
                                     <i class="fas fa-file-alt mr-3"></i>Overview Report
                                 </a>
-                                <a href="{{ route('manager.reports.export', ['type' => 'service-usage'] + request()->query()) }}" 
+                                <a href="<?php echo e(route('manager.reports.export', ['type' => 'service-usage'] + request()->query())); ?>" 
                                    class="flex items-center px-4 py-2 text-gray-300 hover:bg-gray-700 hover:text-green-400 transition-colors">
                                     <i class="fas fa-chart-bar mr-3"></i>Service Usage
                                 </a>
-                                <a href="{{ route('manager.reports.export', ['type' => 'staff-performance'] + request()->query()) }}" 
+                                <a href="<?php echo e(route('manager.reports.export', ['type' => 'staff-performance'] + request()->query())); ?>" 
                                    class="flex items-center px-4 py-2 text-gray-300 hover:bg-gray-700 hover:text-green-400 transition-colors">
                                     <i class="fas fa-users mr-3"></i>Staff Performance
                                 </a>
@@ -56,7 +54,7 @@
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
                 <!-- Room Sales -->
-                <a href="{{ route('manager.reports.room-sales', request()->query()) }}" 
+                <a href="<?php echo e(route('manager.reports.room-sales', request()->query())); ?>" 
                    class="group bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg p-5 hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-105">
                     <div class="flex flex-col items-center text-center">
                         <div class="w-14 h-14 bg-white/20 rounded-xl flex items-center justify-center mb-3 group-hover:bg-white/30 transition-colors">
@@ -68,7 +66,7 @@
                 </a>
 
                 <!-- Food Sales -->
-                <a href="{{ route('manager.reports.food-sales', request()->query()) }}" 
+                <a href="<?php echo e(route('manager.reports.food-sales', request()->query())); ?>" 
                    class="group bg-gradient-to-br from-green-600 to-green-700 rounded-lg p-5 hover:from-green-700 hover:to-green-800 transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-105">
                     <div class="flex flex-col items-center text-center">
                         <div class="w-14 h-14 bg-white/20 rounded-xl flex items-center justify-center mb-3 group-hover:bg-white/30 transition-colors">
@@ -80,7 +78,7 @@
                 </a>
 
                 <!-- Service Usage -->
-                <a href="{{ route('manager.reports.service-usage', request()->query()) }}" 
+                <a href="<?php echo e(route('manager.reports.service-usage', request()->query())); ?>" 
                    class="group bg-gradient-to-br from-purple-600 to-purple-700 rounded-lg p-5 hover:from-purple-700 hover:to-purple-800 transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-105">
                     <div class="flex flex-col items-center text-center">
                         <div class="w-14 h-14 bg-white/20 rounded-xl flex items-center justify-center mb-3 group-hover:bg-white/30 transition-colors">
@@ -92,7 +90,7 @@
                 </a>
 
                 <!-- Service Revenue -->
-                <a href="{{ route('manager.reports.service-sales', request()->query()) }}" 
+                <a href="<?php echo e(route('manager.reports.service-sales', request()->query())); ?>" 
                    class="group bg-gradient-to-br from-indigo-600 to-indigo-700 rounded-lg p-5 hover:from-indigo-700 hover:to-indigo-800 transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-105">
                     <div class="flex flex-col items-center text-center">
                         <div class="w-14 h-14 bg-white/20 rounded-xl flex items-center justify-center mb-3 group-hover:bg-white/30 transition-colors">
@@ -104,7 +102,7 @@
                 </a>
 
                 <!-- Staff Performance -->
-                <a href="{{ route('manager.reports.staff-performance', request()->query()) }}" 
+                <a href="<?php echo e(route('manager.reports.staff-performance', request()->query())); ?>" 
                    class="group bg-gradient-to-br from-pink-600 to-pink-700 rounded-lg p-5 hover:from-pink-700 hover:to-pink-800 transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-105">
                     <div class="flex flex-col items-center text-center">
                         <div class="w-14 h-14 bg-white/20 rounded-xl flex items-center justify-center mb-3 group-hover:bg-white/30 transition-colors">
@@ -112,52 +110,6 @@
                         </div>
                         <h3 class="text-white font-bold text-sm mb-1">Staff Performance</h3>
                         <p class="text-pink-100 text-xs">Productivity</p>
-                    </div>
-                </a>
-            </div>
-        </div>
-
-        <!-- Customer Reports Section -->
-        <div class="mb-8">
-            <div class="flex items-center mb-4">
-                <div class="w-1 h-8 bg-gradient-to-b from-cyan-400 to-cyan-600 rounded-full mr-3"></div>
-                <h2 class="text-2xl font-bold text-white">Customer Analytics</h2>
-            </div>
-            
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <!-- Repeat Customers -->
-                <a href="{{ route($routePrefix . '.reports.repeat-customers', request()->query()) }}" 
-                   class="group bg-gradient-to-br from-cyan-600 to-cyan-700 rounded-lg p-5 hover:from-cyan-700 hover:to-cyan-800 transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-105">
-                    <div class="flex flex-col items-center text-center">
-                        <div class="w-14 h-14 bg-white/20 rounded-xl flex items-center justify-center mb-3 group-hover:bg-white/30 transition-colors">
-                            <i class="fas fa-user-check text-white text-2xl"></i>
-                        </div>
-                        <h3 class="text-white font-bold text-sm mb-1">Repeat Customers</h3>
-                        <p class="text-cyan-100 text-xs">Loyalty Analysis</p>
-                    </div>
-                </a>
-
-                <!-- Customer Preferences -->
-                <a href="{{ route($routePrefix . '.reports.customer-preferences', request()->query()) }}" 
-                   class="group bg-gradient-to-br from-teal-600 to-teal-700 rounded-lg p-5 hover:from-teal-700 hover:to-teal-800 transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-105">
-                    <div class="flex flex-col items-center text-center">
-                        <div class="w-14 h-14 bg-white/20 rounded-xl flex items-center justify-center mb-3 group-hover:bg-white/30 transition-colors">
-                            <i class="fas fa-heart text-white text-2xl"></i>
-                        </div>
-                        <h3 class="text-white font-bold text-sm mb-1">Customer Preferences</h3>
-                        <p class="text-teal-100 text-xs">Behavior Insights</p>
-                    </div>
-                </a>
-
-                <!-- Payment Methods -->
-                <a href="{{ route($routePrefix . '.reports.payment-methods', request()->query()) }}" 
-                   class="group bg-gradient-to-br from-emerald-600 to-emerald-700 rounded-lg p-5 hover:from-emerald-700 hover:to-emerald-800 transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-105">
-                    <div class="flex flex-col items-center text-center">
-                        <div class="w-14 h-14 bg-white/20 rounded-xl flex items-center justify-center mb-3 group-hover:bg-white/30 transition-colors">
-                            <i class="fas fa-credit-card text-white text-2xl"></i>
-                        </div>
-                        <h3 class="text-white font-bold text-sm mb-1">Payment Methods</h3>
-                        <p class="text-emerald-100 text-xs">Transaction Types</p>
                     </div>
                 </a>
             </div>
@@ -176,7 +128,7 @@
                             <i class="fas fa-clipboard-list text-blue-400 text-xl"></i>
                         </div>
                     </div>
-                    <h2 class="text-2xl font-bold text-white mb-1">{{ number_format($stats['total_requests']) }}</h2>
+                    <h2 class="text-2xl font-bold text-white mb-1"><?php echo e(number_format($stats['total_requests'])); ?></h2>
                     <p class="text-gray-400 text-xs uppercase tracking-wider">Total Requests</p>
                 </div>
 
@@ -185,13 +137,13 @@
                         <div class="w-12 h-12 bg-green-600/20 rounded-lg flex items-center justify-center">
                             <i class="fas fa-check-circle text-green-400 text-xl"></i>
                         </div>
-                        @if($stats['total_requests'] > 0)
+                        <?php if($stats['total_requests'] > 0): ?>
                             <span class="px-2 py-1 bg-green-600/20 text-green-400 text-xs font-bold rounded">
-                                {{ round(($stats['completed_requests'] / $stats['total_requests']) * 100, 1) }}%
+                                <?php echo e(round(($stats['completed_requests'] / $stats['total_requests']) * 100, 1)); ?>%
                             </span>
-                        @endif
+                        <?php endif; ?>
                     </div>
-                    <h2 class="text-2xl font-bold text-white mb-1">{{ number_format($stats['completed_requests']) }}</h2>
+                    <h2 class="text-2xl font-bold text-white mb-1"><?php echo e(number_format($stats['completed_requests'])); ?></h2>
                     <p class="text-gray-400 text-xs uppercase tracking-wider">Completed</p>
                 </div>
 
@@ -200,13 +152,13 @@
                         <div class="w-12 h-12 bg-yellow-600/20 rounded-lg flex items-center justify-center">
                             <i class="fas fa-clock text-yellow-400 text-xl"></i>
                         </div>
-                        @if($stats['total_requests'] > 0)
+                        <?php if($stats['total_requests'] > 0): ?>
                             <span class="px-2 py-1 bg-yellow-600/20 text-yellow-400 text-xs font-bold rounded">
-                                {{ round(($stats['pending_requests'] / $stats['total_requests']) * 100, 1) }}%
+                                <?php echo e(round(($stats['pending_requests'] / $stats['total_requests']) * 100, 1)); ?>%
                             </span>
-                        @endif
+                        <?php endif; ?>
                     </div>
-                    <h2 class="text-2xl font-bold text-white mb-1">{{ number_format($stats['pending_requests']) }}</h2>
+                    <h2 class="text-2xl font-bold text-white mb-1"><?php echo e(number_format($stats['pending_requests'])); ?></h2>
                     <p class="text-gray-400 text-xs uppercase tracking-wider">Pending</p>
                         </div>
 
@@ -216,65 +168,8 @@
                             <i class="fas fa-tachometer-alt text-purple-400 text-xl"></i>
                         </div>
                     </div>
-                    <h2 class="text-2xl font-bold text-white mb-1">{{ round($stats['avg_response_time'], 1) }}h</h2>
+                    <h2 class="text-2xl font-bold text-white mb-1"><?php echo e(round($stats['avg_response_time'], 1)); ?>h</h2>
                     <p class="text-gray-400 text-xs uppercase tracking-wider">Avg Response Time</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Revenue Highlights Section -->
-        <div class="mb-8">
-            <div class="flex items-center mb-4">
-                <div class="w-1 h-8 bg-gradient-to-b from-yellow-400 to-yellow-600 rounded-full mr-3"></div>
-                <h2 class="text-2xl font-bold text-white">Revenue Highlights</h2>
-            </div>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <!-- Rooms/Bookings Revenue -->
-                <div class="bg-gray-800 rounded-lg border border-gray-700 p-5 hover:border-blue-500/50 transition-colors">
-                    <div class="flex items-center justify-between mb-3">
-                        <div class="w-12 h-12 bg-blue-600/20 rounded-lg flex items-center justify-center">
-                            <i class="fas fa-door-open text-blue-400 text-xl"></i>
-                        </div>
-                    </div>
-                    <h2 class="text-2xl font-bold text-white mb-1">₱{{ number_format($revenueStats['rooms_revenue'], 2) }}</h2>
-                    <p class="text-gray-400 text-xs uppercase tracking-wider">Rooms Revenue</p>
-                </div>
-
-                <!-- Food Revenue -->
-                <div class="bg-gray-800 rounded-lg border border-gray-700 p-5 hover:border-green-500/50 transition-colors">
-                    <div class="flex items-center justify-between mb-3">
-                        <div class="w-12 h-12 bg-green-600/20 rounded-lg flex items-center justify-center">
-                            <i class="fas fa-utensils text-green-400 text-xl"></i>
-                        </div>
-                    </div>
-                    <h2 class="text-2xl font-bold text-white mb-1">₱{{ number_format($revenueStats['food_revenue'], 2) }}</h2>
-                    <p class="text-gray-400 text-xs uppercase tracking-wider">Food Revenue</p>
-                </div>
-
-                <!-- Services Revenue -->
-                <div class="bg-gray-800 rounded-lg border border-gray-700 p-5 hover:border-purple-500/50 transition-colors">
-                    <div class="flex items-center justify-between mb-3">
-                        <div class="w-12 h-12 bg-purple-600/20 rounded-lg flex items-center justify-center">
-                            <i class="fas fa-concierge-bell text-purple-400 text-xl"></i>
-                        </div>
-                    </div>
-                    <h2 class="text-2xl font-bold text-white mb-1">₱{{ number_format($revenueStats['services_revenue'], 2) }}</h2>
-                    <p class="text-gray-400 text-xs uppercase tracking-wider">Services Revenue</p>
-                </div>
-
-                <!-- Overall Total Revenue (Highlighted) -->
-                <div class="bg-gradient-to-br from-yellow-900/40 to-yellow-800/30 rounded-lg border-2 border-yellow-500/50 p-5 shadow-lg shadow-yellow-500/10">
-                    <div class="flex items-center justify-between mb-3">
-                        <div class="w-12 h-12 bg-yellow-600/30 rounded-lg flex items-center justify-center">
-                            <i class="fas fa-chart-line text-yellow-400 text-xl"></i>
-                        </div>
-                        <span class="px-2 py-1 bg-yellow-600/20 text-yellow-400 text-xs font-bold rounded">
-                            TOTAL
-                        </span>
-                    </div>
-                    <h2 class="text-3xl font-bold text-yellow-400 mb-1">₱{{ number_format($revenueStats['total_revenue'], 2) }}</h2>
-                    <p class="text-yellow-200 text-xs uppercase tracking-wider font-semibold">Overall Revenue</p>
                 </div>
             </div>
         </div>
@@ -285,7 +180,7 @@
                 <div class="flex items-center">
                     <i class="fas fa-info-circle text-blue-400 mr-3 text-lg"></i>
                     <span class="text-blue-100">
-                        Showing data from <strong>{{ $startDate->format('M d, Y') }}</strong> to <strong>{{ $endDate->format('M d, Y') }}</strong>
+                        Showing data from <strong><?php echo e($startDate->format('M d, Y')); ?></strong> to <strong><?php echo e($endDate->format('M d, Y')); ?></strong>
                     </span>
                 </div>
             </div>
@@ -309,7 +204,7 @@
                         <p class="text-gray-400 text-xs">Revenue analysis by facility categories</p>
                     </div>
                 </div>
-                <a href="{{ route($routePrefix . '.reports.room-sales', request()->query()) }}" 
+                <a href="<?php echo e(route($routePrefix . '.reports.room-sales', request()->query())); ?>" 
                    class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition-colors shadow-lg">
                     <i class="fas fa-chart-bar mr-2"></i>
                     View Full Report
@@ -323,7 +218,7 @@
                         <div class="flex items-center justify-between mb-2">
                             <i class="fas fa-clipboard-list text-blue-400 text-lg"></i>
                         </div>
-                        <h4 class="text-2xl font-bold text-green-50">{{ number_format($roomSalesOverview['total_bookings']) }}</h4>
+                        <h4 class="text-2xl font-bold text-green-50"><?php echo e(number_format($roomSalesOverview['total_bookings'])); ?></h4>
                         <p class="text-gray-400 text-xs uppercase tracking-wider mt-1">Total Bookings</p>
                     </div>
                     
@@ -331,7 +226,7 @@
                         <div class="flex items-center justify-between mb-2">
                             <i class="fas fa-check-circle text-green-400 text-lg"></i>
                         </div>
-                        <h4 class="text-2xl font-bold text-green-50">{{ number_format($roomSalesOverview['completed_bookings']) }}</h4>
+                        <h4 class="text-2xl font-bold text-green-50"><?php echo e(number_format($roomSalesOverview['completed_bookings'])); ?></h4>
                         <p class="text-gray-400 text-xs uppercase tracking-wider mt-1">Completed</p>
                     </div>
                     
@@ -339,7 +234,7 @@
                         <div class="flex items-center justify-between mb-2">
                             <i class="fas fa-peso-sign text-purple-400 text-lg"></i>
                         </div>
-                        <h4 class="text-2xl font-bold text-green-50">₱{{ number_format($roomSalesOverview['total_revenue'], 0) }}</h4>
+                        <h4 class="text-2xl font-bold text-green-50">₱<?php echo e(number_format($roomSalesOverview['total_revenue'], 0)); ?></h4>
                         <p class="text-gray-400 text-xs uppercase tracking-wider mt-1">Total Revenue</p>
                     </div>
                     
@@ -347,7 +242,7 @@
                         <div class="flex items-center justify-between mb-2">
                             <i class="fas fa-chart-line text-yellow-400 text-lg"></i>
                         </div>
-                        <h4 class="text-2xl font-bold text-green-50">₱{{ number_format($roomSalesOverview['avg_booking_value'] ?? 0, 0) }}</h4>
+                        <h4 class="text-2xl font-bold text-green-50">₱<?php echo e(number_format($roomSalesOverview['avg_booking_value'] ?? 0, 0)); ?></h4>
                         <p class="text-gray-400 text-xs uppercase tracking-wider mt-1">Avg. Value</p>
                     </div>
                 </div>
@@ -365,27 +260,27 @@
                             </div>
                         </div>
                         <div class="p-4">
-                            @php
+                            <?php
                                 $roomsCategory = $revenueByCategory->firstWhere('category', 'Rooms');
-                            @endphp
-                            @if($roomsCategory)
+                            ?>
+                            <?php if($roomsCategory): ?>
                                 <div class="text-center mb-3">
-                                    <div class="text-2xl font-bold text-green-400 mb-1">₱{{ number_format($roomsCategory->total_revenue, 0) }}</div>
-                                    <div class="text-xs text-gray-400">{{ number_format($roomsCategory->booking_count) }} booking{{ $roomsCategory->booking_count != 1 ? 's' : '' }}</div>
+                                    <div class="text-2xl font-bold text-green-400 mb-1">₱<?php echo e(number_format($roomsCategory->total_revenue, 0)); ?></div>
+                                    <div class="text-xs text-gray-400"><?php echo e(number_format($roomsCategory->booking_count)); ?> booking<?php echo e($roomsCategory->booking_count != 1 ? 's' : ''); ?></div>
                                 </div>
                                 <div class="bg-gray-700 rounded-full h-2">
                                     <div class="bg-blue-500 h-2 rounded-full" 
-                                         style="width: {{ $roomSalesOverview['total_revenue'] > 0 ? ($roomsCategory->total_revenue / $roomSalesOverview['total_revenue']) * 100 : 0 }}%;"></div>
+                                         style="width: <?php echo e($roomSalesOverview['total_revenue'] > 0 ? ($roomsCategory->total_revenue / $roomSalesOverview['total_revenue']) * 100 : 0); ?>%;"></div>
                                 </div>
                                 <div class="text-center text-xs text-gray-400 mt-2">
-                                    {{ $roomSalesOverview['total_revenue'] > 0 ? number_format(($roomsCategory->total_revenue / $roomSalesOverview['total_revenue']) * 100, 1) : 0 }}% of total
+                                    <?php echo e($roomSalesOverview['total_revenue'] > 0 ? number_format(($roomsCategory->total_revenue / $roomSalesOverview['total_revenue']) * 100, 1) : 0); ?>% of total
                                 </div>
-                            @else
+                            <?php else: ?>
                                 <div class="text-center py-6 text-gray-500">
                                     <i class="fas fa-door-open text-2xl mb-2"></i>
                                     <p class="text-xs">No data</p>
                                 </div>
-                            @endif
+                            <?php endif; ?>
                         </div>
                     </div>
 
@@ -400,27 +295,27 @@
                             </div>
                         </div>
                         <div class="p-4">
-                            @php
+                            <?php
                                 $cottagesCategory = $revenueByCategory->firstWhere('category', 'Cottages');
-                            @endphp
-                            @if($cottagesCategory)
+                            ?>
+                            <?php if($cottagesCategory): ?>
                                 <div class="text-center mb-3">
-                                    <div class="text-2xl font-bold text-green-400 mb-1">₱{{ number_format($cottagesCategory->total_revenue, 0) }}</div>
-                                    <div class="text-xs text-gray-400">{{ number_format($cottagesCategory->booking_count) }} booking{{ $cottagesCategory->booking_count != 1 ? 's' : '' }}</div>
+                                    <div class="text-2xl font-bold text-green-400 mb-1">₱<?php echo e(number_format($cottagesCategory->total_revenue, 0)); ?></div>
+                                    <div class="text-xs text-gray-400"><?php echo e(number_format($cottagesCategory->booking_count)); ?> booking<?php echo e($cottagesCategory->booking_count != 1 ? 's' : ''); ?></div>
                                 </div>
                                 <div class="bg-gray-700 rounded-full h-2">
                                     <div class="bg-amber-500 h-2 rounded-full" 
-                                         style="width: {{ $roomSalesOverview['total_revenue'] > 0 ? ($cottagesCategory->total_revenue / $roomSalesOverview['total_revenue']) * 100 : 0 }}%;"></div>
+                                         style="width: <?php echo e($roomSalesOverview['total_revenue'] > 0 ? ($cottagesCategory->total_revenue / $roomSalesOverview['total_revenue']) * 100 : 0); ?>%;"></div>
                                 </div>
                                 <div class="text-center text-xs text-gray-400 mt-2">
-                                    {{ $roomSalesOverview['total_revenue'] > 0 ? number_format(($cottagesCategory->total_revenue / $roomSalesOverview['total_revenue']) * 100, 1) : 0 }}% of total
+                                    <?php echo e($roomSalesOverview['total_revenue'] > 0 ? number_format(($cottagesCategory->total_revenue / $roomSalesOverview['total_revenue']) * 100, 1) : 0); ?>% of total
                                 </div>
-                            @else
+                            <?php else: ?>
                                 <div class="text-center py-6 text-gray-500">
                                     <i class="fas fa-home text-2xl mb-2"></i>
                                     <p class="text-xs">No data</p>
                                 </div>
-                            @endif
+                            <?php endif; ?>
                         </div>
                     </div>
 
@@ -435,27 +330,27 @@
                             </div>
                         </div>
                         <div class="p-4">
-                            @php
+                            <?php
                                 $eventDiningCategory = $revenueByCategory->firstWhere('category', 'Event and Dining');
-                            @endphp
-                            @if($eventDiningCategory)
+                            ?>
+                            <?php if($eventDiningCategory): ?>
                                 <div class="text-center mb-3">
-                                    <div class="text-2xl font-bold text-green-400 mb-1">₱{{ number_format($eventDiningCategory->total_revenue, 0) }}</div>
-                                    <div class="text-xs text-gray-400">{{ number_format($eventDiningCategory->booking_count) }} booking{{ $eventDiningCategory->booking_count != 1 ? 's' : '' }}</div>
+                                    <div class="text-2xl font-bold text-green-400 mb-1">₱<?php echo e(number_format($eventDiningCategory->total_revenue, 0)); ?></div>
+                                    <div class="text-xs text-gray-400"><?php echo e(number_format($eventDiningCategory->booking_count)); ?> booking<?php echo e($eventDiningCategory->booking_count != 1 ? 's' : ''); ?></div>
                                 </div>
                                 <div class="bg-gray-700 rounded-full h-2">
                                     <div class="bg-purple-500 h-2 rounded-full" 
-                                         style="width: {{ $roomSalesOverview['total_revenue'] > 0 ? ($eventDiningCategory->total_revenue / $roomSalesOverview['total_revenue']) * 100 : 0 }}%;"></div>
+                                         style="width: <?php echo e($roomSalesOverview['total_revenue'] > 0 ? ($eventDiningCategory->total_revenue / $roomSalesOverview['total_revenue']) * 100 : 0); ?>%;"></div>
                                 </div>
                                 <div class="text-center text-xs text-gray-400 mt-2">
-                                    {{ $roomSalesOverview['total_revenue'] > 0 ? number_format(($eventDiningCategory->total_revenue / $roomSalesOverview['total_revenue']) * 100, 1) : 0 }}% of total
+                                    <?php echo e($roomSalesOverview['total_revenue'] > 0 ? number_format(($eventDiningCategory->total_revenue / $roomSalesOverview['total_revenue']) * 100, 1) : 0); ?>% of total
                                 </div>
-                            @else
+                            <?php else: ?>
                                 <div class="text-center py-6 text-gray-500">
                                     <i class="fas fa-utensils text-2xl mb-2"></i>
                                     <p class="text-xs">No data</p>
                                 </div>
-                    @endif
+                    <?php endif; ?>
                         </div>
                     </div>
                 </div>
@@ -481,7 +376,7 @@
                             <p class="text-gray-400 text-xs">Menu items and food order analytics</p>
                         </div>
                     </div>
-                    <a href="{{ route('manager.reports.food-sales', request()->query()) }}" 
+                    <a href="<?php echo e(route('manager.reports.food-sales', request()->query())); ?>" 
                        class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 transition-colors shadow-lg">
                         <i class="fas fa-chart-pie mr-2"></i>
                         View Full Report
@@ -493,7 +388,7 @@
                             <i class="fas fa-utensils text-green-400 text-3xl"></i>
                         </div>
                         <p class="text-gray-400 text-sm mb-3">View detailed food & beverage sales analytics</p>
-                        <a href="{{ route('manager.reports.food-sales', request()->query()) }}" 
+                        <a href="<?php echo e(route('manager.reports.food-sales', request()->query())); ?>" 
                            class="inline-flex items-center text-green-400 hover:text-green-300 text-sm font-medium">
                             Access Full Report <i class="fas fa-arrow-right ml-2"></i>
                         </a>
@@ -522,7 +417,7 @@
                                 <p class="text-gray-400 text-xs">Request trends & categories</p>
                             </div>
                         </div>
-                        <a href="{{ route('manager.reports.service-usage', request()->query()) }}" 
+                        <a href="<?php echo e(route('manager.reports.service-usage', request()->query())); ?>" 
                            class="inline-flex items-center px-3 py-1.5 bg-purple-600 text-white rounded-lg text-xs hover:bg-purple-700 transition-colors">
                             View
                         </a>
@@ -546,7 +441,7 @@
                                 <p class="text-gray-400 text-xs">Service sales & payments</p>
                             </div>
                         </div>
-                        <a href="{{ route('manager.reports.service-sales', request()->query()) }}" 
+                        <a href="<?php echo e(route('manager.reports.service-sales', request()->query())); ?>" 
                            class="inline-flex items-center px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs hover:bg-indigo-700 transition-colors">
                             View
                         </a>
@@ -578,7 +473,7 @@
                         <p class="text-gray-400 text-xs">Task assignments and productivity metrics</p>
                     </div>
                 </div>
-                <a href="{{ route('manager.reports.staff-performance', request()->query()) }}" 
+                <a href="<?php echo e(route('manager.reports.staff-performance', request()->query())); ?>" 
                    class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700 transition-colors shadow-lg">
                     <i class="fas fa-users-cog mr-2"></i>
                     View Full Report
@@ -601,43 +496,45 @@
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-700">
-                            @forelse($staffPerformance as $staff)
+                            <?php $__empty_1 = true; $__currentLoopData = $staffPerformance; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $staff): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                             <tr class="hover:bg-gray-750 transition-colors">
                                 <td class="px-6 py-4">
                                     <div class="flex items-center">
                                         <div class="w-10 h-10 bg-gray-700 rounded-full flex items-center justify-center mr-4">
                                             <i class="fas fa-user text-gray-400"></i>
                                         </div>
-                                        <span class="text-green-100 font-medium">{{ $staff->name }}</span>
+                                        <span class="text-green-100 font-medium"><?php echo e($staff->name); ?></span>
                                     </div>
                                 </td>
                                 <td class="px-6 py-4 text-center">
                                     <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-600/20 text-blue-400">
-                                        {{ $staff->assigned_count }}
+                                        <?php echo e($staff->assigned_count); ?>
+
                                     </span>
                                 </td>
                                 <td class="px-6 py-4">
                                     <div class="flex items-center">
                                         <div class="flex-1 bg-gray-700 rounded-full h-6 mr-4">
                                             <div class="bg-green-500 h-6 rounded-full flex items-center justify-center text-xs font-medium text-white" 
-                                                 style="width: {{ min($staff->assigned_count * 10, 100) }}%;">
-                                                @if($staff->assigned_count > 0)
-                                                    {{ $staff->assigned_count }} task{{ $staff->assigned_count != 1 ? 's' : '' }}
-                                                @endif
+                                                 style="width: <?php echo e(min($staff->assigned_count * 10, 100)); ?>%;">
+                                                <?php if($staff->assigned_count > 0): ?>
+                                                    <?php echo e($staff->assigned_count); ?> task<?php echo e($staff->assigned_count != 1 ? 's' : ''); ?>
+
+                                                <?php endif; ?>
                                             </div>
                                         </div>
-                                        <span class="text-gray-400 text-sm min-w-12">{{ min($staff->assigned_count * 10, 100) }}%</span>
+                                        <span class="text-gray-400 text-sm min-w-12"><?php echo e(min($staff->assigned_count * 10, 100)); ?>%</span>
                                     </div>
                                 </td>
                             </tr>
-                            @empty
+                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                             <tr>
                                 <td colspan="3" class="px-6 py-12 text-center">
                                     <i class="fas fa-users text-4xl text-gray-600 mb-4"></i>
                                     <p class="text-gray-500">No staff performance data available</p>
                                 </td>
                             </tr>
-                            @endforelse
+                            <?php endif; ?>
                         </tbody>
                     </table>
                 </div>
@@ -663,7 +560,7 @@
                             <p class="text-gray-400 text-xs">Service request patterns over time</p>
                         </div>
                     </div>
-                    <a href="{{ route('manager.reports.performance-metrics', request()->query()) }}" 
+                    <a href="<?php echo e(route('manager.reports.performance-metrics', request()->query())); ?>" 
                        class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 transition-colors shadow-lg">
                         <i class="fas fa-tachometer-alt mr-2"></i>
                         View Metrics
@@ -692,31 +589,31 @@
                 </div>
             </div>
             
-            <form method="GET" action="{{ route('manager.reports.index') }}">
+            <form method="GET" action="<?php echo e(route('manager.reports.index')); ?>">
                 <div class="p-6 space-y-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-400 mb-2">Quick Select</label>
                         <select name="period" onchange="toggleCustomDates(this.value)" 
                                 class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2 text-gray-300 focus:outline-none focus:border-green-500">
-                            <option value="today" {{ request('period') == 'today' ? 'selected' : '' }}>Today</option>
-                            <option value="yesterday" {{ request('period') == 'yesterday' ? 'selected' : '' }}>Yesterday</option>
-                            <option value="last_7_days" {{ request('period') == 'last_7_days' ? 'selected' : '' }}>Last 7 Days</option>
-                            <option value="last_30_days" {{ request('period', 'last_30_days') == 'last_30_days' ? 'selected' : '' }}>Last 30 Days</option>
-                            <option value="this_month" {{ request('period') == 'this_month' ? 'selected' : '' }}>This Month</option>
-                            <option value="last_month" {{ request('period') == 'last_month' ? 'selected' : '' }}>Last Month</option>
-                            <option value="custom" {{ request('period') == 'custom' ? 'selected' : '' }}>Custom Range</option>
+                            <option value="today" <?php echo e(request('period') == 'today' ? 'selected' : ''); ?>>Today</option>
+                            <option value="yesterday" <?php echo e(request('period') == 'yesterday' ? 'selected' : ''); ?>>Yesterday</option>
+                            <option value="last_7_days" <?php echo e(request('period') == 'last_7_days' ? 'selected' : ''); ?>>Last 7 Days</option>
+                            <option value="last_30_days" <?php echo e(request('period', 'last_30_days') == 'last_30_days' ? 'selected' : ''); ?>>Last 30 Days</option>
+                            <option value="this_month" <?php echo e(request('period') == 'this_month' ? 'selected' : ''); ?>>This Month</option>
+                            <option value="last_month" <?php echo e(request('period') == 'last_month' ? 'selected' : ''); ?>>Last Month</option>
+                            <option value="custom" <?php echo e(request('period') == 'custom' ? 'selected' : ''); ?>>Custom Range</option>
                         </select>
                     </div>
                     
-                    <div id="customDates" class="space-y-4" style="display: {{ request('period') == 'custom' ? 'block' : 'none' }};">
+                    <div id="customDates" class="space-y-4" style="display: <?php echo e(request('period') == 'custom' ? 'block' : 'none'); ?>;">
                         <div>
                             <label class="block text-sm font-medium text-gray-400 mb-2">Start Date</label>
-                            <input type="date" name="start_date" value="{{ request('start_date') }}"
+                            <input type="date" name="start_date" value="<?php echo e(request('start_date')); ?>"
                                    class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2 text-gray-300 focus:outline-none focus:border-green-500">
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-400 mb-2">End Date</label>
-                            <input type="date" name="end_date" value="{{ request('end_date') }}"
+                            <input type="date" name="end_date" value="<?php echo e(request('end_date')); ?>"
                                    class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2 text-gray-300 focus:outline-none focus:border-green-500">
                         </div>
                     </div>
@@ -737,7 +634,7 @@
     </div>
 </div>
 
-@push('scripts')
+<?php $__env->startPush('scripts'); ?>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 // Chart.js defaults for dark theme
@@ -750,10 +647,10 @@ const serviceUsageCtxSmall = document.getElementById('serviceUsageChartSmall').g
 new Chart(serviceUsageCtxSmall, {
     type: 'bar',
     data: {
-        labels: {!! json_encode($serviceUsage->pluck('name')->take(5)) !!},
+        labels: <?php echo json_encode($serviceUsage->pluck('name')->take(5)); ?>,
         datasets: [{
             label: 'Requests',
-            data: {!! json_encode($serviceUsage->pluck('request_count')->take(5)) !!},
+            data: <?php echo json_encode($serviceUsage->pluck('request_count')->take(5)); ?>,
             backgroundColor: 'rgba(168, 85, 247, 0.8)',
             borderColor: 'rgba(168, 85, 247, 1)',
             borderWidth: 1,
@@ -809,9 +706,9 @@ const statusCtxSmall = document.getElementById('statusChartSmall').getContext('2
 new Chart(statusCtxSmall, {
     type: 'doughnut',
     data: {
-        labels: {!! json_encode($performanceMetrics->pluck('status')) !!},
+        labels: <?php echo json_encode($performanceMetrics->pluck('status')); ?>,
         datasets: [{
-            data: {!! json_encode($performanceMetrics->pluck('count')) !!},
+            data: <?php echo json_encode($performanceMetrics->pluck('count')); ?>,
             backgroundColor: [
                 'rgba(239, 68, 68, 0.8)',
                 'rgba(99, 102, 241, 0.8)',
@@ -875,10 +772,10 @@ const dailyTrendsCtx = document.getElementById('dailyTrendsChart').getContext('2
 new Chart(dailyTrendsCtx, {
     type: 'line',
     data: {
-        labels: {!! json_encode($dailyTrends->pluck('date')) !!},
+        labels: <?php echo json_encode($dailyTrends->pluck('date')); ?>,
         datasets: [{
             label: 'Daily Requests',
-            data: {!! json_encode($dailyTrends->pluck('request_count')) !!},
+            data: <?php echo json_encode($dailyTrends->pluck('request_count')); ?>,
             fill: true,
             backgroundColor: 'rgba(34, 197, 94, 0.1)',
             borderColor: 'rgba(34, 197, 94, 1)',
@@ -972,5 +869,7 @@ document.getElementById('dateRangeModal').addEventListener('click', function(e) 
     }
 });
 </script>
-@endpush
-@endsection
+<?php $__env->stopPush(); ?>
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('layouts.admin', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\Users\sethy\ValesBeach\resources\views/manager/reports/index.blade.php ENDPATH**/ ?>
