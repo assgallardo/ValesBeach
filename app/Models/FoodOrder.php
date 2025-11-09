@@ -73,6 +73,22 @@ class FoodOrder extends Model
     protected $with = ['orderItems'];
 
     /**
+     * Get the customer name (from guest_name or user relationship).
+     */
+    public function getCustomerNameAttribute()
+    {
+        return $this->guest_name ?? $this->user?->name ?? 'Guest';
+    }
+
+    /**
+     * Get the customer email (from guest_email or user relationship).
+     */
+    public function getCustomerEmailAttribute()
+    {
+        return $this->guest_email ?? $this->user?->email ?? 'N/A';
+    }
+
+    /**
      * Get the user that owns this order.
      */
     public function user()

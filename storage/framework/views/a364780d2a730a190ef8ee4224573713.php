@@ -1,6 +1,5 @@
-@extends('layouts.guest')
-@section('title', 'Make Payment')
-@section('content')
+<?php $__env->startSection('title', 'Make Payment'); ?>
+<?php $__env->startSection('content'); ?>
 <!-- Make Payment Page -->
 <div class="min-h-screen bg-gray-900 py-6">
     <!-- Decorative Background -->
@@ -24,35 +23,35 @@
             <div class="space-y-3">
                 <div class="flex justify-between items-center">
                     <span class="text-gray-400">Booking Reference:</span>
-                    <span class="text-green-50 font-medium">{{ $booking->booking_reference }}</span>
+                    <span class="text-green-50 font-medium"><?php echo e($booking->booking_reference); ?></span>
                 </div>
                 <div class="flex justify-between items-center">
                     <span class="text-gray-400">Room:</span>
-                    <span class="text-green-50">{{ $booking->room->name }}</span>
+                    <span class="text-green-50"><?php echo e($booking->room->name); ?></span>
                 </div>
                 <div class="flex justify-between items-center">
                     <span class="text-gray-400">Check-in:</span>
-                    <span class="text-green-50">{{ $booking->check_in->format('M d, Y') }}</span>
+                    <span class="text-green-50"><?php echo e($booking->check_in->format('M d, Y')); ?></span>
                 </div>
                 <div class="flex justify-between items-center">
                     <span class="text-gray-400">Check-out:</span>
-                    <span class="text-green-50">{{ $booking->check_out->format('M d, Y') }}</span>
+                    <span class="text-green-50"><?php echo e($booking->check_out->format('M d, Y')); ?></span>
                 </div>
                 <div class="flex justify-between items-center">
                     <span class="text-gray-400">Guests:</span>
-                    <span class="text-green-50">{{ $booking->guests }}</span>
+                    <span class="text-green-50"><?php echo e($booking->guests); ?></span>
                 </div>
                 <div class="flex justify-between items-center border-t border-green-700/30 pt-4">
                     <span class="text-green-300">Total Amount:</span>
-                    <span class="text-green-50 font-bold text-lg">₱{{ number_format($booking->total_price, 2) }}</span>
+                    <span class="text-green-50 font-bold text-lg">₱<?php echo e(number_format($booking->total_price, 2)); ?></span>
                 </div>
                 <div class="flex justify-between items-center">
                     <span class="text-green-300">Amount Paid:</span>
-                    <span class="text-green-400 font-medium">₱{{ number_format($booking->amount_paid, 2) }}</span>
+                    <span class="text-green-400 font-medium">₱<?php echo e(number_format($booking->amount_paid, 2)); ?></span>
                 </div>
                 <div class="flex justify-between items-center border-t border-green-700/30 pt-3">
                     <span class="text-green-100 font-semibold text-lg">Remaining Balance:</span>
-                    <span class="text-yellow-400 font-bold text-2xl">₱{{ number_format($remainingBalance, 2) }}</span>
+                    <span class="text-yellow-400 font-bold text-2xl">₱<?php echo e(number_format($remainingBalance, 2)); ?></span>
                 </div>
             </div>
         </div>
@@ -62,33 +61,33 @@
                 <i class="fas fa-wallet mr-2"></i>Payment Details
             </h2>
             
-            @if ($errors->any())
+            <?php if($errors->any()): ?>
                 <div class="bg-red-900/50 border border-red-600 rounded-lg p-4 mb-6">
                     <div class="flex">
                         <i class="fas fa-exclamation-circle text-red-400 mr-3 mt-1"></i>
                         <div>
                             <h4 class="text-red-200 font-semibold mb-2">Please fix the following errors:</h4>
                             <ul class="list-disc list-inside text-red-300 text-sm">
-                                @foreach ($errors->all() as $error)
-                                    <li>{{ $error }}</li>
-                                @endforeach
+                                <?php $__currentLoopData = $errors->all(); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $error): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <li><?php echo e($error); ?></li>
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                             </ul>
                         </div>
                     </div>
                 </div>
-            @endif
+            <?php endif; ?>
 
-            @if (session('error'))
+            <?php if(session('error')): ?>
                 <div class="bg-red-900/50 border border-red-600 rounded-lg p-4 mb-6">
                     <div class="flex items-center">
                         <i class="fas fa-times-circle text-red-400 mr-3"></i>
-                        <p class="text-red-200">{{ session('error') }}</p>
+                        <p class="text-red-200"><?php echo e(session('error')); ?></p>
                     </div>
                 </div>
-            @endif
+            <?php endif; ?>
             
-            <form action="{{ route('payments.store', $booking) }}" method="POST" id="paymentForm" class="space-y-6">
-                @csrf
+            <form action="<?php echo e(route('payments.store', $booking)); ?>" method="POST" id="paymentForm" class="space-y-6">
+                <?php echo csrf_field(); ?>
                 
                 <!-- Payment Amount -->
                 <div>
@@ -98,17 +97,17 @@
                     
                     <!-- Quick Select Buttons -->
                     <div class="grid grid-cols-2 gap-3 mb-3">
-                        <button type="button" onclick="selectPaymentAmount({{ $minimumPayment }})" 
+                        <button type="button" onclick="selectPaymentAmount(<?php echo e($minimumPayment); ?>)" 
                                 class="px-4 py-3 bg-yellow-600/80 hover:bg-yellow-600 text-white rounded-lg font-medium transition-all text-sm">
                             <i class="fas fa-percentage mr-1"></i>
                             Partial (50%)
-                            <div class="text-xs opacity-90 mt-1">₱{{ number_format($minimumPayment, 2) }}</div>
+                            <div class="text-xs opacity-90 mt-1">₱<?php echo e(number_format($minimumPayment, 2)); ?></div>
                         </button>
-                        <button type="button" onclick="selectPaymentAmount({{ $remainingBalance }})" 
+                        <button type="button" onclick="selectPaymentAmount(<?php echo e($remainingBalance); ?>)" 
                                 class="px-4 py-3 bg-green-600/80 hover:bg-green-600 text-white rounded-lg font-medium transition-all text-sm">
                             <i class="fas fa-check-circle mr-1"></i>
                             Full Payment
-                            <div class="text-xs opacity-90 mt-1">₱{{ number_format($remainingBalance, 2) }}</div>
+                            <div class="text-xs opacity-90 mt-1">₱<?php echo e(number_format($remainingBalance, 2)); ?></div>
                         </button>
                     </div>
                     
@@ -118,10 +117,10 @@
                         <input type="number" 
                                id="payment_amount" 
                                name="payment_amount" 
-                               min="{{ $minimumPayment }}" 
-                               max="{{ $remainingBalance }}" 
+                               min="<?php echo e($minimumPayment); ?>" 
+                               max="<?php echo e($remainingBalance); ?>" 
                                step="0.01" 
-                               value="{{ old('payment_amount', $remainingBalance) }}" 
+                               value="<?php echo e(old('payment_amount', $remainingBalance)); ?>" 
                                required 
                                class="w-full pl-12 pr-4 py-4 bg-green-800/50 border-2 border-green-600/50 rounded-lg text-green-100 text-2xl font-bold focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all" 
                                oninput="updatePaymentSummary()"
@@ -131,18 +130,27 @@
                     <div class="flex justify-between items-center mt-2 text-sm">
                         <p class="text-green-400">
                             <i class="fas fa-info-circle mr-1"></i>
-                            Minimum: ₱{{ number_format($minimumPayment, 2) }} (50%)
+                            Minimum: ₱<?php echo e(number_format($minimumPayment, 2)); ?> (50%)
                         </p>
                         <p class="text-green-400">
-                            Maximum: ₱{{ number_format($remainingBalance, 2) }}
+                            Maximum: ₱<?php echo e(number_format($remainingBalance, 2)); ?>
+
                         </p>
                     </div>
                     
-                    @error('payment_amount')
+                    <?php $__errorArgs = ['payment_amount'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>
                         <p class="text-red-400 text-sm mt-2">
-                            <i class="fas fa-exclamation-triangle mr-1"></i>{{ $message }}
+                            <i class="fas fa-exclamation-triangle mr-1"></i><?php echo e($message); ?>
+
                         </p>
-                    @enderror
+                    <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
                 </div>
                 
                 <!-- Payment Method -->
@@ -202,16 +210,24 @@
                         </label>
                     </div>
                     
-                    @error('payment_method')
+                    <?php $__errorArgs = ['payment_method'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>
                         <p class="text-red-400 text-sm mt-2">
-                            <i class="fas fa-exclamation-triangle mr-1"></i>{{ $message }}
+                            <i class="fas fa-exclamation-triangle mr-1"></i><?php echo e($message); ?>
+
                         </p>
-                    @enderror
+                    <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
                 </div>
                 <!-- Notes -->
                 <div>
                     <label class="block text-green-200 text-sm font-medium mb-2">Notes (Optional) place the payment number/reference number:</label>
-                    <textarea name="notes" rows="3" placeholder="Add any payment notes..." class="w-full px-4 py-3 bg-green-800/50 border border-green-600/50 rounded-lg text-green-100 placeholder-green-400 focus:ring-2 focus:ring-green-500 focus:border-transparent">{{ old('notes') }}</textarea>
+                    <textarea name="notes" rows="3" placeholder="Add any payment notes..." class="w-full px-4 py-3 bg-green-800/50 border border-green-600/50 rounded-lg text-green-100 placeholder-green-400 focus:ring-2 focus:ring-green-500 focus:border-transparent"><?php echo e(old('notes')); ?></textarea>
                 </div>
                 <!-- Summary -->
                 <div class="bg-gray-900/50 rounded-lg p-4 border border-gray-700" id="paymentSummary">
@@ -221,15 +237,15 @@
                     <div class="space-y-3">
                         <div class="flex justify-between items-center">
                             <span class="text-green-300">Payment Amount:</span>
-                            <span class="text-green-400 font-bold text-xl" id="summaryAmount">₱{{ number_format($remainingBalance, 2) }}</span>
+                            <span class="text-green-400 font-bold text-xl" id="summaryAmount">₱<?php echo e(number_format($remainingBalance, 2)); ?></span>
                         </div>
                         <div class="flex justify-between items-center">
                             <span class="text-green-300">Already Paid:</span>
-                            <span class="text-green-50">₱{{ number_format($booking->amount_paid ?? 0, 2) }}</span>
+                            <span class="text-green-50">₱<?php echo e(number_format($booking->amount_paid ?? 0, 2)); ?></span>
                         </div>
                         <div class="flex justify-between items-center border-t border-green-700/30 pt-3 mt-3">
                             <span class="text-green-100 font-semibold text-lg">After This Payment:</span>
-                            <span id="totalPaidDisplay" class="text-green-400 font-bold text-lg">₱{{ number_format($remainingBalance + ($booking->amount_paid ?? 0), 2) }}</span>
+                            <span id="totalPaidDisplay" class="text-green-400 font-bold text-lg">₱<?php echo e(number_format($remainingBalance + ($booking->amount_paid ?? 0), 2)); ?></span>
                         </div>
                         <div class="flex justify-between items-center pb-3">
                             <span class="text-green-100 font-semibold text-lg">Remaining Balance:</span>
@@ -249,7 +265,7 @@
                     <button type="submit" class="flex-1 bg-green-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-green-700 focus:ring-2 focus:ring-green-500 transition-colors">
                         <i class="fas fa-credit-card mr-2"></i>Process Payment
                     </button>
-                    <a href="{{ route('guest.bookings.show', $booking) }}" class="flex-1 bg-gray-600 text-white px-6 py-3 rounded-lg text-center hover:bg-gray-700 focus:ring-2 focus:ring-gray-500 transition-colors">
+                    <a href="<?php echo e(route('guest.bookings.show', $booking)); ?>" class="flex-1 bg-gray-600 text-white px-6 py-3 rounded-lg text-center hover:bg-gray-700 focus:ring-2 focus:ring-gray-500 transition-colors">
                         <i class="fas fa-arrow-left mr-2"></i>Back to Booking
                     </a>
                 </div>
@@ -310,8 +326,8 @@ function updateSelectedMethod(methodName, iconClass, colorClass) {
 // Update payment summary in real-time
 function updatePaymentSummary() {
     const paymentAmount = parseFloat(document.getElementById('payment_amount').value) || 0;
-    const currentPaid = {{ $booking->amount_paid ?? 0 }};
-    const totalPrice = {{ $booking->total_price }};
+    const currentPaid = <?php echo e($booking->amount_paid ?? 0); ?>;
+    const totalPrice = <?php echo e($booking->total_price); ?>;
     
     const totalAfterPayment = currentPaid + paymentAmount;
     const newRemaining = Math.max(0, totalPrice - totalAfterPayment);
@@ -334,7 +350,7 @@ function updatePaymentSummary() {
     
     // Update payment status indicator
     const statusIndicator = document.getElementById('paymentStatusIndicator');
-    const minimumPayment = {{ $minimumPayment }};
+    const minimumPayment = <?php echo e($minimumPayment); ?>;
     
     if (paymentAmount < minimumPayment) {
         statusIndicator.innerHTML = '<i class="fas fa-exclamation-triangle mr-2"></i>Amount below minimum (50% required)';
@@ -385,8 +401,8 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Check if amount is valid
             const amount = parseFloat(document.getElementById('payment_amount').value);
-            const min = {{ $minimumPayment }};
-            const max = {{ $remainingBalance }};
+            const min = <?php echo e($minimumPayment); ?>;
+            const max = <?php echo e($remainingBalance); ?>;
             
             if (isNaN(amount) || amount < min || amount > max) {
                 e.preventDefault();
@@ -400,8 +416,10 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
-@endsection
+<?php $__env->stopSection(); ?>
 
 
 
 
+
+<?php echo $__env->make('layouts.guest', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\VALESBEACH_LATEST\ValesBeach\resources\views/payments/create.blade.php ENDPATH**/ ?>

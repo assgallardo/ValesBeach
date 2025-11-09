@@ -249,6 +249,8 @@ class FoodOrderController extends Controller
             $foodOrder = FoodOrder::create([
                 'order_number' => FoodOrder::generateOrderNumber(),
                 'user_id' => Auth::id(),
+                'guest_name' => Auth::user()->name,
+                'guest_email' => Auth::user()->email,
                 'booking_id' => $currentBooking?->id,
                 'status' => 'pending',
                 'delivery_type' => $request->delivery_type,

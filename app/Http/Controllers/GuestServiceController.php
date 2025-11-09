@@ -80,73 +80,50 @@ class GuestServiceController extends Controller
         ]);
 
         try {
-            // Get the service to get its details
             $service = Service::findOrFail($validated['service_id']);
             
-            // Create service request with proper fields matching the migration
+            // Create service request with ONLY columns that exist in your database
             $serviceRequest = ServiceRequest::create([
                 'service_id' => $validated['service_id'],
+                'user_id' => Auth::id(),  // Add user_id
                 'guest_id' => Auth::id(),
                 'guest_name' => Auth::user()->name,
                 'guest_email' => Auth::user()->email,
-                'room_id' => Auth::user()->room_id ?? null,
                 'service_type' => $validated['service_type'],
                 'description' => $validated['description'] ?? "Service booking for {$validated['service_type']}",
                 'scheduled_date' => $validated['scheduled_date'],
-                'deadline' => $validated['scheduled_date'], // Same as scheduled date initially
+                'deadline' => $validated['scheduled_date'],
                 'guests_count' => $validated['guests_count'],
-                'manager_notes' => $validated['special_requests'] ?? null,
+                'special_requests' => $validated['special_requests'] ?? null,  // Changed from manager_notes
                 'status' => 'pending',
                 'priority' => 'medium',
             ]);
             
             \Log::info('Service request created successfully:', $serviceRequest->toArray());
 
-            // Create a payment record for the service request
-            try {
-                Payment::create([
-                    'service_request_id' => $serviceRequest->id,
-                    'user_id' => $serviceRequest->guest_id,
-                    'amount' => $service->price,
-                    'payment_method' => 'cash',
-                    'status' => 'pending',
-                    'payment_date' => now(),
-                    'notes' => "Service request payment - {$service->name}"
-                ]);
-                
-                \Log::info('Payment record created for service request', [
-                    'service_request_id' => $serviceRequest->id,
-                    'amount' => $service->price
-                ]);
-            } catch (\Exception $e) {
-                \Log::error('Failed to create payment record for service request', [
-                    'service_request_id' => $serviceRequest->id,
-                    'error' => $e->getMessage()
-                ]);
-                // Don't fail the service request creation if payment record fails
-            }
-
             return redirect()->route('guest.services.history')
-                           ->with('success', 'Your service request has been submitted successfully! We will contact you soon to confirm your booking.');
+                           ->with('success', 'Your service request has been submitted successfully!');
 
         } catch (\Illuminate\Database\QueryException $e) {
             \Log::error('Database error creating service request', [
                 'error' => $e->getMessage(),
                 'sql' => $e->getSql() ?? 'N/A',
+                'bindings' => $e->getBindings() ?? [],
             ]);
             
             return back()->withInput()
-                        ->with('error', 'Database error: Unable to create service request. Please try again or contact support.');
+                        ->with('error', 'Database error: ' . $e->getMessage());
                         
         } catch (\Exception $e) {
             \Log::error('General error creating service request', [
                 'error' => $e->getMessage(),
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
             ]);
             
             return back()->withInput()
-                        ->with('error', 'An error occurred while processing your request. Please try again.');
+                        ->with('error', 'An error occurred: ' . $e->getMessage());
         }
     }
 
