@@ -38,7 +38,7 @@
                 <option value="assigned">Assigned</option>
                 <option value="in_progress">In Progress</option>
                 <option value="completed">Completed</option>
-                <option value="overdue">⚠️ Overdue</option>
+                <option value="overdue">Overdue</option>
             </select>
             
             <button onclick="clearFilters()" class="bg-gray-600 text-white px-3 py-2 rounded text-sm hover:bg-gray-500">
@@ -47,15 +47,29 @@
         </div>
     </div>
 
+    <!-- View Toggle -->
+    <div class="flex justify-end mb-4">
+        <div class="bg-gray-800 rounded-lg p-2 flex gap-2">
+            <button onclick="setViewMode('compact')" id="compactViewBtn" 
+                    class="px-3 py-1 text-xs rounded bg-green-600 text-white">
+                <i class="fas fa-th mr-1"></i>Compact
+            </button>
+            <button onclick="setViewMode('list')" id="listViewBtn" 
+                    class="px-3 py-1 text-xs rounded bg-gray-600 text-gray-300 hover:bg-gray-500">
+                <i class="fas fa-list mr-1"></i>List
+            </button>
+        </div>
+    </div>
+
     <!-- Tasks List -->
-    <div class="space-y-4" id="tasksContainer">
+    <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4" id="tasksContainer">
         @forelse($tasks as $task)
         @php
             $isOverdue = $task->due_date < now() && !in_array($task->status, ['completed', 'cancelled']);
             $hoursOverdue = $isOverdue ? $task->due_date->diffInHours(now()) : 0;
         @endphp
         
-        <div class="rounded-lg p-6 hover:bg-gray-750 transition-colors 
+        <div class="rounded-lg p-4 hover:bg-gray-750 transition-colors 
                     {{ $isOverdue ? 'bg-red-900 border-2 border-red-500 animate-pulse' : 'bg-gray-800' }}" 
              data-task-id="{{ $task->id }}" 
              data-status="{{ $task->status }}"
@@ -63,42 +77,42 @@
             
             <!-- Overdue Alert Banner -->
             @if($isOverdue)
-            <div class="bg-red-600 text-white px-4 py-2 rounded-lg mb-4 flex items-center justify-between">
+            <div class="bg-red-600 text-white px-3 py-2 rounded-lg mb-3 flex items-center justify-between">
                 <div class="flex items-center">
-                    <i class="fas fa-exclamation-triangle text-xl mr-3 animate-bounce"></i>
+                    <i class="fas fa-exclamation-triangle text-lg mr-2 animate-bounce"></i>
                     <div>
-                        <div class="font-bold text-lg">⚠️ TASK OVERDUE!</div>
-                        <div class="text-sm">
-                            This task was due {{ $task->due_date->diffForHumans() }}
+                        <div class="font-bold text-sm">⚠️ OVERDUE!</div>
+                        <div class="text-xs">
+                            Due {{ $task->due_date->diffForHumans() }}
                             @if($hoursOverdue > 24)
-                                ({{ floor($hoursOverdue / 24) }} day{{ floor($hoursOverdue / 24) > 1 ? 's' : '' }} overdue)
+                                ({{ floor($hoursOverdue / 24) }}d)
                             @else
-                                ({{ $hoursOverdue }} hour{{ $hoursOverdue > 1 ? 's' : '' }} overdue)
+                                ({{ $hoursOverdue }}h)
                             @endif
                         </div>
                     </div>
                 </div>
-                <div class="text-right">
-                    <div class="text-xs opacity-90">Due Date:</div>
-                    <div class="font-medium">{{ $task->due_date->format('M d, Y H:i') }}</div>
+                <div class="text-right text-xs">
+                    <div class="opacity-90">Due:</div>
+                    <div class="font-medium">{{ $task->due_date->format('M d, H:i') }}</div>
                 </div>
             </div>
             @endif
             
             <!-- Task Header -->
-            <div class="flex items-start justify-between mb-4">
-                <div class="flex-1">
-                    <h3 class="text-xl font-semibold text-green-100 mb-2">
+            <div class="flex items-start justify-between mb-3">
+                <div class="flex-1 min-w-0">
+                    <h3 class="text-lg font-semibold text-green-100 mb-2 truncate">
                         {{ $task->title }}
                         @if($isOverdue)
-                            <span class="text-red-400 text-sm ml-2">[OVERDUE]</span>
+                            <span class="text-red-400 text-xs ml-2">[OVERDUE]</span>
                         @endif
                     </h3>
                     
                     <!-- Status Badge -->
-                    <div class="flex items-center space-x-3 mb-3">
+                    <div class="flex items-center space-x-2 mb-2">
                         <select onchange="updateTaskStatus({{ $task->id }}, this.value)" 
-                                class="px-3 py-1 text-xs rounded-full border-none font-medium {{ $task->status_color }}">
+                                class="px-2 py-1 text-xs rounded-full border-none font-medium {{ $task->status_color }}">
                             <option value="pending" {{ $task->status === 'pending' ? 'selected' : '' }}>Pending</option>
                             <option value="confirmed" {{ $task->status === 'confirmed' ? 'selected' : '' }}>Confirmed</option>
                             <option value="assigned" {{ $task->status === 'assigned' ? 'selected' : '' }}>Assigned</option>
@@ -109,12 +123,12 @@
                         @if($task->status === 'confirmed')
                         <span class="px-2 py-1 text-xs rounded bg-green-600 text-green-100 flex items-center">
                             <i class="fas fa-check-circle mr-1"></i>
-                            Manager Confirmed
+                            Confirmed
                         </span>
                         @endif
                         
                         @if($isOverdue)
-                        <span class="px-3 py-1 text-sm font-bold rounded-full bg-red-600 text-white animate-pulse">
+                        <span class="px-2 py-1 text-xs font-bold rounded-full bg-red-600 text-white animate-pulse">
                             <i class="fas fa-clock mr-1"></i>
                             OVERDUE
                         </span>
@@ -123,89 +137,117 @@
                 </div>
                 
                 <!-- Task Actions -->
-                <div class="flex gap-2">
+                <div class="flex gap-2 ml-2">
                     <button onclick="viewTaskDetails({{ $task->id }})" 
-                            class="inline-flex items-center px-3 py-2 {{ $isOverdue ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700' }} text-white text-sm rounded-lg transition-colors" 
+                            class="inline-flex items-center px-2 py-1 {{ $isOverdue ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700' }} text-white text-xs rounded-lg transition-colors" 
                             title="View Details">
-                        <i class="fas fa-eye mr-2"></i>
-                        View
+                        <i class="fas fa-eye"></i>
                     </button>
                     
                     @if(!in_array($task->status, ['completed', 'cancelled']))
                     <button onclick="cancelTask({{ $task->id }})" 
-                            class="inline-flex items-center px-3 py-2 bg-red-600 hover:bg-red-700 text-white text-sm rounded-lg transition-colors" 
+                            class="inline-flex items-center px-2 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded-lg transition-colors" 
                             title="Cancel Task">
-                        <i class="fas fa-times mr-2"></i>
-                        Cancel
+                        <i class="fas fa-times"></i>
                     </button>
                     @endif
                 </div>
             </div>
 
             <!-- Task Content -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
                 <!-- Description -->
-                <div class="space-y-1">
-                    <label class="text-xs text-gray-400 uppercase tracking-wide">Description</label>
-                    <p class="text-gray-300 text-sm">{{ Str::limit($task->description, 100) }}</p>
+                <div class="col-span-2 space-y-1">
+                    <label class="text-xs text-gray-400 uppercase tracking-wide font-medium">Description</label>
+                    <p class="text-gray-300 text-xs line-clamp-2">{{ Str::limit($task->description, 80) }}</p>
                 </div>
 
                 <!-- Assigned By -->
                 <div class="space-y-1">
-                    <label class="text-xs text-gray-400 uppercase tracking-wide">Assigned By</label>
-                    <p class="text-green-100 font-medium">{{ $task->assignedBy->name ?? 'System' }}</p>
+                    <label class="text-xs text-gray-400 uppercase tracking-wide font-medium">Assigned By</label>
+                    <p class="text-green-100 text-xs font-medium truncate">{{ $task->assignedBy->name ?? 'System' }}</p>
                 </div>
 
+                <!-- Guest/Requestor Information -->
+                @if($task->serviceRequest)
+                <div class="space-y-1">
+                    <label class="text-xs text-gray-400 uppercase tracking-wide font-medium">Guest</label>
+                    <p class="text-blue-100 text-xs font-medium truncate">
+                        <i class="fas fa-user text-blue-400 mr-1"></i>
+                        {{ $task->serviceRequest->guest_name ?? $task->serviceRequest->guest->name ?? 'N/A' }}
+                    </p>
+                </div>
+                @else
                 <!-- Due Date with Enhanced Overdue Display -->
                 <div class="space-y-1">
-                    <label class="text-xs text-gray-400 uppercase tracking-wide">Due Date</label>
-                    <p class="font-medium {{ $isOverdue ? 'text-red-400 font-bold' : 'text-green-100' }}">
-                        {{ $task->due_date->format('M d, Y H:i') }}
+                    <label class="text-xs text-gray-400 uppercase tracking-wide font-medium">Due Date</label>
+                    <p class="text-xs font-medium {{ $isOverdue ? 'text-red-400 font-bold' : 'text-green-100' }}">
+                        {{ $task->due_date->format('M d, H:i') }}
                     </p>
-                    <p class="text-sm {{ $isOverdue ? 'text-red-300 font-medium' : 'text-gray-400' }}">
+                    <p class="text-xs {{ $isOverdue ? 'text-red-300 font-medium' : 'text-gray-400' }}">
                         {{ $task->due_date->diffForHumans() }}
                         @if($isOverdue)
                             <span class="text-red-400 font-bold ml-1">⚠️</span>
                         @endif
                     </p>
                 </div>
+                @endif
             </div>
 
-            <!-- Task Notes -->
-            @if($task->notes)
-            <div class="mt-4 pt-3 border-t border-gray-700">
-                <label class="text-xs text-gray-400 uppercase tracking-wide">My Notes</label>
-                <p class="text-gray-300 text-sm mt-1">{{ $task->notes }}</p>
+            <!-- Due Date for service requests (moved to second row) -->
+            @if($task->serviceRequest)
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs mt-3">
+                <div class="space-y-1">
+                    <label class="text-xs text-gray-400 uppercase tracking-wide font-medium">Due Date</label>
+                    <p class="text-xs font-medium {{ $isOverdue ? 'text-red-400 font-bold' : 'text-green-100' }}">
+                        {{ $task->due_date->format('M d, H:i') }}
+                    </p>
+                    <p class="text-xs {{ $isOverdue ? 'text-red-300 font-medium' : 'text-gray-400' }}">
+                        {{ $task->due_date->diffForHumans() }}
+                        @if($isOverdue)
+                            <span class="text-red-400 font-bold ml-1">⚠️</span>
+                        @endif
+                    </p>
+                </div>
+                @if($task->serviceRequest->guest_email)
+                <div class="space-y-1">
+                    <label class="text-xs text-gray-400 uppercase tracking-wide font-medium">Guest Email</label>
+                    <p class="text-gray-400 text-xs truncate">
+                        <i class="fas fa-envelope text-gray-500 mr-1"></i>
+                        {{ $task->serviceRequest->guest_email }}
+                    </p>
+                </div>
+                @endif
             </div>
             @endif
 
-            <!-- Notes Input -->
-            <div class="mt-4 pt-3 border-t border-gray-700">
-                <label class="text-xs text-gray-400 uppercase tracking-wide">Add/Update Notes</label>
-                <div class="flex gap-2 mt-2">
-                    <input type="text" 
-                           value="{{ $task->notes }}" 
-                           placeholder="Add notes about this task..."
-                           class="flex-1 bg-gray-700 text-green-100 rounded px-3 py-2 text-sm border-none"
-                           data-task-id="{{ $task->id }}"
-                           onkeypress="if(event.key==='Enter') updateTaskNotes({{ $task->id }}, this.value)">
-                    <button onclick="updateTaskNotes({{ $task->id }}, document.querySelector('[data-task-id=\'{{ $task->id }}\']').value)" 
-                            class="bg-green-600 text-white px-4 py-2 rounded text-sm hover:bg-green-700">
-                        Save
-                    </button>
-                </div>
+            <!-- Compact Notes Section -->
+            @if($task->notes)
+            <div class="mt-3 pt-3 border-t border-gray-700">
+                <label class="text-xs text-gray-400 uppercase tracking-wide font-medium">Notes</label>
+                <p class="text-gray-300 text-xs mt-1 line-clamp-2">{{ $task->notes }}</p>
             </div>
+            @endif
 
-            <!-- Timeline Footer -->
-            <div class="mt-4 pt-3 border-t border-gray-700">
-                <div class="flex justify-between text-xs text-gray-400">
-                    <span>Created: {{ $task->created_at->format('M d, Y H:i') }}</span>
-                    @if($task->completed_at)
-                    <span>Completed: {{ $task->completed_at->format('M d, H:i') }}</span>
-                    @elseif($isOverdue)
-                    <span class="text-red-400 font-medium">
-                        ⚠️ OVERDUE BY: {{ $task->due_date->diffForHumans(null, true) }}
-                    </span>
+            <!-- Compact Footer with Quick Actions -->
+            <div class="mt-3 pt-3 border-t border-gray-700 flex items-center justify-between">
+                <div class="text-xs text-gray-400">
+                    Created: {{ $task->created_at->format('M d, H:i') }}
+                </div>
+                <div class="flex gap-2">
+                    @if($task->status !== 'completed')
+                    <button onclick="updateTaskStatus({{ $task->id }}, 'completed')" 
+                            class="px-2 py-1 {{ $isOverdue ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700' }} text-white text-xs rounded transition-colors" 
+                            title="Mark Complete">
+                        <i class="fas fa-check mr-1"></i>Complete
+                    </button>
+                    @endif
+                    @if($task->status === 'pending')
+                    <button onclick="updateTaskStatus({{ $task->id }}, 'in_progress')" 
+                            class="px-2 py-1 bg-orange-600 hover:bg-orange-700 text-white text-xs rounded transition-colors" 
+                            title="Start Work">
+                        <i class="fas fa-play mr-1"></i>Start
+                    </button>
                     @endif
                 </div>
             </div>
@@ -432,6 +474,34 @@ function displayTaskDetails(task) {
             
             <div class="grid grid-cols-2 gap-4">
                 <div>
+                    <label class="text-xs text-gray-400 uppercase tracking-wide">Assigned By</label>
+                    <p class="text-green-100 font-medium">${task.assigned_by ? task.assigned_by.name : 'System'}</p>
+                </div>
+                
+                ${task.service_request && (task.service_request.guest_name || (task.service_request.guest && task.service_request.guest.name)) ? `
+                <div>
+                    <label class="text-xs text-gray-400 uppercase tracking-wide">Requested By (Guest)</label>
+                    <p class="text-blue-100 font-medium">
+                        <i class="fas fa-user text-blue-400 mr-1"></i>
+                        ${task.service_request.guest_name || task.service_request.guest.name}
+                    </p>
+                    ${task.service_request.guest_email ? `
+                    <p class="text-gray-400 text-xs mt-1">
+                        <i class="fas fa-envelope text-gray-500 mr-1"></i>
+                        ${task.service_request.guest_email}
+                    </p>
+                    ` : ''}
+                </div>
+                ` : `
+                <div>
+                    <label class="text-xs text-gray-400 uppercase tracking-wide">Created</label>
+                    <p class="text-green-100 font-medium">${new Date(task.created_at).toLocaleDateString()}</p>
+                </div>
+                `}
+            </div>
+            
+            <div class="grid grid-cols-2 gap-4">
+                <div>
                     <label class="text-xs text-gray-400 uppercase tracking-wide">Status</label>
                     <p class="text-green-100 font-medium capitalize">
                         ${task.status.replace('_', ' ')}
@@ -445,18 +515,6 @@ function displayTaskDetails(task) {
                         ${new Date(task.due_date).toLocaleDateString()}
                         ${isOverdue ? ' ⚠️' : ''}
                     </p>
-                </div>
-            </div>
-            
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <label class="text-xs text-gray-400 uppercase tracking-wide">Assigned By</label>
-                    <p class="text-green-100 font-medium">${task.assigned_by ? task.assigned_by.name : 'System'}</p>
-                </div>
-                
-                <div>
-                    <label class="text-xs text-gray-400 uppercase tracking-wide">Created</label>
-                    <p class="text-green-100 font-medium">${new Date(task.created_at).toLocaleDateString()}</p>
                 </div>
             </div>
             
@@ -526,6 +584,32 @@ function closeTaskModal() {
     // Ensure we're back to the main tasks view
     console.log('Returned to My Tasks module');
 }
+
+// View mode toggle
+function setViewMode(mode) {
+    const container = document.getElementById('tasksContainer');
+    const compactBtn = document.getElementById('compactViewBtn');
+    const listBtn = document.getElementById('listViewBtn');
+    
+    if (mode === 'compact') {
+        container.className = 'grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4';
+        compactBtn.className = 'px-3 py-1 text-xs rounded bg-green-600 text-white';
+        listBtn.className = 'px-3 py-1 text-xs rounded bg-gray-600 text-gray-300 hover:bg-gray-500';
+    } else {
+        container.className = 'space-y-4';
+        listBtn.className = 'px-3 py-1 text-xs rounded bg-green-600 text-white';
+        compactBtn.className = 'px-3 py-1 text-xs rounded bg-gray-600 text-gray-300 hover:bg-gray-500';
+    }
+    
+    // Save preference
+    localStorage.setItem('taskViewMode', mode);
+}
+
+// Load saved view mode on page load
+document.addEventListener('DOMContentLoaded', function() {
+    const savedMode = localStorage.getItem('taskViewMode') || 'compact';
+    setViewMode(savedMode);
+});
 
 // Filtering
 function clearFilters() {
@@ -618,6 +702,25 @@ document.addEventListener('keydown', function(e) {
 
 [data-overdue="true"] {
     animation: urgent-glow 2s infinite;
+}
+
+/* Text truncation utilities */
+.line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* Compact card height consistency */
+#tasksContainer > div {
+    height: fit-content;
+    min-height: 200px;
+}
+
+/* Smooth transitions for view mode changes */
+#tasksContainer {
+    transition: all 0.3s ease;
 }
 </style>
 @endsection

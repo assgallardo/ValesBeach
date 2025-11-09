@@ -44,6 +44,11 @@
                                    class="text-white hover:text-green-200 transition-colors duration-200">
                                     Manager Dashboard
                                 </a>
+                            <?php elseif(auth()->user()->role === 'staff'): ?>
+                                <a href="<?php echo e(route('staff.dashboard')); ?>" 
+                                   class="text-white hover:text-green-200 transition-colors duration-200">
+                                    Staff Dashboard
+                                </a>
                             <?php elseif(auth()->user()->role === 'guest'): ?>
                                 <a href="<?php echo e(route('guest.dashboard')); ?>" 
                                    class="text-white hover:text-green-200 transition-colors duration-200">
@@ -109,6 +114,11 @@
                                     <a href="<?php echo e(route('guest.dashboard')); ?>" 
                                        class="px-8 py-4 bg-green-900 text-white rounded-lg hover:bg-green-800 transition-colors duration-200 text-lg font-medium">
                                         Go to Dashboard
+                                    </a>
+                                <?php elseif(auth()->user()->role === 'staff'): ?>
+                                    <a href="<?php echo e(route('staff.dashboard')); ?>" 
+                                       class="px-8 py-4 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200 text-lg font-medium">
+                                        Staff Dashboard
                                     </a>
                                 <?php elseif(auth()->user()->role === 'manager'): ?>
                                     <a href="<?php echo e(route('manager.dashboard')); ?>" 

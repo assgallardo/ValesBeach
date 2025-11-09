@@ -204,6 +204,7 @@
                     <option value="pending" <?php echo e(request('status') === 'pending' ? 'selected' : ''); ?>>Pending</option>
                     <option value="confirmed" <?php echo e(request('status') === 'confirmed' ? 'selected' : ''); ?>>Confirmed</option>
                     <option value="checked_in" <?php echo e(request('status') === 'checked_in' ? 'selected' : ''); ?>>Checked In</option>
+                    <option value="checked_out" <?php echo e(request('status') === 'checked_out' ? 'selected' : ''); ?>>Checked Out</option>
                     <option value="completed" <?php echo e(request('status') === 'completed' ? 'selected' : ''); ?>>Completed</option>
                     <option value="cancelled" <?php echo e(request('status') === 'cancelled' ? 'selected' : ''); ?>>Cancelled</option>
                 </select>
@@ -413,10 +414,12 @@
 
                                     <?php echo e($booking->status === 'checked_in' ? 'bg-green-900 text-green-200' : ''); ?>
 
+                                    <?php echo e($booking->status === 'checked_out' ? 'bg-indigo-900 text-indigo-200' : ''); ?>
+
                                     <?php echo e($booking->status === 'completed' ? 'bg-purple-900 text-purple-200' : ''); ?>
 
                                     <?php echo e($booking->status === 'cancelled' ? 'bg-red-900 text-red-200' : ''); ?>">
-                                    <?php echo e(ucfirst($booking->status)); ?>
+                                    <?php echo e(ucfirst(str_replace('_', ' ', $booking->status))); ?>
 
                                 </span>
                             </td>
@@ -531,10 +534,12 @@
 
                                 <?php echo e($booking->status === 'checked_in' ? 'bg-green-900 text-green-200' : ''); ?>
 
+                                <?php echo e($booking->status === 'checked_out' ? 'bg-indigo-900 text-indigo-200' : ''); ?>
+
                                 <?php echo e($booking->status === 'completed' ? 'bg-purple-900 text-purple-200' : ''); ?>
 
                                 <?php echo e($booking->status === 'cancelled' ? 'bg-red-900 text-red-200' : ''); ?>">
-                                <?php echo e(ucfirst($booking->status)); ?>
+                                <?php echo e(ucfirst(str_replace('_', ' ', $booking->status))); ?>
 
                             </span>
                         </td>
@@ -655,10 +660,12 @@
 
                                     <?php echo e($cottageBooking->status === 'checked_in' ? 'bg-green-900 text-green-200' : ''); ?>
 
+                                    <?php echo e($cottageBooking->status === 'checked_out' ? 'bg-indigo-900 text-indigo-200' : ''); ?>
+
                                     <?php echo e($cottageBooking->status === 'completed' ? 'bg-purple-900 text-purple-200' : ''); ?>
 
                                     <?php echo e($cottageBooking->status === 'cancelled' ? 'bg-red-900 text-red-200' : ''); ?>">
-                                    <?php echo e(ucfirst($cottageBooking->status)); ?>
+                                    <?php echo e(ucfirst(str_replace('_', ' ', $cottageBooking->status))); ?>
 
                                 </span>
                             </td>
@@ -773,10 +780,12 @@
 
                                     <?php echo e($eventBooking->status === 'checked_in' ? 'bg-green-900 text-green-200' : ''); ?>
 
+                                    <?php echo e($eventBooking->status === 'checked_out' ? 'bg-indigo-900 text-indigo-200' : ''); ?>
+
                                     <?php echo e($eventBooking->status === 'completed' ? 'bg-purple-900 text-purple-200' : ''); ?>
 
                                     <?php echo e($eventBooking->status === 'cancelled' ? 'bg-red-900 text-red-200' : ''); ?>">
-                                    <?php echo e(ucfirst($eventBooking->status)); ?>
+                                    <?php echo e(ucfirst(str_replace('_', ' ', $eventBooking->status))); ?>
 
                                 </span>
                             </td>
@@ -957,11 +966,12 @@
                             <label for="status" class="block text-sm font-medium text-gray-300 mb-2">Status</label>
                             <select name="status" id="status"
                                     class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white">
-                                <option value="pending">Pending</option>
-                                <option value="confirmed">Confirmed</option>
-                                <option value="checked_in">Checked In</option>
-                                <option value="completed">Completed</option>
-                                <option value="cancelled">Cancelled</option>
+                                <?php $__currentLoopData = $statuses; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $status): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <option value="<?php echo e($status); ?>">
+                                        <?php echo e(ucfirst(str_replace('_', ' ', $status))); ?>
+
+                                    </option>
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                             </select>
                         </div>
                         <div class="flex justify-end space-x-3">

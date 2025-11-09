@@ -36,7 +36,7 @@
                 <option value="assigned">Assigned</option>
                 <option value="in_progress">In Progress</option>
                 <option value="completed">Completed</option>
-                <option value="overdue">⚠️ Overdue</option>
+                <option value="overdue">Overdue</option>
             </select>
             
             <button onclick="clearFilters()" class="bg-gray-600 text-white px-3 py-2 rounded text-sm hover:bg-gray-500">
@@ -53,7 +53,7 @@
             $hoursOverdue = $isOverdue ? $task->due_date->diffInHours(now()) : 0;
         ?>
         
-        <div class="rounded-lg p-6 hover:bg-gray-750 transition-colors 
+        <div class="rounded-lg p-4 hover:bg-gray-750 transition-colors 
                     <?php echo e($isOverdue ? 'bg-red-900 border-2 border-red-500 animate-pulse' : 'bg-gray-800'); ?>" 
              data-task-id="<?php echo e($task->id); ?>" 
              data-status="<?php echo e($task->status); ?>"
@@ -61,44 +61,44 @@
             
             <!-- Overdue Alert Banner -->
             <?php if($isOverdue): ?>
-            <div class="bg-red-600 text-white px-4 py-2 rounded-lg mb-4 flex items-center justify-between">
+            <div class="bg-red-600 text-white px-3 py-2 rounded-lg mb-3 flex items-center justify-between">
                 <div class="flex items-center">
-                    <i class="fas fa-exclamation-triangle text-xl mr-3 animate-bounce"></i>
+                    <i class="fas fa-exclamation-triangle text-lg mr-2 animate-bounce"></i>
                     <div>
-                        <div class="font-bold text-lg">⚠️ TASK OVERDUE!</div>
-                        <div class="text-sm">
-                            This task was due <?php echo e($task->due_date->diffForHumans()); ?>
+                        <div class="font-bold text-sm">⚠️ OVERDUE!</div>
+                        <div class="text-xs">
+                            Due <?php echo e($task->due_date->diffForHumans()); ?>
 
                             <?php if($hoursOverdue > 24): ?>
-                                (<?php echo e(floor($hoursOverdue / 24)); ?> day<?php echo e(floor($hoursOverdue / 24) > 1 ? 's' : ''); ?> overdue)
+                                (<?php echo e(floor($hoursOverdue / 24)); ?>d)
                             <?php else: ?>
-                                (<?php echo e($hoursOverdue); ?> hour<?php echo e($hoursOverdue > 1 ? 's' : ''); ?> overdue)
+                                (<?php echo e($hoursOverdue); ?>h)
                             <?php endif; ?>
                         </div>
                     </div>
                 </div>
-                <div class="text-right">
-                    <div class="text-xs opacity-90">Due Date:</div>
-                    <div class="font-medium"><?php echo e($task->due_date->format('M d, Y H:i')); ?></div>
+                <div class="text-right text-xs">
+                    <div class="opacity-90">Due:</div>
+                    <div class="font-medium"><?php echo e($task->due_date->format('M d, H:i')); ?></div>
                 </div>
             </div>
             <?php endif; ?>
             
             <!-- Task Header -->
-            <div class="flex items-start justify-between mb-4">
-                <div class="flex-1">
-                    <h3 class="text-xl font-semibold text-green-100 mb-2">
+            <div class="flex items-start justify-between mb-3">
+                <div class="flex-1 min-w-0">
+                    <h3 class="text-lg font-semibold text-green-100 mb-2 truncate">
                         <?php echo e($task->title); ?>
 
                         <?php if($isOverdue): ?>
-                            <span class="text-red-400 text-sm ml-2">[OVERDUE]</span>
+                            <span class="text-red-400 text-xs ml-2">[OVERDUE]</span>
                         <?php endif; ?>
                     </h3>
                     
                     <!-- Status Badge -->
-                    <div class="flex items-center space-x-3 mb-3">
+                    <div class="flex items-center space-x-2 mb-2">
                         <select onchange="updateTaskStatus(<?php echo e($task->id); ?>, this.value)" 
-                                class="px-3 py-1 text-xs rounded-full border-none font-medium <?php echo e($task->status_color); ?>">
+                                class="px-2 py-1 text-xs rounded-full border-none font-medium <?php echo e($task->status_color); ?>">
                             <option value="pending" <?php echo e($task->status === 'pending' ? 'selected' : ''); ?>>Pending</option>
                             <option value="confirmed" <?php echo e($task->status === 'confirmed' ? 'selected' : ''); ?>>Confirmed</option>
                             <option value="assigned" <?php echo e($task->status === 'assigned' ? 'selected' : ''); ?>>Assigned</option>
@@ -109,12 +109,12 @@
                         <?php if($task->status === 'confirmed'): ?>
                         <span class="px-2 py-1 text-xs rounded bg-green-600 text-green-100 flex items-center">
                             <i class="fas fa-check-circle mr-1"></i>
-                            Manager Confirmed
+                            Confirmed
                         </span>
                         <?php endif; ?>
                         
                         <?php if($isOverdue): ?>
-                        <span class="px-3 py-1 text-sm font-bold rounded-full bg-red-600 text-white animate-pulse">
+                        <span class="px-2 py-1 text-xs font-bold rounded-full bg-red-600 text-white animate-pulse">
                             <i class="fas fa-clock mr-1"></i>
                             OVERDUE
                         </span>
@@ -123,47 +123,56 @@
                 </div>
                 
                 <!-- Task Actions -->
-                <div class="flex gap-2">
+                <div class="flex gap-2 ml-2">
                     <button onclick="viewTaskDetails(<?php echo e($task->id); ?>)" 
-                            class="inline-flex items-center px-3 py-2 <?php echo e($isOverdue ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'); ?> text-white text-sm rounded-lg transition-colors" 
+                            class="inline-flex items-center px-2 py-1 <?php echo e($isOverdue ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'); ?> text-white text-xs rounded-lg transition-colors" 
                             title="View Details">
-                        <i class="fas fa-eye mr-2"></i>
-                        View
+                        <i class="fas fa-eye"></i>
                     </button>
                     
                     <?php if(!in_array($task->status, ['completed', 'cancelled'])): ?>
                     <button onclick="cancelTask(<?php echo e($task->id); ?>)" 
-                            class="inline-flex items-center px-3 py-2 bg-red-600 hover:bg-red-700 text-white text-sm rounded-lg transition-colors" 
+                            class="inline-flex items-center px-2 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded-lg transition-colors" 
                             title="Cancel Task">
-                        <i class="fas fa-times mr-2"></i>
-                        Cancel
+                        <i class="fas fa-times"></i>
                     </button>
                     <?php endif; ?>
                 </div>
             </div>
 
             <!-- Task Content -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
                 <!-- Description -->
-                <div class="space-y-1">
-                    <label class="text-xs text-gray-400 uppercase tracking-wide">Description</label>
-                    <p class="text-gray-300 text-sm"><?php echo e(Str::limit($task->description, 100)); ?></p>
+                <div class="col-span-2 space-y-1">
+                    <label class="text-xs text-gray-400 uppercase tracking-wide font-medium">Description</label>
+                    <p class="text-gray-300 text-xs line-clamp-2"><?php echo e(Str::limit($task->description, 80)); ?></p>
                 </div>
 
                 <!-- Assigned By -->
                 <div class="space-y-1">
-                    <label class="text-xs text-gray-400 uppercase tracking-wide">Assigned By</label>
-                    <p class="text-green-100 font-medium"><?php echo e($task->assignedBy->name ?? 'System'); ?></p>
+                    <label class="text-xs text-gray-400 uppercase tracking-wide font-medium">Assigned By</label>
+                    <p class="text-green-100 text-xs font-medium truncate"><?php echo e($task->assignedBy->name ?? 'System'); ?></p>
                 </div>
 
-                <!-- Due Date with Enhanced Overdue Display -->
+                <!-- Guest/Requestor Information -->
+                <?php if($task->serviceRequest): ?>
                 <div class="space-y-1">
-                    <label class="text-xs text-gray-400 uppercase tracking-wide">Due Date</label>
-                    <p class="font-medium <?php echo e($isOverdue ? 'text-red-400 font-bold' : 'text-green-100'); ?>">
-                        <?php echo e($task->due_date->format('M d, Y H:i')); ?>
+                    <label class="text-xs text-gray-400 uppercase tracking-wide font-medium">Guest</label>
+                    <p class="text-blue-100 text-xs font-medium truncate">
+                        <i class="fas fa-user text-blue-400 mr-1"></i>
+                        <?php echo e($task->serviceRequest->guest_name ?? $task->serviceRequest->guest->name ?? 'N/A'); ?>
 
                     </p>
-                    <p class="text-sm <?php echo e($isOverdue ? 'text-red-300 font-medium' : 'text-gray-400'); ?>">
+                </div>
+                <?php else: ?>
+                <!-- Due Date with Enhanced Overdue Display -->
+                <div class="space-y-1">
+                    <label class="text-xs text-gray-400 uppercase tracking-wide font-medium">Due Date</label>
+                    <p class="text-xs font-medium <?php echo e($isOverdue ? 'text-red-400 font-bold' : 'text-green-100'); ?>">
+                        <?php echo e($task->due_date->format('M d, H:i')); ?>
+
+                    </p>
+                    <p class="text-xs <?php echo e($isOverdue ? 'text-red-300 font-medium' : 'text-gray-400'); ?>">
                         <?php echo e($task->due_date->diffForHumans()); ?>
 
                         <?php if($isOverdue): ?>
@@ -171,44 +180,67 @@
                         <?php endif; ?>
                     </p>
                 </div>
+                <?php endif; ?>
             </div>
 
-            <!-- Task Notes -->
-            <?php if($task->notes): ?>
-            <div class="mt-4 pt-3 border-t border-gray-700">
-                <label class="text-xs text-gray-400 uppercase tracking-wide">My Notes</label>
-                <p class="text-gray-300 text-sm mt-1"><?php echo e($task->notes); ?></p>
+            <!-- Due Date for service requests (moved to second row) -->
+            <?php if($task->serviceRequest): ?>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs mt-3">
+                <div class="space-y-1">
+                    <label class="text-xs text-gray-400 uppercase tracking-wide font-medium">Due Date</label>
+                    <p class="text-xs font-medium <?php echo e($isOverdue ? 'text-red-400 font-bold' : 'text-green-100'); ?>">
+                        <?php echo e($task->due_date->format('M d, H:i')); ?>
+
+                    </p>
+                    <p class="text-xs <?php echo e($isOverdue ? 'text-red-300 font-medium' : 'text-gray-400'); ?>">
+                        <?php echo e($task->due_date->diffForHumans()); ?>
+
+                        <?php if($isOverdue): ?>
+                            <span class="text-red-400 font-bold ml-1">⚠️</span>
+                        <?php endif; ?>
+                    </p>
+                </div>
+                <?php if($task->serviceRequest->guest_email): ?>
+                <div class="space-y-1">
+                    <label class="text-xs text-gray-400 uppercase tracking-wide font-medium">Guest Email</label>
+                    <p class="text-gray-400 text-xs truncate">
+                        <i class="fas fa-envelope text-gray-500 mr-1"></i>
+                        <?php echo e($task->serviceRequest->guest_email); ?>
+
+                    </p>
+                </div>
+                <?php endif; ?>
             </div>
             <?php endif; ?>
 
-            <!-- Notes Input -->
-            <div class="mt-4 pt-3 border-t border-gray-700">
-                <label class="text-xs text-gray-400 uppercase tracking-wide">Add/Update Notes</label>
-                <div class="flex gap-2 mt-2">
-                    <input type="text" 
-                           value="<?php echo e($task->notes); ?>" 
-                           placeholder="Add notes about this task..."
-                           class="flex-1 bg-gray-700 text-green-100 rounded px-3 py-2 text-sm border-none"
-                           data-task-id="<?php echo e($task->id); ?>"
-                           onkeypress="if(event.key==='Enter') updateTaskNotes(<?php echo e($task->id); ?>, this.value)">
-                    <button onclick="updateTaskNotes(<?php echo e($task->id); ?>, document.querySelector('[data-task-id=\'<?php echo e($task->id); ?>\']').value)" 
-                            class="bg-green-600 text-white px-4 py-2 rounded text-sm hover:bg-green-700">
-                        Save
-                    </button>
-                </div>
+            <!-- Compact Notes Section -->
+            <?php if($task->notes): ?>
+            <div class="mt-3 pt-3 border-t border-gray-700">
+                <label class="text-xs text-gray-400 uppercase tracking-wide font-medium">Notes</label>
+                <p class="text-gray-300 text-xs mt-1 line-clamp-2"><?php echo e($task->notes); ?></p>
             </div>
+            <?php endif; ?>
 
-            <!-- Timeline Footer -->
-            <div class="mt-4 pt-3 border-t border-gray-700">
-                <div class="flex justify-between text-xs text-gray-400">
-                    <span>Created: <?php echo e($task->created_at->format('M d, Y H:i')); ?></span>
-                    <?php if($task->completed_at): ?>
-                    <span>Completed: <?php echo e($task->completed_at->format('M d, H:i')); ?></span>
-                    <?php elseif($isOverdue): ?>
-                    <span class="text-red-400 font-medium">
-                        ⚠️ OVERDUE BY: <?php echo e($task->due_date->diffForHumans(null, true)); ?>
+            <!-- Compact Footer with Quick Actions -->
+            <div class="mt-3 pt-3 border-t border-gray-700 flex items-center justify-between">
+                <div class="text-xs text-gray-400">
+                    Created: <?php echo e($task->created_at->format('M d, H:i')); ?>
 
-                    </span>
+                </div>
+                <div class="flex gap-2">
+                    <?php if($task->status !== 'completed'): ?>
+                    <button onclick="updateTaskStatus(<?php echo e($task->id); ?>, 'completed')" 
+                            class="px-2 py-1 <?php echo e($isOverdue ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'); ?> text-white text-xs rounded transition-colors" 
+                            title="Mark Complete">
+                        <i class="fas fa-check mr-1"></i>Complete
+                    </button>
+                    <?php endif; ?>
+                    <?php if($task->status === 'pending'): ?>
+                    <button onclick="updateTaskStatus(<?php echo e($task->id); ?>, 'in_progress')" 
+                            class="px-2 py-1 bg-orange-600 hover:bg-orange-700 text-white text-xs rounded transition-colors" 
+                            title="Start Work">
+                        <i class="fas fa-play mr-1"></i>Start
+                    </button>
                     <?php endif; ?>
                 </div>
             </div>
@@ -436,6 +468,34 @@ function displayTaskDetails(task) {
             
             <div class="grid grid-cols-2 gap-4">
                 <div>
+                    <label class="text-xs text-gray-400 uppercase tracking-wide">Assigned By</label>
+                    <p class="text-green-100 font-medium">${task.assigned_by ? task.assigned_by.name : 'System'}</p>
+                </div>
+                
+                ${task.service_request && (task.service_request.guest_name || (task.service_request.guest && task.service_request.guest.name)) ? `
+                <div>
+                    <label class="text-xs text-gray-400 uppercase tracking-wide">Requested By (Guest)</label>
+                    <p class="text-blue-100 font-medium">
+                        <i class="fas fa-user text-blue-400 mr-1"></i>
+                        ${task.service_request.guest_name || task.service_request.guest.name}
+                    </p>
+                    ${task.service_request.guest_email ? `
+                    <p class="text-gray-400 text-xs mt-1">
+                        <i class="fas fa-envelope text-gray-500 mr-1"></i>
+                        ${task.service_request.guest_email}
+                    </p>
+                    ` : ''}
+                </div>
+                ` : `
+                <div>
+                    <label class="text-xs text-gray-400 uppercase tracking-wide">Created</label>
+                    <p class="text-green-100 font-medium">${new Date(task.created_at).toLocaleDateString()}</p>
+                </div>
+                `}
+            </div>
+            
+            <div class="grid grid-cols-2 gap-4">
+                <div>
                     <label class="text-xs text-gray-400 uppercase tracking-wide">Status</label>
                     <p class="text-green-100 font-medium capitalize">
                         ${task.status.replace('_', ' ')}
@@ -449,18 +509,6 @@ function displayTaskDetails(task) {
                         ${new Date(task.due_date).toLocaleDateString()}
                         ${isOverdue ? ' ⚠️' : ''}
                     </p>
-                </div>
-            </div>
-            
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <label class="text-xs text-gray-400 uppercase tracking-wide">Assigned By</label>
-                    <p class="text-green-100 font-medium">${task.assigned_by ? task.assigned_by.name : 'System'}</p>
-                </div>
-                
-                <div>
-                    <label class="text-xs text-gray-400 uppercase tracking-wide">Created</label>
-                    <p class="text-green-100 font-medium">${new Date(task.created_at).toLocaleDateString()}</p>
                 </div>
             </div>
             

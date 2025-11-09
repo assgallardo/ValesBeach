@@ -417,10 +417,12 @@
 
                                     <?php echo e($booking->status === 'checked_in' ? 'bg-green-900 text-green-200' : ''); ?>
 
+                                    <?php echo e($booking->status === 'checked_out' ? 'bg-indigo-900 text-indigo-200' : ''); ?>
+
                                     <?php echo e($booking->status === 'completed' ? 'bg-purple-900 text-purple-200' : ''); ?>
 
                                     <?php echo e($booking->status === 'cancelled' ? 'bg-red-900 text-red-200' : ''); ?>">
-                                    <?php echo e(ucfirst($booking->status)); ?>
+                                    <?php echo e(ucfirst(str_replace('_', ' ', $booking->status))); ?>
 
                                 </span>
                             </td>
@@ -535,10 +537,12 @@
 
                                 <?php echo e($booking->status === 'checked_in' ? 'bg-green-900 text-green-200' : ''); ?>
 
+                                <?php echo e($booking->status === 'checked_out' ? 'bg-indigo-900 text-indigo-200' : ''); ?>
+
                                 <?php echo e($booking->status === 'completed' ? 'bg-purple-900 text-purple-200' : ''); ?>
 
                                 <?php echo e($booking->status === 'cancelled' ? 'bg-red-900 text-red-200' : ''); ?>">
-                                <?php echo e(ucfirst($booking->status)); ?>
+                                <?php echo e(ucfirst(str_replace('_', ' ', $booking->status))); ?>
 
                             </span>
                         </td>
@@ -659,10 +663,12 @@
 
                                     <?php echo e($cottageBooking->status === 'checked_in' ? 'bg-green-900 text-green-200' : ''); ?>
 
+                                    <?php echo e($cottageBooking->status === 'checked_out' ? 'bg-indigo-900 text-indigo-200' : ''); ?>
+
                                     <?php echo e($cottageBooking->status === 'completed' ? 'bg-purple-900 text-purple-200' : ''); ?>
 
                                     <?php echo e($cottageBooking->status === 'cancelled' ? 'bg-red-900 text-red-200' : ''); ?>">
-                                    <?php echo e(ucfirst($cottageBooking->status)); ?>
+                                    <?php echo e(ucfirst(str_replace('_', ' ', $cottageBooking->status))); ?>
 
                                 </span>
                             </td>
@@ -772,10 +778,12 @@
 
                                     <?php echo e($eventBooking->status === 'checked_in' ? 'bg-green-900 text-green-200' : ''); ?>
 
+                                    <?php echo e($eventBooking->status === 'checked_out' ? 'bg-indigo-900 text-indigo-200' : ''); ?>
+
                                     <?php echo e($eventBooking->status === 'completed' ? 'bg-purple-900 text-purple-200' : ''); ?>
 
                                     <?php echo e($eventBooking->status === 'cancelled' ? 'bg-red-900 text-red-200' : ''); ?>">
-                                    <?php echo e(ucfirst($eventBooking->status)); ?>
+                                    <?php echo e(ucfirst(str_replace('_', ' ', $eventBooking->status))); ?>
 
                                 </span>
                             </td>

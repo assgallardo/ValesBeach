@@ -237,7 +237,7 @@ class ManagerController extends Controller
         // Calculate statistics safely
         $stats = $this->calculateBookingStats();
 
-        $statuses = ['pending', 'confirmed', 'checked_in', 'completed', 'cancelled'];
+        $statuses = ['pending', 'confirmed', 'checked_in', 'checked_out', 'completed', 'cancelled'];
 
         return view('manager.bookings.index', compact('allBookings', 'bookings', 'cottageBookings', 'eventDiningBookings', 'stats', 'statuses'));
     }

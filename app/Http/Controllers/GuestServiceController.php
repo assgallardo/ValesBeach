@@ -101,6 +101,25 @@ class GuestServiceController extends Controller
             
             \Log::info('Service request created successfully:', $serviceRequest->toArray());
 
+            // Create payment record for the service request
+            $totalAmount = $service->price * ($validated['guests_count'] ?? 1);
+            
+            $payment = Payment::create([
+                'service_request_id' => $serviceRequest->id,
+                'user_id' => Auth::id(),
+                'amount' => $totalAmount,
+                'payment_method' => 'cash', // Default to cash, will be updated by admin when payment is processed
+                'status' => 'pending',
+                'payment_date' => null, // Will be set when payment is completed
+                'notes' => 'Service request payment for ' . $service->name,
+            ]);
+            
+            \Log::info('Payment record created for service request:', [
+                'payment_id' => $payment->id,
+                'service_request_id' => $serviceRequest->id,
+                'amount' => $totalAmount
+            ]);
+
             return redirect()->route('guest.services.history')
                            ->with('success', 'Your service request has been submitted successfully!');
 

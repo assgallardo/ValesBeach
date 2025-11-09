@@ -22,22 +22,107 @@
                                 onclick="toggleExportDropdown()"
                                 class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors w-full sm:w-auto">
                             <i class="fas fa-download mr-2"></i>
-                            Export
+                            Export Reports
                             <i class="fas fa-chevron-down ml-2"></i>
                         </button>
-                        <div id="exportDropdown" class="absolute right-0 mt-2 w-56 bg-gray-800 border border-gray-700 rounded-lg shadow-lg z-10 hidden">
+                        <div id="exportDropdown" class="absolute right-0 mt-2 w-72 bg-gray-800 border border-gray-700 rounded-lg shadow-xl z-10 hidden max-h-96 overflow-y-auto">
+                            <!-- Overview Summary -->
+                            <div class="px-3 py-2 bg-gray-750 border-b border-gray-700">
+                                <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Summary Report</p>
+                            </div>
                             <div class="py-1">
                                 <a href="<?php echo e(route('manager.reports.export', ['type' => 'overview'] + request()->query())); ?>" 
-                                   class="flex items-center px-4 py-2 text-gray-300 hover:bg-gray-700 hover:text-green-400 transition-colors">
-                                    <i class="fas fa-file-alt mr-3"></i>Overview Report
+                                   class="flex items-center px-4 py-2.5 text-gray-300 hover:bg-gray-700 hover:text-green-400 transition-colors">
+                                    <i class="fas fa-file-chart-line mr-3 text-yellow-400"></i>
+                                    <div>
+                                        <div class="font-medium">Overview Report</div>
+                                        <div class="text-xs text-gray-500">All metrics summary</div>
+                                    </div>
                                 </a>
+                            </div>
+
+                            <!-- Revenue Reports -->
+                            <div class="px-3 py-2 bg-gray-750 border-t border-b border-gray-700">
+                                <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Revenue Reports</p>
+                            </div>
+                            <div class="py-1">
+                                <a href="<?php echo e(route('manager.reports.export', ['type' => 'room-sales'] + request()->query())); ?>" 
+                                   class="flex items-center px-4 py-2.5 text-gray-300 hover:bg-gray-700 hover:text-green-400 transition-colors">
+                                    <i class="fas fa-door-open mr-3 text-blue-400"></i>
+                                    <div>
+                                        <div class="font-medium">Room Sales</div>
+                                        <div class="text-xs text-gray-500">Booking revenue</div>
+                                    </div>
+                                </a>
+                                <a href="<?php echo e(route('manager.reports.export', ['type' => 'food-sales'] + request()->query())); ?>" 
+                                   class="flex items-center px-4 py-2.5 text-gray-300 hover:bg-gray-700 hover:text-green-400 transition-colors">
+                                    <i class="fas fa-utensils mr-3 text-green-400"></i>
+                                    <div>
+                                        <div class="font-medium">Food Sales</div>
+                                        <div class="text-xs text-gray-500">F&B revenue</div>
+                                    </div>
+                                </a>
+                                <a href="<?php echo e(route('manager.reports.export', ['type' => 'service-sales'] + request()->query())); ?>" 
+                                   class="flex items-center px-4 py-2.5 text-gray-300 hover:bg-gray-700 hover:text-green-400 transition-colors">
+                                    <i class="fas fa-concierge-bell mr-3 text-indigo-400"></i>
+                                    <div>
+                                        <div class="font-medium">Service Revenue</div>
+                                        <div class="text-xs text-gray-500">Service sales</div>
+                                    </div>
+                                </a>
+                            </div>
+
+                            <!-- Operational Reports -->
+                            <div class="px-3 py-2 bg-gray-750 border-t border-b border-gray-700">
+                                <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Operational Reports</p>
+                            </div>
+                            <div class="py-1">
                                 <a href="<?php echo e(route('manager.reports.export', ['type' => 'service-usage'] + request()->query())); ?>" 
-                                   class="flex items-center px-4 py-2 text-gray-300 hover:bg-gray-700 hover:text-green-400 transition-colors">
-                                    <i class="fas fa-chart-bar mr-3"></i>Service Usage
+                                   class="flex items-center px-4 py-2.5 text-gray-300 hover:bg-gray-700 hover:text-green-400 transition-colors">
+                                    <i class="fas fa-chart-bar mr-3 text-purple-400"></i>
+                                    <div>
+                                        <div class="font-medium">Service Usage</div>
+                                        <div class="text-xs text-gray-500">Request trends</div>
+                                    </div>
                                 </a>
                                 <a href="<?php echo e(route('manager.reports.export', ['type' => 'staff-performance'] + request()->query())); ?>" 
-                                   class="flex items-center px-4 py-2 text-gray-300 hover:bg-gray-700 hover:text-green-400 transition-colors">
-                                    <i class="fas fa-users mr-3"></i>Staff Performance
+                                   class="flex items-center px-4 py-2.5 text-gray-300 hover:bg-gray-700 hover:text-green-400 transition-colors">
+                                    <i class="fas fa-users mr-3 text-pink-400"></i>
+                                    <div>
+                                        <div class="font-medium">Staff Performance</div>
+                                        <div class="text-xs text-gray-500">Productivity metrics</div>
+                                    </div>
+                                </a>
+                            </div>
+
+                            <!-- Customer Analytics -->
+                            <div class="px-3 py-2 bg-gray-750 border-t border-b border-gray-700">
+                                <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Customer Analytics</p>
+                            </div>
+                            <div class="py-1">
+                                <a href="<?php echo e(route('manager.reports.export', ['type' => 'repeat-customers'] + request()->query())); ?>" 
+                                   class="flex items-center px-4 py-2.5 text-gray-300 hover:bg-gray-700 hover:text-green-400 transition-colors">
+                                    <i class="fas fa-user-check mr-3 text-cyan-400"></i>
+                                    <div>
+                                        <div class="font-medium">Repeat Customers</div>
+                                        <div class="text-xs text-gray-500">Loyalty analysis</div>
+                                    </div>
+                                </a>
+                                <a href="<?php echo e(route('manager.reports.export', ['type' => 'customer-preferences'] + request()->query())); ?>" 
+                                   class="flex items-center px-4 py-2.5 text-gray-300 hover:bg-gray-700 hover:text-green-400 transition-colors">
+                                    <i class="fas fa-heart mr-3 text-teal-400"></i>
+                                    <div>
+                                        <div class="font-medium">Customer Preferences</div>
+                                        <div class="text-xs text-gray-500">Behavior insights</div>
+                                    </div>
+                                </a>
+                                <a href="<?php echo e(route('manager.reports.export', ['type' => 'payment-methods'] + request()->query())); ?>" 
+                                   class="flex items-center px-4 py-2.5 text-gray-300 hover:bg-gray-700 hover:text-green-400 transition-colors">
+                                    <i class="fas fa-credit-card mr-3 text-emerald-400"></i>
+                                    <div>
+                                        <div class="font-medium">Payment Methods</div>
+                                        <div class="text-xs text-gray-500">Transaction types</div>
+                                    </div>
                                 </a>
                             </div>
                         </div>
@@ -486,16 +571,83 @@
                     </a>
                 </div>
                 <div class="p-6">
+                    <!-- Quick Stats Grid -->
+                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                        <div class="bg-gray-900 rounded-lg p-4 border border-gray-700">
+                            <div class="flex items-center justify-between mb-2">
+                                <i class="fas fa-shopping-cart text-green-400 text-lg"></i>
+                            </div>
+                            <h4 class="text-2xl font-bold text-green-50"><?php echo e(number_format($foodSalesOverview['total_orders'])); ?></h4>
+                            <p class="text-gray-400 text-xs uppercase tracking-wider mt-1">Total Orders</p>
+                        </div>
+                        
+                        <div class="bg-gray-900 rounded-lg p-4 border border-gray-700">
+                            <div class="flex items-center justify-between mb-2">
+                                <i class="fas fa-check-circle text-green-400 text-lg"></i>
+                            </div>
+                            <h4 class="text-2xl font-bold text-green-50"><?php echo e(number_format($foodSalesOverview['completed_orders'])); ?></h4>
+                            <p class="text-gray-400 text-xs uppercase tracking-wider mt-1">Completed</p>
+                        </div>
+                        
+                        <div class="bg-gray-900 rounded-lg p-4 border border-gray-700">
+                            <div class="flex items-center justify-between mb-2">
+                                <i class="fas fa-peso-sign text-green-400 text-lg"></i>
+                            </div>
+                            <h4 class="text-2xl font-bold text-green-50">₱<?php echo e(number_format($foodSalesOverview['total_revenue'], 0)); ?></h4>
+                            <p class="text-gray-400 text-xs uppercase tracking-wider mt-1">Total Revenue</p>
+                        </div>
+                        
+                        <div class="bg-gray-900 rounded-lg p-4 border border-gray-700">
+                            <div class="flex items-center justify-between mb-2">
+                                <i class="fas fa-chart-line text-green-400 text-lg"></i>
+                            </div>
+                            <h4 class="text-2xl font-bold text-green-50">₱<?php echo e(number_format($foodSalesOverview['avg_order_value'] ?? 0, 0)); ?></h4>
+                            <p class="text-gray-400 text-xs uppercase tracking-wider mt-1">Avg. Order</p>
+                        </div>
+                    </div>
+
+                    <!-- Top Menu Items -->
+                    <?php if($topMenuItems && $topMenuItems->count() > 0): ?>
+                    <div class="bg-gray-900 rounded-lg border border-gray-700 overflow-hidden">
+                        <div class="px-4 py-3 bg-gradient-to-r from-green-900/50 to-green-800/30 border-b border-green-600/30">
+                            <h4 class="text-sm font-semibold text-green-100 flex items-center">
+                                <i class="fas fa-star text-yellow-400 mr-2"></i>
+                                Top 5 Menu Items
+                            </h4>
+                        </div>
+                        <div class="p-4">
+                            <div class="space-y-3">
+                                <?php $__currentLoopData = $topMenuItems; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $index => $item): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center flex-1">
+                                        <div class="w-8 h-8 bg-green-600/20 rounded-lg flex items-center justify-center mr-3">
+                                            <span class="text-green-400 font-bold text-sm"><?php echo e($index + 1); ?></span>
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <p class="text-gray-200 text-sm font-medium truncate"><?php echo e($item->name); ?></p>
+                                            <p class="text-xs text-gray-400"><?php echo e(number_format($item->total_quantity)); ?> sold</p>
+                                        </div>
+                                    </div>
+                                    <div class="text-right ml-4">
+                                        <p class="text-green-400 font-semibold text-sm">₱<?php echo e(number_format($item->total_revenue, 0)); ?></p>
+                                    </div>
+                                </div>
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                            </div>
+                        </div>
+                    </div>
+                    <?php else: ?>
                     <div class="text-center py-8">
                         <div class="w-20 h-20 bg-green-600/20 rounded-full flex items-center justify-center mx-auto mb-4">
                             <i class="fas fa-utensils text-green-400 text-3xl"></i>
                         </div>
-                        <p class="text-gray-400 text-sm mb-3">View detailed food & beverage sales analytics</p>
+                        <p class="text-gray-400 text-sm mb-3">No food order data available for this period</p>
                         <a href="<?php echo e(route('manager.reports.food-sales', request()->query())); ?>" 
                            class="inline-flex items-center text-green-400 hover:text-green-300 text-sm font-medium">
-                            Access Full Report <i class="fas fa-arrow-right ml-2"></i>
+                            View Full Report <i class="fas fa-arrow-right ml-2"></i>
                         </a>
                     </div>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>

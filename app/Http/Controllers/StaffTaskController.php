@@ -15,7 +15,7 @@ class StaffTaskController extends Controller
         $user = auth()->user();
         
         // Get tasks assigned to this staff member
-        $tasks = Task::with(['assignedBy', 'serviceRequest'])
+        $tasks = Task::with(['assignedBy', 'serviceRequest.guest'])
             ->forUser($user->id)
             ->active()
             ->orderBy('due_date', 'asc')
@@ -161,7 +161,7 @@ class StaffTaskController extends Controller
             ], 403);
         }
 
-        $task->load(['assignedBy', 'serviceRequest']);
+        $task->load(['assignedBy', 'serviceRequest.guest']);
 
         return response()->json([
             'success' => true,

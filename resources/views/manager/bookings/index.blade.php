@@ -201,6 +201,7 @@
                     <option value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}>Pending</option>
                     <option value="confirmed" {{ request('status') === 'confirmed' ? 'selected' : '' }}>Confirmed</option>
                     <option value="checked_in" {{ request('status') === 'checked_in' ? 'selected' : '' }}>Checked In</option>
+                    <option value="checked_out" {{ request('status') === 'checked_out' ? 'selected' : '' }}>Checked Out</option>
                     <option value="completed" {{ request('status') === 'completed' ? 'selected' : '' }}>Completed</option>
                     <option value="cancelled" {{ request('status') === 'cancelled' ? 'selected' : '' }}>Cancelled</option>
                 </select>
@@ -404,9 +405,10 @@
                                     {{ $booking->status === 'pending' ? 'bg-yellow-900 text-yellow-200' : '' }}
                                     {{ $booking->status === 'confirmed' ? 'bg-blue-900 text-blue-200' : '' }}
                                     {{ $booking->status === 'checked_in' ? 'bg-green-900 text-green-200' : '' }}
+                                    {{ $booking->status === 'checked_out' ? 'bg-indigo-900 text-indigo-200' : '' }}
                                     {{ $booking->status === 'completed' ? 'bg-purple-900 text-purple-200' : '' }}
                                     {{ $booking->status === 'cancelled' ? 'bg-red-900 text-red-200' : '' }}">
-                                    {{ ucfirst($booking->status) }}
+                                    {{ ucfirst(str_replace('_', ' ', $booking->status)) }}
                                 </span>
                             </td>
                             <td class="px-6 py-4">
@@ -513,9 +515,10 @@
                                 {{ $booking->status === 'pending' ? 'bg-yellow-900 text-yellow-200' : '' }}
                                 {{ $booking->status === 'confirmed' ? 'bg-blue-900 text-blue-200' : '' }}
                                 {{ $booking->status === 'checked_in' ? 'bg-green-900 text-green-200' : '' }}
+                                {{ $booking->status === 'checked_out' ? 'bg-indigo-900 text-indigo-200' : '' }}
                                 {{ $booking->status === 'completed' ? 'bg-purple-900 text-purple-200' : '' }}
                                 {{ $booking->status === 'cancelled' ? 'bg-red-900 text-red-200' : '' }}">
-                                {{ ucfirst($booking->status) }}
+                                {{ ucfirst(str_replace('_', ' ', $booking->status)) }}
                             </span>
                         </td>
                         <td class="px-6 py-4">
@@ -628,9 +631,10 @@
                                     {{ $cottageBooking->status === 'pending' ? 'bg-yellow-900 text-yellow-200' : '' }}
                                     {{ $cottageBooking->status === 'confirmed' ? 'bg-blue-900 text-blue-200' : '' }}
                                     {{ $cottageBooking->status === 'checked_in' ? 'bg-green-900 text-green-200' : '' }}
+                                    {{ $cottageBooking->status === 'checked_out' ? 'bg-indigo-900 text-indigo-200' : '' }}
                                     {{ $cottageBooking->status === 'completed' ? 'bg-purple-900 text-purple-200' : '' }}
                                     {{ $cottageBooking->status === 'cancelled' ? 'bg-red-900 text-red-200' : '' }}">
-                                    {{ ucfirst($cottageBooking->status) }}
+                                    {{ ucfirst(str_replace('_', ' ', $cottageBooking->status)) }}
                                 </span>
                             </td>
                             <td class="px-6 py-4">
@@ -737,9 +741,10 @@
                                     {{ $eventBooking->status === 'pending' ? 'bg-yellow-900 text-yellow-200' : '' }}
                                     {{ $eventBooking->status === 'confirmed' ? 'bg-blue-900 text-blue-200' : '' }}
                                     {{ $eventBooking->status === 'checked_in' ? 'bg-green-900 text-green-200' : '' }}
+                                    {{ $eventBooking->status === 'checked_out' ? 'bg-indigo-900 text-indigo-200' : '' }}
                                     {{ $eventBooking->status === 'completed' ? 'bg-purple-900 text-purple-200' : '' }}
                                     {{ $eventBooking->status === 'cancelled' ? 'bg-red-900 text-red-200' : '' }}">
-                                    {{ ucfirst($eventBooking->status) }}
+                                    {{ ucfirst(str_replace('_', ' ', $eventBooking->status)) }}
                                 </span>
                             </td>
                             <td class="px-6 py-4">
@@ -918,11 +923,11 @@
                             <label for="status" class="block text-sm font-medium text-gray-300 mb-2">Status</label>
                             <select name="status" id="status"
                                     class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white">
-                                <option value="pending">Pending</option>
-                                <option value="confirmed">Confirmed</option>
-                                <option value="checked_in">Checked In</option>
-                                <option value="completed">Completed</option>
-                                <option value="cancelled">Cancelled</option>
+                                @foreach($statuses as $status)
+                                    <option value="{{ $status }}">
+                                        {{ ucfirst(str_replace('_', ' ', $status)) }}
+                                    </option>
+                                @endforeach
                             </select>
                         </div>
                         <div class="flex justify-end space-x-3">

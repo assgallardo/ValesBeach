@@ -12,6 +12,7 @@ use App\Models\Payment;
 use App\Models\FoodOrder;
 use App\Models\MenuItem;
 use App\Models\MenuCategory;
+use App\Models\Task;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -95,35 +96,38 @@ class ReportsController extends Controller
             $currentDate->addDay();
         }
 
-        // Room Sales Overview
+        // Room Sales Overview - Include soft-deleted bookings for historical accuracy
         $roomSalesOverview = [
-            'total_bookings' => Booking::whereBetween('created_at', [$startDate, $endDate])->count(),
-            'completed_bookings' => Booking::whereIn('status', ['completed', 'checked_out'])
+            'total_bookings' => Booking::withTrashed()->whereBetween('created_at', [$startDate, $endDate])->count(),
+            'completed_bookings' => Booking::withTrashed()
+                ->whereIn('status', ['completed', 'checked_out'])
                 ->whereBetween('created_at', [$startDate, $endDate])
                 ->count(),
-            'total_revenue' => Booking::whereIn('status', ['completed', 'checked_out'])
+            'total_revenue' => Payment::whereNotNull('booking_id')
+                ->where('status', 'completed')
                 ->whereBetween('created_at', [$startDate, $endDate])
-                ->sum('total_price'),
-            'avg_booking_value' => Booking::whereIn('status', ['completed', 'checked_out'])
+                ->sum('amount'),
+            'avg_booking_value' => Payment::whereNotNull('booking_id')
+                ->where('status', 'completed')
                 ->whereBetween('created_at', [$startDate, $endDate])
-                ->avg('total_price'),
+                ->avg('amount'),
         ];
 
         // Calculate Revenue Totals
         $revenueStats = [
-            // Rooms/Bookings Revenue
+            // Rooms/Bookings Revenue - using completed payments
             'rooms_revenue' => Payment::whereNotNull('booking_id')
                 ->where('status', 'completed')
                 ->whereBetween('created_at', [$startDate, $endDate])
                 ->sum('amount'),
             
-            // Food Revenue
+            // Food Revenue - using completed payments
             'food_revenue' => Payment::whereNotNull('food_order_id')
                 ->where('status', 'completed')
                 ->whereBetween('created_at', [$startDate, $endDate])
                 ->sum('amount'),
             
-            // Services Revenue
+            // Services Revenue - using completed payments
             'services_revenue' => Payment::whereNotNull('service_request_id')
                 ->where('status', 'completed')
                 ->whereBetween('created_at', [$startDate, $endDate])
@@ -135,14 +139,48 @@ class ReportsController extends Controller
                                          $revenueStats['food_revenue'] + 
                                          $revenueStats['services_revenue'];
 
-        // Revenue by category for quick overview
+        // Food Sales Overview for Dashboard
+        $foodSalesOverview = [
+            'total_orders' => FoodOrder::whereBetween('created_at', [$startDate, $endDate])->count(),
+            'completed_orders' => FoodOrder::whereIn('status', ['delivered', 'completed'])
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->count(),
+            'total_revenue' => Payment::whereNotNull('food_order_id')
+                ->where('status', 'completed')
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->sum('amount'),
+            'avg_order_value' => Payment::whereNotNull('food_order_id')
+                ->where('status', 'completed')
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->avg('amount'),
+        ];
+
+        // Top 5 Menu Items (for dashboard quick view)
+        $topMenuItems = MenuItem::join('order_items', 'menu_items.id', '=', 'order_items.menu_item_id')
+            ->join('food_orders', 'order_items.food_order_id', '=', 'food_orders.id')
+            ->whereIn('food_orders.status', ['delivered', 'completed'])
+            ->whereBetween('food_orders.created_at', [$startDate, $endDate])
+            ->selectRaw('
+                menu_items.name,
+                SUM(order_items.quantity) as total_quantity,
+                SUM(order_items.total_price) as total_revenue
+            ')
+            ->groupBy('menu_items.id', 'menu_items.name')
+            ->orderByDesc('total_quantity')
+            ->take(5)
+            ->get();
+
+        // Revenue by category for quick overview - using Payment model
         $revenueByCategory = Room::join('bookings', 'rooms.id', '=', 'bookings.room_id')
-            ->whereIn('bookings.status', ['completed', 'checked_out'])
+            ->leftJoin('payments', function($join) {
+                $join->on('bookings.id', '=', 'payments.booking_id')
+                     ->where('payments.status', '=', 'completed');
+            })
             ->whereBetween('bookings.created_at', [$startDate, $endDate])
             ->selectRaw('
                 rooms.category,
-                COUNT(bookings.id) as booking_count,
-                SUM(bookings.total_price) as total_revenue
+                COUNT(DISTINCT bookings.id) as booking_count,
+                COALESCE(SUM(payments.amount), 0) as total_revenue
             ')
             ->groupBy('rooms.category')
             ->orderByDesc('total_revenue')
@@ -161,6 +199,8 @@ class ReportsController extends Controller
             'roomSalesOverview',
             'revenueByCategory',
             'revenueStats',
+            'foodSalesOverview',
+            'topMenuItems',
             'routePrefix'
         ));
     }
@@ -369,34 +409,77 @@ class ReportsController extends Controller
      */
     public function export(Request $request)
     {
-        $type = $request->get('type', 'overview');
-        $dateRange = $this->getDateRange($request);
-        $startDate = $dateRange['start'];
-        $endDate = $dateRange['end'];
+        try {
+            $type = $request->get('type', 'overview');
+            $dateRange = $this->getDateRange($request);
+            $startDate = $dateRange['start'];
+            $endDate = $dateRange['end'];
 
-        $filename = "service_reports_{$type}_" . $startDate->format('Y-m-d') . "_to_" . $endDate->format('Y-m-d') . ".csv";
+            $filename = "valesbeach_reports_{$type}_" . $startDate->format('Y-m-d') . "_to_" . $endDate->format('Y-m-d') . ".csv";
 
-        $headers = [
-            'Content-Type' => 'text/csv',
-            'Content-Disposition' => "attachment; filename=\"$filename\"",
-        ];
+            $headers = [
+                'Content-Type' => 'text/csv; charset=UTF-8',
+                'Content-Disposition' => "attachment; filename=\"$filename\"",
+                'Pragma' => 'no-cache',
+                'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
+                'Expires' => '0',
+            ];
 
-        return response()->stream(function () use ($type, $startDate, $endDate) {
-            $handle = fopen('php://output', 'w');
+            return response()->stream(function () use ($type, $startDate, $endDate) {
+                $handle = fopen('php://output', 'w');
+                
+                // Add BOM for proper Excel UTF-8 support
+                fprintf($handle, chr(0xEF).chr(0xBB).chr(0xBF));
+                
+                try {
+                    switch ($type) {
+                        case 'room-sales':
+                            $this->exportRoomSales($handle, $startDate, $endDate);
+                            break;
+                        case 'food-sales':
+                            $this->exportFoodSales($handle, $startDate, $endDate);
+                            break;
+                        case 'service-sales':
+                            $this->exportServiceSales($handle, $startDate, $endDate);
+                            break;
+                        case 'service-usage':
+                            $this->exportServiceUsage($handle, $startDate, $endDate);
+                            break;
+                        case 'staff-performance':
+                            $this->exportStaffPerformance($handle, $startDate, $endDate);
+                            break;
+                        case 'repeat-customers':
+                            $this->exportRepeatCustomers($handle, $startDate, $endDate);
+                            break;
+                        case 'customer-preferences':
+                            $this->exportCustomerPreferences($handle, $startDate, $endDate);
+                            break;
+                        case 'payment-methods':
+                            $this->exportPaymentMethods($handle, $startDate, $endDate);
+                            break;
+                        case 'overview':
+                        default:
+                            $this->exportOverview($handle, $startDate, $endDate);
+                    }
+                } catch (\Exception $e) {
+                    fputcsv($handle, ['ERROR']);
+                    fputcsv($handle, ['An error occurred while generating the report:']);
+                    fputcsv($handle, [$e->getMessage()]);
+                    fputcsv($handle, ['File: ' . $e->getFile()]);
+                    fputcsv($handle, ['Line: ' . $e->getLine()]);
+                }
+                
+                fclose($handle);
+            }, 200, $headers);
+        } catch (\Exception $e) {
+            \Log::error('Export error: ' . $e->getMessage(), [
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
             
-            switch ($type) {
-                case 'service-usage':
-                    $this->exportServiceUsage($handle, $startDate, $endDate);
-                    break;
-                case 'staff-performance':
-                    $this->exportStaffPerformance($handle, $startDate, $endDate);
-                    break;
-                default:
-                    $this->exportOverview($handle, $startDate, $endDate);
-            }
-            
-            fclose($handle);
-        }, 200, $headers);
+            return back()->with('error', 'Failed to export report: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -527,14 +610,396 @@ class ReportsController extends Controller
      */
     private function exportOverview($handle, $startDate, $endDate)
     {
-        fputcsv($handle, ['Metric', 'Value']);
+        // Header
+        fputcsv($handle, ['VALESBEACH RESORT - COMPREHENSIVE OVERVIEW REPORT']);
+        fputcsv($handle, ['Report Period:', $startDate->format('M d, Y') . ' to ' . $endDate->format('M d, Y')]);
+        fputcsv($handle, ['Generated:', now()->format('M d, Y H:i:s')]);
+        fputcsv($handle, []);
+
+        // === REVENUE SUMMARY ===
+        fputcsv($handle, ['=== REVENUE SUMMARY ===']);
+        fputcsv($handle, ['Metric', 'Amount']);
+        
+        $roomsRevenue = Payment::whereNotNull('booking_id')
+            ->where('status', 'completed')
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->sum('amount');
+        
+        $foodRevenue = Payment::whereNotNull('food_order_id')
+            ->where('status', 'completed')
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->sum('amount');
+        
+        $servicesRevenue = Payment::whereNotNull('service_request_id')
+            ->where('status', 'completed')
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->sum('amount');
+        
+        $totalRevenue = $roomsRevenue + $foodRevenue + $servicesRevenue;
+        
+        fputcsv($handle, ['Rooms Revenue', '₱' . number_format($roomsRevenue, 2)]);
+        fputcsv($handle, ['Food & Beverage Revenue', '₱' . number_format($foodRevenue, 2)]);
+        fputcsv($handle, ['Services Revenue', '₱' . number_format($servicesRevenue, 2)]);
+        fputcsv($handle, ['TOTAL REVENUE', '₱' . number_format($totalRevenue, 2)]);
+        fputcsv($handle, []);
+
+        // === BOOKING STATISTICS ===
+        fputcsv($handle, ['=== BOOKING STATISTICS ===']);
+        fputcsv($handle, ['Metric', 'Count']);
+        
+        $totalBookings = Booking::whereBetween('created_at', [$startDate, $endDate])->count();
+        $completedBookings = Booking::whereIn('status', ['completed', 'checked_out'])
+            ->whereBetween('created_at', [$startDate, $endDate])->count();
+        $cancelledBookings = Booking::where('status', 'cancelled')
+            ->whereBetween('created_at', [$startDate, $endDate])->count();
+        
+        fputcsv($handle, ['Total Bookings', $totalBookings]);
+        fputcsv($handle, ['Completed Bookings', $completedBookings]);
+        fputcsv($handle, ['Cancelled Bookings', $cancelledBookings]);
+        fputcsv($handle, ['Completion Rate', $totalBookings > 0 ? round(($completedBookings / $totalBookings) * 100, 1) . '%' : '0%']);
+        fputcsv($handle, []);
+
+        // === FOOD & BEVERAGE STATISTICS ===
+        fputcsv($handle, ['=== FOOD & BEVERAGE STATISTICS ===']);
+        fputcsv($handle, ['Metric', 'Count/Amount']);
+        
+        $totalOrders = FoodOrder::whereBetween('created_at', [$startDate, $endDate])->count();
+        $completedOrders = FoodOrder::where('status', 'completed')
+            ->whereBetween('created_at', [$startDate, $endDate])->count();
+        
+        fputcsv($handle, ['Total Orders', $totalOrders]);
+        fputcsv($handle, ['Completed Orders', $completedOrders]);
+        fputcsv($handle, ['Average Order Value', $totalOrders > 0 ? '₱' . number_format($foodRevenue / $totalOrders, 2) : '₱0.00']);
+        fputcsv($handle, []);
+
+        // === SERVICE REQUEST STATISTICS ===
+        fputcsv($handle, ['=== SERVICE REQUEST STATISTICS ===']);
+        fputcsv($handle, ['Metric', 'Count']);
         
         $stats = $this->getStats($startDate, $endDate);
+        fputcsv($handle, ['Total Service Requests', $stats['total_requests']]);
+        fputcsv($handle, ['Completed Requests', $stats['completed_requests']]);
+        fputcsv($handle, ['Pending Requests', $stats['pending_requests']]);
+        fputcsv($handle, ['Average Response Time (hours)', $stats['avg_response_time']]);
+        fputcsv($handle, []);
+
+        // === TOP PERFORMING CATEGORIES ===
+        fputcsv($handle, ['=== TOP PERFORMING ROOM CATEGORIES ===']);
+        fputcsv($handle, ['Category', 'Bookings', 'Revenue']);
         
-        foreach ($stats as $key => $value) {
-            $label = ucwords(str_replace('_', ' ', $key));
-            fputcsv($handle, [$label, $value]);
+        $revenueByCategory = Room::leftJoin('bookings', 'rooms.id', '=', 'bookings.room_id')
+            ->leftJoin('payments', function($join) {
+                $join->on('bookings.id', '=', 'payments.booking_id')
+                     ->where('payments.status', '=', 'completed');
+            })
+            ->whereBetween('bookings.created_at', [$startDate, $endDate])
+            ->selectRaw('
+                rooms.category,
+                COUNT(DISTINCT bookings.id) as booking_count,
+                COALESCE(SUM(payments.amount), 0) as total_revenue
+            ')
+            ->groupBy('rooms.category')
+            ->orderByDesc('total_revenue')
+            ->get();
+        
+        foreach ($revenueByCategory as $cat) {
+            fputcsv($handle, [$cat->category, $cat->booking_count, '₱' . number_format($cat->total_revenue, 2)]);
         }
+        fputcsv($handle, []);
+
+        // === STAFF PERFORMANCE SUMMARY ===
+        fputcsv($handle, ['=== STAFF PERFORMANCE SUMMARY ===']);
+        fputcsv($handle, ['Staff Member', 'Assigned Tasks']);
+        
+        $staffMembers = User::where('role', 'staff')->get();
+        
+        foreach ($staffMembers as $staff) {
+            $taskCount = Task::where('assigned_to', $staff->id)
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->count();
+            
+            if ($taskCount > 0) {
+                fputcsv($handle, [$staff->name, $taskCount]);
+            }
+        }
+        fputcsv($handle, []);
+
+        // === PAYMENT METHOD DISTRIBUTION ===
+        fputcsv($handle, ['=== PAYMENT METHOD DISTRIBUTION ===']);
+        fputcsv($handle, ['Payment Method', 'Count', 'Total Amount']);
+        
+        $paymentMethods = Payment::where('status', 'completed')
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->selectRaw('
+                payment_method,
+                COUNT(*) as count,
+                SUM(amount) as total_amount
+            ')
+            ->groupBy('payment_method')
+            ->orderByDesc('total_amount')
+            ->get();
+        
+        foreach ($paymentMethods as $method) {
+            fputcsv($handle, [
+                ucfirst(str_replace('_', ' ', $method->payment_method)),
+                $method->count,
+                '₱' . number_format($method->total_amount, 2)
+            ]);
+        }
+        fputcsv($handle, []);
+
+        // === FOOTER ===
+        fputcsv($handle, ['--- End of Report ---']);
+    }
+
+    /**
+     * Export Room Sales Report
+     */
+    private function exportRoomSales($handle, $startDate, $endDate)
+    {
+        fputcsv($handle, ['ROOM SALES REPORT']);
+        fputcsv($handle, ['Period:', $startDate->format('M d, Y') . ' to ' . $endDate->format('M d, Y')]);
+        fputcsv($handle, []);
+        
+        fputcsv($handle, ['Room/Cottage Name', 'Category', 'Bookings', 'Revenue']);
+        
+        $roomSales = Room::leftJoin('bookings', 'rooms.id', '=', 'bookings.room_id')
+            ->leftJoin('payments', function($join) {
+                $join->on('bookings.id', '=', 'payments.booking_id')
+                     ->where('payments.status', '=', 'completed');
+            })
+            ->whereBetween('bookings.created_at', [$startDate, $endDate])
+            ->selectRaw('
+                rooms.name,
+                rooms.category,
+                COUNT(DISTINCT bookings.id) as booking_count,
+                COALESCE(SUM(payments.amount), 0) as total_revenue
+            ')
+            ->groupBy('rooms.id', 'rooms.name', 'rooms.category')
+            ->having('booking_count', '>', 0)
+            ->orderByDesc('total_revenue')
+            ->get();
+        
+        foreach ($roomSales as $room) {
+            fputcsv($handle, [
+                $room->name,
+                $room->category,
+                $room->booking_count,
+                '₱' . number_format($room->total_revenue, 2)
+            ]);
+        }
+    }
+
+    /**
+     * Export Food Sales Report
+     */
+    private function exportFoodSales($handle, $startDate, $endDate)
+    {
+        fputcsv($handle, ['FOOD & BEVERAGE SALES REPORT']);
+        fputcsv($handle, ['Period:', $startDate->format('M d, Y') . ' to ' . $endDate->format('M d, Y')]);
+        fputcsv($handle, []);
+        
+        fputcsv($handle, ['Item Name', 'Category', 'Quantity Sold', 'Revenue']);
+        
+        $foodSales = MenuItem::join('order_items', 'menu_items.id', '=', 'order_items.menu_item_id')
+            ->join('food_orders', 'order_items.food_order_id', '=', 'food_orders.id')
+            ->join('menu_categories', 'menu_items.menu_category_id', '=', 'menu_categories.id')
+            ->whereBetween('food_orders.created_at', [$startDate, $endDate])
+            ->selectRaw('
+                menu_items.name,
+                menu_categories.name as category,
+                SUM(order_items.quantity) as total_quantity,
+                SUM(order_items.total_price) as total_revenue
+            ')
+            ->groupBy('menu_items.id', 'menu_items.name', 'menu_categories.name')
+            ->orderByDesc('total_revenue')
+            ->get();
+        
+        foreach ($foodSales as $item) {
+            fputcsv($handle, [
+                $item->name,
+                $item->category,
+                $item->total_quantity,
+                '₱' . number_format($item->total_revenue, 2)
+            ]);
+        }
+    }
+
+    /**
+     * Export Service Sales Report
+     */
+    private function exportServiceSales($handle, $startDate, $endDate)
+    {
+        fputcsv($handle, ['SERVICE REVENUE REPORT']);
+        fputcsv($handle, ['Period:', $startDate->format('M d, Y') . ' to ' . $endDate->format('M d, Y')]);
+        fputcsv($handle, []);
+        
+        fputcsv($handle, ['Service Name', 'Category', 'Requests', 'Revenue']);
+        
+        $serviceSales = Service::join('service_requests', 'services.id', '=', 'service_requests.service_id')
+            ->whereBetween('service_requests.created_at', [$startDate, $endDate])
+            ->selectRaw('
+                services.id,
+                services.name,
+                services.category,
+                COUNT(DISTINCT service_requests.id) as request_count
+            ')
+            ->groupBy('services.id', 'services.name', 'services.category')
+            ->orderByDesc('request_count')
+            ->get();
+        
+        foreach ($serviceSales as $service) {
+            // Get revenue separately to avoid JOIN multiplication issues
+            $revenue = Payment::where('status', 'completed')
+                ->whereIn('service_request_id', function($query) use ($service, $startDate, $endDate) {
+                    $query->select('id')
+                        ->from('service_requests')
+                        ->where('service_id', $service->id)
+                        ->whereBetween('created_at', [$startDate, $endDate]);
+                })
+                ->sum('amount');
+            
+            fputcsv($handle, [
+                $service->name,
+                $service->category,
+                $service->request_count,
+                '₱' . number_format($revenue, 2)
+            ]);
+        }
+    }
+
+    /**
+     * Export Repeat Customers Report
+     */
+    private function exportRepeatCustomers($handle, $startDate, $endDate)
+    {
+        fputcsv($handle, ['REPEAT CUSTOMERS REPORT']);
+        fputcsv($handle, ['Period:', $startDate->format('M d, Y') . ' to ' . $endDate->format('M d, Y')]);
+        fputcsv($handle, []);
+        
+        fputcsv($handle, ['Customer Name', 'Email', 'Bookings', 'Total Spent', 'Last Booking']);
+        
+        $repeatCustomers = User::where('role', 'customer')
+            ->withCount(['bookings' => function($query) use ($startDate, $endDate) {
+                $query->whereBetween('created_at', [$startDate, $endDate]);
+            }])
+            ->with(['bookings' => function($query) use ($startDate, $endDate) {
+                $query->whereBetween('created_at', [$startDate, $endDate])
+                      ->orderByDesc('created_at');
+            }])
+            ->having('bookings_count', '>', 1)
+            ->orderByDesc('bookings_count')
+            ->get();
+        
+        foreach ($repeatCustomers as $customer) {
+            $totalSpent = Payment::where('user_id', $customer->id)
+                ->where('status', 'completed')
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->sum('amount');
+            
+            $lastBooking = $customer->bookings->first();
+            $lastBookingDate = $lastBooking ? $lastBooking->created_at->format('M d, Y') : 'N/A';
+            
+            fputcsv($handle, [
+                $customer->name,
+                $customer->email,
+                $customer->bookings_count,
+                '₱' . number_format($totalSpent, 2),
+                $lastBookingDate
+            ]);
+        }
+    }
+
+    /**
+     * Export Customer Preferences Report
+     */
+    private function exportCustomerPreferences($handle, $startDate, $endDate)
+    {
+        fputcsv($handle, ['CUSTOMER PREFERENCES REPORT']);
+        fputcsv($handle, ['Period:', $startDate->format('M d, Y') . ' to ' . $endDate->format('M d, Y')]);
+        fputcsv($handle, []);
+        
+        // Room Preferences
+        fputcsv($handle, ['=== ROOM TYPE PREFERENCES ===']);
+        fputcsv($handle, ['Category', 'Bookings', 'Unique Customers']);
+        
+        $roomPreferences = Room::join('bookings', 'rooms.id', '=', 'bookings.room_id')
+            ->whereBetween('bookings.created_at', [$startDate, $endDate])
+            ->selectRaw('
+                rooms.category,
+                COUNT(bookings.id) as booking_count,
+                COUNT(DISTINCT bookings.user_id) as unique_customers
+            ')
+            ->groupBy('rooms.category')
+            ->orderByDesc('booking_count')
+            ->get();
+        
+        foreach ($roomPreferences as $pref) {
+            fputcsv($handle, [$pref->category, $pref->booking_count, $pref->unique_customers]);
+        }
+        fputcsv($handle, []);
+        
+        // Food Preferences
+        fputcsv($handle, ['=== TOP FOOD ITEMS ===']);
+        fputcsv($handle, ['Item', 'Category', 'Orders', 'Unique Customers']);
+        
+        $foodPreferences = MenuItem::join('order_items', 'menu_items.id', '=', 'order_items.menu_item_id')
+            ->join('food_orders', 'order_items.food_order_id', '=', 'food_orders.id')
+            ->join('menu_categories', 'menu_items.menu_category_id', '=', 'menu_categories.id')
+            ->whereBetween('food_orders.created_at', [$startDate, $endDate])
+            ->selectRaw('
+                menu_items.name as item_name,
+                menu_categories.name as category,
+                COUNT(order_items.id) as total_orders,
+                COUNT(DISTINCT food_orders.user_id) as unique_customers
+            ')
+            ->groupBy('menu_items.id', 'menu_items.name', 'menu_categories.name')
+            ->orderByDesc('total_orders')
+            ->take(20)
+            ->get();
+        
+        foreach ($foodPreferences as $pref) {
+            fputcsv($handle, [$pref->item_name, $pref->category, $pref->total_orders, $pref->unique_customers]);
+        }
+    }
+
+    /**
+     * Export Payment Methods Report
+     */
+    private function exportPaymentMethods($handle, $startDate, $endDate)
+    {
+        fputcsv($handle, ['PAYMENT METHODS REPORT']);
+        fputcsv($handle, ['Period:', $startDate->format('M d, Y') . ' to ' . $endDate->format('M d, Y')]);
+        fputcsv($handle, []);
+        
+        fputcsv($handle, ['Payment Method', 'Transactions', 'Total Amount', 'Percentage']);
+        
+        $paymentMethods = Payment::where('status', 'completed')
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->selectRaw('
+                payment_method,
+                COUNT(*) as count,
+                SUM(amount) as total_amount
+            ')
+            ->groupBy('payment_method')
+            ->orderByDesc('total_amount')
+            ->get();
+        
+        $grandTotal = $paymentMethods->sum('total_amount');
+        
+        foreach ($paymentMethods as $method) {
+            $percentage = $grandTotal > 0 ? round(($method->total_amount / $grandTotal) * 100, 1) : 0;
+            
+            fputcsv($handle, [
+                ucfirst(str_replace('_', ' ', $method->payment_method)),
+                $method->count,
+                '₱' . number_format($method->total_amount, 2),
+                $percentage . '%'
+            ]);
+        }
+        
+        fputcsv($handle, []);
+        fputcsv($handle, ['GRAND TOTAL', $paymentMethods->sum('count'), '₱' . number_format($grandTotal, 2), '100%']);
     }
 
     /**
@@ -576,121 +1041,158 @@ class ReportsController extends Controller
         $startDate = $dateRange['start'];
         $endDate = $dateRange['end'];
 
-        // Room booking statistics
+        // Room booking statistics - Include soft-deleted bookings for historical accuracy
         $stats = [
-            'total_bookings' => Booking::whereBetween('created_at', [$startDate, $endDate])->count(),
-            'completed_bookings' => Booking::where('status', 'completed')
+            'total_bookings' => Booking::withTrashed()->whereBetween('created_at', [$startDate, $endDate])->count(),
+            'completed_bookings' => Booking::withTrashed()
+                ->whereIn('status', ['completed', 'checked_out'])
                 ->whereBetween('created_at', [$startDate, $endDate])
                 ->count(),
-            'cancelled_bookings' => Booking::where('status', 'cancelled')
+            'cancelled_bookings' => Booking::withTrashed()
+                ->where('status', 'cancelled')
                 ->whereBetween('created_at', [$startDate, $endDate])
                 ->count(),
-            'total_revenue' => Booking::whereIn('status', ['completed', 'checked_out'])
+            'total_revenue' => Payment::whereNotNull('booking_id')
+                ->where('status', 'completed')
                 ->whereBetween('created_at', [$startDate, $endDate])
-                ->sum('total_price'),
-            'avg_booking_value' => Booking::whereIn('status', ['completed', 'checked_out'])
+                ->sum('amount'),
+            'avg_booking_value' => Payment::whereNotNull('booking_id')
+                ->where('status', 'completed')
                 ->whereBetween('created_at', [$startDate, $endDate])
-                ->avg('total_price'),
+                ->avg('amount'),
         ];
 
-        // Revenue by Rooms category
+        // Revenue by Rooms category - Include soft-deleted bookings for historical data
         $revenueByRooms = Room::where('category', 'Rooms')
-            ->withSum([
-                'bookings as total_revenue' => function ($query) use ($startDate, $endDate) {
-                    $query->whereIn('status', ['completed', 'checked_out'])
-                        ->whereBetween('created_at', [$startDate, $endDate]);
-                }
-            ], 'total_price')
-            ->withCount([
-                'bookings as booking_count' => function ($query) use ($startDate, $endDate) {
-                    $query->whereBetween('created_at', [$startDate, $endDate]);
-                }
-            ])
+            ->leftJoin('bookings', function($join) {
+                $join->on('rooms.id', '=', 'bookings.room_id');
+            })
+            ->leftJoin('payments', function($join) {
+                $join->on('bookings.id', '=', 'payments.booking_id')
+                     ->where('payments.status', '=', 'completed');
+            })
+            ->whereBetween('bookings.created_at', [$startDate, $endDate])
+            ->selectRaw('
+                rooms.id,
+                rooms.name,
+                COUNT(DISTINCT bookings.id) as booking_count,
+                COALESCE(SUM(payments.amount), 0) as total_revenue
+            ')
+            ->groupBy('rooms.id', 'rooms.name')
             ->having('booking_count', '>', 0)
             ->orderByDesc('total_revenue')
             ->get();
 
-        // Revenue by Cottages category
+        // Revenue by Cottages category - Include soft-deleted bookings for historical data
         $revenueByCottages = Room::where('category', 'Cottages')
-            ->withSum([
-                'bookings as total_revenue' => function ($query) use ($startDate, $endDate) {
-                    $query->whereIn('status', ['completed', 'checked_out'])
-                        ->whereBetween('created_at', [$startDate, $endDate]);
-                }
-            ], 'total_price')
-            ->withCount([
-                'bookings as booking_count' => function ($query) use ($startDate, $endDate) {
-                    $query->whereBetween('created_at', [$startDate, $endDate]);
-                }
-            ])
+            ->leftJoin('bookings', function($join) {
+                $join->on('rooms.id', '=', 'bookings.room_id');
+            })
+            ->leftJoin('payments', function($join) {
+                $join->on('bookings.id', '=', 'payments.booking_id')
+                     ->where('payments.status', '=', 'completed');
+            })
+            ->whereBetween('bookings.created_at', [$startDate, $endDate])
+            ->selectRaw('
+                rooms.id,
+                rooms.name,
+                COUNT(DISTINCT bookings.id) as booking_count,
+                COALESCE(SUM(payments.amount), 0) as total_revenue
+            ')
+            ->groupBy('rooms.id', 'rooms.name')
             ->having('booking_count', '>', 0)
             ->orderByDesc('total_revenue')
             ->get();
 
-        // Revenue by Event and Dining category
+        // Revenue by Event and Dining category - Include soft-deleted bookings for historical data
         $revenueByEventDining = Room::where('category', 'Event and Dining')
-            ->withSum([
-                'bookings as total_revenue' => function ($query) use ($startDate, $endDate) {
-                    $query->whereIn('status', ['completed', 'checked_out'])
-                        ->whereBetween('created_at', [$startDate, $endDate]);
-                }
-            ], 'total_price')
-            ->withCount([
-                'bookings as booking_count' => function ($query) use ($startDate, $endDate) {
-                    $query->whereBetween('created_at', [$startDate, $endDate]);
-                }
-            ])
+            ->leftJoin('bookings', function($join) {
+                $join->on('rooms.id', '=', 'bookings.room_id');
+            })
+            ->leftJoin('payments', function($join) {
+                $join->on('bookings.id', '=', 'payments.booking_id')
+                     ->where('payments.status', '=', 'completed');
+            })
+            ->whereBetween('bookings.created_at', [$startDate, $endDate])
+            ->selectRaw('
+                rooms.id,
+                rooms.name,
+                COUNT(DISTINCT bookings.id) as booking_count,
+                COALESCE(SUM(payments.amount), 0) as total_revenue
+            ')
+            ->groupBy('rooms.id', 'rooms.name')
             ->having('booking_count', '>', 0)
             ->orderByDesc('total_revenue')
             ->get();
 
-        // Revenue by category summary (for overview)
-        $revenueByCategory = Room::join('bookings', 'rooms.id', '=', 'bookings.room_id')
-            ->whereIn('bookings.status', ['completed', 'checked_out'])
+        // Revenue by category summary (for overview) - Include soft-deleted bookings
+        $revenueByCategory = Room::leftJoin('bookings', function($join) {
+                $join->on('rooms.id', '=', 'bookings.room_id');
+            })
+            ->leftJoin('payments', function($join) {
+                $join->on('bookings.id', '=', 'payments.booking_id')
+                     ->where('payments.status', '=', 'completed');
+            })
             ->whereBetween('bookings.created_at', [$startDate, $endDate])
             ->selectRaw('
                 rooms.category,
-                COUNT(bookings.id) as booking_count,
-                SUM(bookings.total_price) as total_revenue
+                COUNT(DISTINCT bookings.id) as booking_count,
+                COALESCE(SUM(payments.amount), 0) as total_revenue
             ')
             ->groupBy('rooms.category')
             ->orderByDesc('total_revenue')
             ->get();
 
-        // Daily revenue trends
-        $dailyRevenue = Booking::whereIn('status', ['completed', 'checked_out'])
+        // Daily revenue trends - using Payment model
+        $dailyRevenue = Payment::whereNotNull('booking_id')
+            ->where('status', 'completed')
             ->whereBetween('created_at', [$startDate, $endDate])
-            ->selectRaw('DATE(created_at) as date, SUM(total_price) as revenue, COUNT(*) as bookings')
+            ->selectRaw('DATE(created_at) as date, SUM(amount) as revenue, COUNT(*) as bookings')
             ->groupBy('date')
             ->orderBy('date')
             ->get();
 
-        // Booking status breakdown
-        $statusBreakdown = Booking::whereBetween('created_at', [$startDate, $endDate])
-            ->selectRaw('status, COUNT(*) as count, SUM(total_price) as revenue')
+        // Booking status breakdown with accurate revenue from payments - Include soft-deleted
+        $statusBreakdown = Booking::withTrashed()
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->selectRaw('status, COUNT(*) as count')
             ->groupBy('status')
             ->get();
+        
+        // Add revenue from Payment model to each status
+        $statusBreakdown = $statusBreakdown->map(function($status) use ($startDate, $endDate) {
+            $status->revenue = Payment::whereHas('booking', function($query) use ($status, $startDate, $endDate) {
+                $query->withTrashed()
+                      ->where('status', $status->status)
+                      ->whereBetween('created_at', [$startDate, $endDate]);
+            })
+            ->where('status', 'completed')
+            ->sum('amount');
+            return $status;
+        });
 
-        // Monthly comparison (if date range is large enough)
+        // Monthly comparison (if date range is large enough) - using Payment model
         $monthlyData = collect();
         if ($startDate->diffInMonths($endDate) >= 1) {
-            $monthlyData = Booking::whereBetween('created_at', [$startDate, $endDate])
+            $monthlyData = Payment::whereNotNull('booking_id')
+                ->where('status', 'completed')
+                ->whereBetween('created_at', [$startDate, $endDate])
                 ->selectRaw('
                     YEAR(created_at) as year,
                     MONTH(created_at) as month,
                     COUNT(*) as total_bookings,
-                    SUM(CASE WHEN status IN ("completed", "checked_out") THEN total_price ELSE 0 END) as revenue
+                    SUM(amount) as revenue
                 ')
                 ->groupByRaw('YEAR(created_at), MONTH(created_at)')
                 ->orderByRaw('year, month')
                 ->get();
         }
 
-        // Top 3 facilities per category
+        // Top 3 facilities per category - Include soft-deleted bookings
         $topRooms = Room::where('category', 'Rooms')
             ->withCount([
                 'bookings as booking_count' => function ($query) use ($startDate, $endDate) {
-                    $query->whereBetween('created_at', [$startDate, $endDate]);
+                    $query->withTrashed()->whereBetween('created_at', [$startDate, $endDate]);
                 }
             ])
             ->having('booking_count', '>', 0)
@@ -701,7 +1203,7 @@ class ReportsController extends Controller
         $topCottages = Room::where('category', 'Cottages')
             ->withCount([
                 'bookings as booking_count' => function ($query) use ($startDate, $endDate) {
-                    $query->whereBetween('created_at', [$startDate, $endDate]);
+                    $query->withTrashed()->whereBetween('created_at', [$startDate, $endDate]);
                 }
             ])
             ->having('booking_count', '>', 0)
@@ -712,7 +1214,7 @@ class ReportsController extends Controller
         $topEventDining = Room::where('category', 'Event and Dining')
             ->withCount([
                 'bookings as booking_count' => function ($query) use ($startDate, $endDate) {
-                    $query->whereBetween('created_at', [$startDate, $endDate]);
+                    $query->withTrashed()->whereBetween('created_at', [$startDate, $endDate]);
                 }
             ])
             ->having('booking_count', '>', 0)
@@ -749,27 +1251,29 @@ class ReportsController extends Controller
         $startDate = $dateRange['start'];
         $endDate = $dateRange['end'];
 
-        // Food order statistics
+        // Food order statistics - using actual payment data for accurate revenue
         $stats = [
-            'total_orders' => \App\Models\FoodOrder::whereBetween('created_at', [$startDate, $endDate])->count(),
-            'completed_orders' => \App\Models\FoodOrder::where('status', 'completed')
+            'total_orders' => FoodOrder::whereBetween('created_at', [$startDate, $endDate])->count(),
+            'completed_orders' => FoodOrder::whereIn('status', ['delivered', 'completed'])
                 ->whereBetween('created_at', [$startDate, $endDate])
                 ->count(),
-            'cancelled_orders' => \App\Models\FoodOrder::where('status', 'cancelled')
+            'cancelled_orders' => FoodOrder::where('status', 'cancelled')
                 ->whereBetween('created_at', [$startDate, $endDate])
                 ->count(),
-            'total_revenue' => \App\Models\FoodOrder::where('status', 'completed')
+            'total_revenue' => Payment::whereNotNull('food_order_id')
+                ->where('status', 'completed')
                 ->whereBetween('created_at', [$startDate, $endDate])
-                ->sum('total_amount'),
-            'avg_order_value' => \App\Models\FoodOrder::where('status', 'completed')
+                ->sum('amount'),
+            'avg_order_value' => Payment::whereNotNull('food_order_id')
+                ->where('status', 'completed')
                 ->whereBetween('created_at', [$startDate, $endDate])
-                ->avg('total_amount'),
+                ->avg('amount'),
         ];
 
-        // Revenue by menu item
-        $revenueByItem = \App\Models\MenuItem::join('order_items', 'menu_items.id', '=', 'order_items.menu_item_id')
+        // Revenue by menu item - using completed orders
+        $revenueByItem = MenuItem::join('order_items', 'menu_items.id', '=', 'order_items.menu_item_id')
             ->join('food_orders', 'order_items.food_order_id', '=', 'food_orders.id')
-            ->where('food_orders.status', 'completed')
+            ->whereIn('food_orders.status', ['delivered', 'completed'])
             ->whereBetween('food_orders.created_at', [$startDate, $endDate])
             ->selectRaw('
                 menu_items.id,
@@ -783,10 +1287,10 @@ class ReportsController extends Controller
             ->get();
 
         // Revenue by category
-        $revenueByCategory = \App\Models\MenuCategory::join('menu_items', 'menu_categories.id', '=', 'menu_items.menu_category_id')
+        $revenueByCategory = MenuCategory::join('menu_items', 'menu_categories.id', '=', 'menu_items.menu_category_id')
             ->join('order_items', 'menu_items.id', '=', 'order_items.menu_item_id')
             ->join('food_orders', 'order_items.food_order_id', '=', 'food_orders.id')
-            ->where('food_orders.status', 'completed')
+            ->whereIn('food_orders.status', ['delivered', 'completed'])
             ->whereBetween('food_orders.created_at', [$startDate, $endDate])
             ->selectRaw('
                 menu_categories.name as category,
@@ -797,24 +1301,36 @@ class ReportsController extends Controller
             ->orderByDesc('total_revenue')
             ->get();
 
-        // Daily revenue trends
-        $dailyRevenue = \App\Models\FoodOrder::where('status', 'completed')
+        // Daily revenue trends - using payment data
+        $dailyRevenue = Payment::whereNotNull('food_order_id')
+            ->where('status', 'completed')
             ->whereBetween('created_at', [$startDate, $endDate])
-            ->selectRaw('DATE(created_at) as date, SUM(total_amount) as revenue, COUNT(*) as orders')
+            ->selectRaw('DATE(created_at) as date, SUM(amount) as revenue, COUNT(*) as orders')
             ->groupBy('date')
             ->orderBy('date')
             ->get();
 
         // Order status breakdown
-        $statusBreakdown = \App\Models\FoodOrder::whereBetween('created_at', [$startDate, $endDate])
-            ->selectRaw('status, COUNT(*) as count, SUM(total_amount) as revenue')
+        $statusBreakdown = FoodOrder::whereBetween('created_at', [$startDate, $endDate])
+            ->selectRaw('status, COUNT(*) as count')
             ->groupBy('status')
             ->get();
 
+        // Add revenue to status breakdown
+        $statusBreakdown = $statusBreakdown->map(function($status) use ($startDate, $endDate) {
+            $status->revenue = Payment::whereHas('foodOrder', function($query) use ($status, $startDate, $endDate) {
+                $query->where('status', $status->status)
+                      ->whereBetween('created_at', [$startDate, $endDate]);
+            })
+            ->where('status', 'completed')
+            ->sum('amount');
+            return $status;
+        });
+
         // Top 10 menu items by quantity sold
-        $topMenuItems = \App\Models\MenuItem::join('order_items', 'menu_items.id', '=', 'order_items.menu_item_id')
+        $topMenuItems = MenuItem::join('order_items', 'menu_items.id', '=', 'order_items.menu_item_id')
             ->join('food_orders', 'order_items.food_order_id', '=', 'food_orders.id')
-            ->where('food_orders.status', 'completed')
+            ->whereIn('food_orders.status', ['delivered', 'completed'])
             ->whereBetween('food_orders.created_at', [$startDate, $endDate])
             ->selectRaw('
                 menu_items.id,
@@ -1043,7 +1559,7 @@ class ReportsController extends Controller
         // Food Preferences (Top Menu Items)
         $foodPreferences = FoodOrder::join('order_items', 'food_orders.id', '=', 'order_items.food_order_id')
             ->join('menu_items', 'order_items.menu_item_id', '=', 'menu_items.id')
-            ->join('menu_categories', 'menu_items.category_id', '=', 'menu_categories.id')
+            ->join('menu_categories', 'menu_items.menu_category_id', '=', 'menu_categories.id')
             ->whereBetween('food_orders.created_at', [$startDate, $endDate])
             ->selectRaw('
                 menu_categories.name as category,
@@ -1059,19 +1575,19 @@ class ReportsController extends Controller
         // Peak Booking Times
         $bookingTimes = Booking::whereBetween('created_at', [$startDate, $endDate])
             ->selectRaw('
-                CASE CAST(strftime("%w", check_in) AS INTEGER)
-                    WHEN 0 THEN "Sunday"
-                    WHEN 1 THEN "Monday"
-                    WHEN 2 THEN "Tuesday"
-                    WHEN 3 THEN "Wednesday"
-                    WHEN 4 THEN "Thursday"
-                    WHEN 5 THEN "Friday"
-                    WHEN 6 THEN "Saturday"
+                CASE DAYOFWEEK(check_in)
+                    WHEN 1 THEN "Sunday"
+                    WHEN 2 THEN "Monday"
+                    WHEN 3 THEN "Tuesday"
+                    WHEN 4 THEN "Wednesday"
+                    WHEN 5 THEN "Thursday"
+                    WHEN 6 THEN "Friday"
+                    WHEN 7 THEN "Saturday"
                 END as day_name,
                 COUNT(*) as booking_count
             ')
             ->groupBy('day_name')
-            ->orderByRaw('CAST(strftime("%w", check_in) AS INTEGER)')
+            ->orderByRaw('DAYOFWEEK(check_in)')
             ->get();
 
         $routePrefix = $this->getRoutePrefix();
