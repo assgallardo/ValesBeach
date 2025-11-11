@@ -339,11 +339,20 @@
                         <h3 class="text-lg font-semibold text-green-100">Quick Actions</h3>
                     </div>
                     <div class="p-6 space-y-3">
+
                         @if($payment->canBeRefunded())
                             <button onclick="showRefundModal({{ $payment->id }}, {{ $payment->getRemainingRefundableAmount() }})"
                                     class="w-full bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 transition-colors duration-200">
                                 <i class="fas fa-undo mr-2"></i>Process Refund
                             </button>
+                        @endif
+                        @if($payment->refund_amount > 0)
+                            <form method="POST" action="{{ route('admin.payments.cancelRefund', $payment) }}" class="w-full mt-2">
+                                @csrf
+                                <button type="submit" class="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200" onclick="return confirm('Are you sure you want to cancel this refund and restore the original payment amount?')">
+                                    <i class="fas fa-undo-alt mr-2"></i>Cancel Refund
+                                </button>
+                            </form>
                         @endif
 
                         @if($payment->status === 'pending')

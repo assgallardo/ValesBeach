@@ -187,6 +187,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'user.status', 'role
     // Refund management
     Route::get('/payments/{payment}/refund', [PaymentController::class, 'showRefundForm'])->name('payments.refund.form');
     Route::post('/payments/{payment}/refund', [PaymentController::class, 'processRefund'])->name('payments.refund.process');
+    // Cancel refund (restore original amount)
+    Route::post('/payments/{payment}/cancel-refund', [PaymentController::class, 'cancelRefund'])->name('payments.cancelRefund');
     
     // Delete extra charge payment
     Route::delete('/payments/{payment}/extra-charge', [PaymentController::class, 'deleteExtraCharge'])->name('payments.extraCharge.delete');
@@ -198,6 +200,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'user.status', 'role
     Route::post('/invoices/{invoice}/remind', [InvoiceController::class, 'sendReminder'])->name('invoices.remind');
     
     // Customer Reports routes (NEW) - Admin uses same controller as Manager
+    Route::get('/reports/customer-analytics', [ManagerReportsController::class, 'customerAnalytics'])->name('reports.customer-analytics');
     Route::get('/reports/repeat-customers', [ManagerReportsController::class, 'repeatCustomers'])->name('reports.repeat-customers');
     Route::get('/reports/customer-preferences', [ManagerReportsController::class, 'customerPreferences'])->name('reports.customer-preferences');
     Route::get('/reports/payment-methods', [ManagerReportsController::class, 'paymentMethods'])->name('reports.payment-methods');
@@ -348,6 +351,7 @@ Route::prefix('manager')->name('manager.')->middleware(['auth', 'user.status', '
     Route::get('/reports/service-sales', [ManagerReportsController::class, 'serviceSales'])->name('reports.service-sales');
     
     // Customer Reports routes (NEW)
+    Route::get('/reports/customer-analytics', [ManagerReportsController::class, 'customerAnalytics'])->name('reports.customer-analytics');
     Route::get('/reports/repeat-customers', [ManagerReportsController::class, 'repeatCustomers'])->name('reports.repeat-customers');
     Route::get('/reports/customer-preferences', [ManagerReportsController::class, 'customerPreferences'])->name('reports.customer-preferences');
     Route::get('/reports/payment-methods', [ManagerReportsController::class, 'paymentMethods'])->name('reports.payment-methods');
@@ -419,6 +423,9 @@ Route::prefix('manager')->name('manager.')->middleware(['auth', 'user.status', '
         Route::patch('/{serviceRequest}/quick-update', [StaffAssignmentController::class, 'quickUpdate'])->name('quick-update');
         Route::delete('/{serviceRequest}', [StaffAssignmentController::class, 'destroy'])->name('destroy');
         Route::post('/bulk-assign', [StaffAssignmentController::class, 'bulkAssign'])->name('bulk-assign');
+        
+        // Housekeeping task routes
+        Route::patch('/housekeeping/{task}', [StaffAssignmentController::class, 'updateHousekeepingTask'])->name('housekeeping.update');
     });
 });
 

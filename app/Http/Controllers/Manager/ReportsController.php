@@ -451,6 +451,9 @@ class ReportsController extends Controller
                         case 'repeat-customers':
                             $this->exportRepeatCustomers($handle, $startDate, $endDate);
                             break;
+                        case 'customer-analytics':
+                            $this->exportCustomerAnalytics($handle, $startDate, $endDate);
+                            break;
                         case 'customer-preferences':
                             $this->exportCustomerPreferences($handle, $startDate, $endDate);
                             break;
@@ -748,6 +751,66 @@ class ReportsController extends Controller
         }
         fputcsv($handle, []);
 
+        // === CUSTOMER ANALYTICS SUMMARY ===
+        fputcsv($handle, ['=== CUSTOMER ANALYTICS SUMMARY ===']);
+        // Total Customers
+        $totalCustomers = User::whereHas('bookings', function($query) use ($startDate, $endDate) {
+            $query->whereBetween('created_at', [$startDate, $endDate]);
+        })->count();
+        // Repeat Customers
+        $repeatCustomers = User::whereHas('bookings', function($query) use ($startDate, $endDate) {
+            $query->whereBetween('created_at', [$startDate, $endDate]);
+        })
+        ->withCount(['bookings' => function($query) use ($startDate, $endDate) {
+            $query->whereBetween('created_at', [$startDate, $endDate]);
+        }])
+        ->get()
+        ->filter(function($user) {
+            return $user->bookings_count >= 2;
+        })
+        ->count();
+        // Retention Rate
+        $retentionRate = $totalCustomers > 0 ? round(($repeatCustomers / $totalCustomers) * 100, 1) : 0;
+        // Top Payment Method
+        $topPaymentMethod = Payment::where('status', 'completed')
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->selectRaw('payment_method, COUNT(*) as count')
+            ->groupBy('payment_method')
+            ->orderByDesc('count')
+            ->first();
+        // Top Room Type
+        $topRoomType = Room::join('bookings', 'rooms.id', '=', 'bookings.room_id')
+            ->whereBetween('bookings.created_at', [$startDate, $endDate])
+            ->selectRaw('rooms.type, COUNT(*) as bookings')
+            ->groupBy('rooms.type')
+            ->orderByDesc('bookings')
+            ->first();
+        // Top Service
+        $topService = Service::withCount(['serviceRequests' => function($query) use ($startDate, $endDate) {
+            $query->whereBetween('created_at', [$startDate, $endDate]);
+        }])
+        ->get()
+        ->sortByDesc('service_requests_count')
+        ->first();
+        // Top Food Item
+        $topFoodItem = MenuItem::join('order_items', 'menu_items.id', '=', 'order_items.menu_item_id')
+            ->join('food_orders', 'order_items.food_order_id', '=', 'food_orders.id')
+            ->whereBetween('food_orders.created_at', [$startDate, $endDate])
+            ->selectRaw('menu_items.name, SUM(order_items.quantity) as total_orders')
+            ->groupBy('menu_items.id', 'menu_items.name')
+            ->orderByDesc('total_orders')
+            ->first();
+
+        fputcsv($handle, ['Metric', 'Value']);
+        fputcsv($handle, ['Total Customers', $totalCustomers]);
+        fputcsv($handle, ['Repeat Customers', $repeatCustomers]);
+        fputcsv($handle, ['Retention Rate', $retentionRate . '%']);
+        fputcsv($handle, ['Top Payment Method', $topPaymentMethod ? ucwords(str_replace('_', ' ', $topPaymentMethod->payment_method)) : 'N/A']);
+        fputcsv($handle, ['Top Room Type', $topRoomType ? $topRoomType->type . ' (' . $topRoomType->bookings . ' bookings)' : 'N/A']);
+        fputcsv($handle, ['Top Service', ($topService && $topService->service_requests_count > 0) ? $topService->name . ' (' . $topService->service_requests_count . ' requests)' : 'N/A']);
+        fputcsv($handle, ['Top Food Item', $topFoodItem ? $topFoodItem->name . ' (' . $topFoodItem->total_orders . ' orders)' : 'N/A']);
+        fputcsv($handle, []);
+
         // === FOOTER ===
         fputcsv($handle, ['--- End of Report ---']);
     }
@@ -873,39 +936,92 @@ class ReportsController extends Controller
      */
     private function exportRepeatCustomers($handle, $startDate, $endDate)
     {
-        fputcsv($handle, ['REPEAT CUSTOMERS REPORT']);
+        fputcsv($handle, ['CUSTOMER REPORTS']);
         fputcsv($handle, ['Period:', $startDate->format('M d, Y') . ' to ' . $endDate->format('M d, Y')]);
         fputcsv($handle, []);
         
-        fputcsv($handle, ['Customer Name', 'Email', 'Bookings', 'Total Spent', 'Last Booking']);
+        // All Customers Section
+        fputcsv($handle, ['=== ALL CUSTOMERS ===']);
+        fputcsv($handle, ['Customer Name', 'Email', 'Total Bookings', 'Total Spent', 'Payment Methods', 'Last Booking', 'Customer Type']);
         
-        $repeatCustomers = User::where('role', 'customer')
+        $allCustomers = User::where('role', 'guest')
             ->withCount(['bookings' => function($query) use ($startDate, $endDate) {
                 $query->whereBetween('created_at', [$startDate, $endDate]);
             }])
             ->with(['bookings' => function($query) use ($startDate, $endDate) {
                 $query->whereBetween('created_at', [$startDate, $endDate])
+                      ->with('payments')
                       ->orderByDesc('created_at');
             }])
-            ->having('bookings_count', '>', 1)
+            ->having('bookings_count', '>', 0)
             ->orderByDesc('bookings_count')
             ->get();
         
-        foreach ($repeatCustomers as $customer) {
-            $totalSpent = Payment::where('user_id', $customer->id)
-                ->where('status', 'completed')
-                ->whereBetween('created_at', [$startDate, $endDate])
-                ->sum('amount');
+        foreach ($allCustomers as $customer) {
+            $totalSpent = $customer->bookings->sum('total_price');
+            $paymentMethods = $customer->bookings->flatMap->payments->pluck('payment_method')->unique()->filter();
+            $paymentMethodsStr = $paymentMethods->map(function($method) {
+                return ucfirst(str_replace('_', ' ', $method));
+            })->join(', ');
             
             $lastBooking = $customer->bookings->first();
             $lastBookingDate = $lastBooking ? $lastBooking->created_at->format('M d, Y') : 'N/A';
+            $isRepeatCustomer = $customer->bookings_count >= 2;
             
             fputcsv($handle, [
                 $customer->name,
                 $customer->email,
                 $customer->bookings_count,
                 '₱' . number_format($totalSpent, 2),
-                $lastBookingDate
+                $paymentMethodsStr ?: 'No payments',
+                $lastBookingDate,
+                $isRepeatCustomer ? 'Repeat Customer' : 'One-Time Customer'
+            ]);
+        }
+        
+        // Repeat Customers Section
+        fputcsv($handle, []);
+        fputcsv($handle, []);
+        fputcsv($handle, ['=== REPEAT CUSTOMERS (2+ Bookings) ===']);
+        fputcsv($handle, ['Customer Name', 'Email', 'Total Bookings', 'Completed Bookings', 'Total Spent', 'Payment Methods']);
+        
+        $repeatCustomers = User::where('role', 'guest')
+            ->withCount(['bookings' => function($query) use ($startDate, $endDate) {
+                $query->whereBetween('created_at', [$startDate, $endDate]);
+            }])
+            ->withCount(['bookings as completed_bookings_count' => function($query) use ($startDate, $endDate) {
+                $query->whereBetween('created_at', [$startDate, $endDate])
+                      ->where('status', 'completed');
+            }])
+            ->with(['bookings' => function($query) use ($startDate, $endDate) {
+                $query->whereBetween('created_at', [$startDate, $endDate])
+                      ->with('payments');
+            }])
+            ->having('bookings_count', '>=', 2)
+            ->orderByDesc('bookings_count')
+            ->get();
+        
+        foreach ($repeatCustomers as $customer) {
+            $totalSpent = $customer->bookings->sum('total_price');
+            $paymentMethods = Payment::where('user_id', $customer->id)
+                ->whereHas('booking', function($q) use ($startDate, $endDate) {
+                    $q->whereBetween('created_at', [$startDate, $endDate]);
+                })
+                ->pluck('payment_method')
+                ->unique()
+                ->filter();
+            
+            $paymentMethodsStr = $paymentMethods->map(function($method) {
+                return ucfirst(str_replace('_', ' ', $method));
+            })->join(', ');
+            
+            fputcsv($handle, [
+                $customer->name,
+                $customer->email,
+                $customer->bookings_count,
+                $customer->completed_bookings_count,
+                '₱' . number_format($totalSpent, 2),
+                $paymentMethodsStr ?: 'No payments'
             ]);
         }
     }
@@ -960,6 +1076,142 @@ class ReportsController extends Controller
         
         foreach ($foodPreferences as $pref) {
             fputcsv($handle, [$pref->item_name, $pref->category, $pref->total_orders, $pref->unique_customers]);
+        }
+    }
+
+    /**
+     * Export Customer Analytics Summary
+     */
+    private function exportCustomerAnalytics($handle, $startDate, $endDate)
+    {
+        fputcsv($handle, ['CUSTOMER ANALYTICS SUMMARY']);
+        fputcsv($handle, ['Period:', $startDate->format('M d, Y') . ' to ' . $endDate->format('M d, Y')]);
+        fputcsv($handle, []);
+
+        // Overview Statistics
+        fputcsv($handle, ['=== OVERVIEW STATISTICS ===']);
+        $totalCustomers = User::where('role', 'guest')
+            ->withCount(['bookings' => function($q) use ($startDate, $endDate) {
+                $q->whereBetween('created_at', [$startDate, $endDate]);
+            }])
+            ->having('bookings_count', '>', 0)
+            ->count();
+
+        $repeatCustomers = User::where('role', 'guest')
+            ->withCount(['bookings' => function($q) use ($startDate, $endDate) {
+                $q->whereBetween('created_at', [$startDate, $endDate]);
+            }])
+            ->having('bookings_count', '>=', 2)
+            ->count();
+
+        $retentionRate = $totalCustomers > 0 ? round(($repeatCustomers / $totalCustomers) * 100, 1) : 0;
+
+        fputcsv($handle, ['Total Customers with Bookings', $totalCustomers]);
+        fputcsv($handle, ['Repeat Customers (2+ bookings)', $repeatCustomers]);
+        fputcsv($handle, ['Customer Retention Rate', $retentionRate . '%']);
+        fputcsv($handle, []);
+
+        // Top 5 Repeat Customers
+        fputcsv($handle, ['=== TOP 5 REPEAT CUSTOMERS ===']);
+        fputcsv($handle, ['Customer Name', 'Email', 'Total Bookings', 'Total Spent', 'Payment Methods']);
+
+        $topRepeatCustomers = User::where('role', 'guest')
+            ->withCount(['bookings' => function($q) use ($startDate, $endDate) {
+                $q->whereBetween('created_at', [$startDate, $endDate]);
+            }])
+            ->with(['bookings' => function($q) use ($startDate, $endDate) {
+                $q->whereBetween('created_at', [$startDate, $endDate])->with('payments');
+            }])
+            ->having('bookings_count', '>=', 2)
+            ->orderByDesc('bookings_count')
+            ->limit(5)
+            ->get();
+
+        foreach ($topRepeatCustomers as $customer) {
+            $totalSpent = $customer->bookings->sum('total_price');
+            $paymentMethods = $customer->bookings->flatMap->payments->pluck('payment_method')->unique()->filter();
+            $paymentMethodsStr = $paymentMethods->map(function($method) {
+                return ucfirst(str_replace('_', ' ', $method));
+            })->join(', ');
+
+            fputcsv($handle, [
+                $customer->name,
+                $customer->email,
+                $customer->bookings_count,
+                '₱' . number_format($totalSpent, 2),
+                $paymentMethodsStr ?: 'No payments'
+            ]);
+        }
+        fputcsv($handle, []);
+
+        // Top Payment Methods
+        fputcsv($handle, ['=== TOP PAYMENT METHODS ===']);
+        fputcsv($handle, ['Payment Method', 'Transactions', 'Total Amount']);
+
+        $topPaymentMethods = Payment::whereBetween('created_at', [$startDate, $endDate])
+            ->where('status', 'completed')
+            ->selectRaw('payment_method, COUNT(*) as count, SUM(amount) as total')
+            ->groupBy('payment_method')
+            ->orderByDesc('count')
+            ->get();
+
+        foreach ($topPaymentMethods as $method) {
+            fputcsv($handle, [
+                ucfirst(str_replace('_', ' ', $method->payment_method)),
+                $method->count,
+                '₱' . number_format($method->total, 2)
+            ]);
+        }
+        fputcsv($handle, []);
+
+        // Top Room Preferences
+        fputcsv($handle, ['=== TOP ROOM PREFERENCES ===']);
+        fputcsv($handle, ['Room Category', 'Bookings', 'Unique Customers']);
+
+        $topRoomPreferences = Booking::join('rooms', 'bookings.room_id', '=', 'rooms.id')
+            ->whereBetween('bookings.created_at', [$startDate, $endDate])
+            ->selectRaw('rooms.category, COUNT(*) as booking_count, COUNT(DISTINCT bookings.user_id) as unique_customers')
+            ->groupBy('rooms.category')
+            ->orderByDesc('booking_count')
+            ->get();
+
+        foreach ($topRoomPreferences as $pref) {
+            fputcsv($handle, [$pref->category, $pref->booking_count, $pref->unique_customers]);
+        }
+        fputcsv($handle, []);
+
+        // Top Service Preferences
+        fputcsv($handle, ['=== TOP SERVICE PREFERENCES ===']);
+        fputcsv($handle, ['Service Name', 'Requests']);
+
+        $topServicePreferences = ServiceRequest::join('services', 'service_requests.service_id', '=', 'services.id')
+            ->whereBetween('service_requests.created_at', [$startDate, $endDate])
+            ->selectRaw('services.name, COUNT(*) as request_count')
+            ->groupBy('services.name')
+            ->orderByDesc('request_count')
+            ->limit(10)
+            ->get();
+
+        foreach ($topServicePreferences as $pref) {
+            fputcsv($handle, [$pref->name, $pref->request_count]);
+        }
+        fputcsv($handle, []);
+
+        // Top Food Items
+        fputcsv($handle, ['=== TOP FOOD ITEMS ===']);
+        fputcsv($handle, ['Item Name', 'Total Orders']);
+
+        $topFoodItems = FoodOrder::join('order_items', 'food_orders.id', '=', 'order_items.food_order_id')
+            ->join('menu_items', 'order_items.menu_item_id', '=', 'menu_items.id')
+            ->whereBetween('food_orders.created_at', [$startDate, $endDate])
+            ->selectRaw('menu_items.name, SUM(order_items.quantity) as total_orders')
+            ->groupBy('menu_items.name')
+            ->orderByDesc('total_orders')
+            ->limit(10)
+            ->get();
+
+        foreach ($topFoodItems as $item) {
+            fputcsv($handle, [$item->name, $item->total_orders]);
         }
     }
 
@@ -1459,6 +1711,99 @@ class ReportsController extends Controller
             'dailyRevenue',
             'statusBreakdown',
             'topServices',
+            'startDate',
+            'endDate',
+            'routePrefix'
+        ));
+    }
+
+    /**
+     * Customer Analytics Summary
+     */
+    public function customerAnalytics(Request $request)
+    {
+        $dateRange = $this->getDateRange($request);
+        $startDate = $dateRange['start'];
+        $endDate = $dateRange['end'];
+
+        // Customer Statistics
+        $totalCustomers = User::where('role', 'guest')
+            ->withCount(['bookings' => function($q) use ($startDate, $endDate) {
+                $q->whereBetween('created_at', [$startDate, $endDate]);
+            }])
+            ->having('bookings_count', '>', 0)
+            ->count();
+
+        $repeatCustomers = User::where('role', 'guest')
+            ->withCount(['bookings' => function($q) use ($startDate, $endDate) {
+                $q->whereBetween('created_at', [$startDate, $endDate]);
+            }])
+            ->having('bookings_count', '>=', 2)
+            ->count();
+
+        $retentionRate = $totalCustomers > 0 ? round(($repeatCustomers / $totalCustomers) * 100, 1) : 0;
+
+        // Top 5 Repeat Customers
+        $topRepeatCustomers = User::where('role', 'guest')
+            ->withCount(['bookings' => function($q) use ($startDate, $endDate) {
+                $q->whereBetween('created_at', [$startDate, $endDate]);
+            }])
+            ->with(['bookings' => function($q) use ($startDate, $endDate) {
+                $q->whereBetween('created_at', [$startDate, $endDate])->with('payments');
+            }])
+            ->having('bookings_count', '>=', 2)
+            ->orderByDesc('bookings_count')
+            ->limit(5)
+            ->get();
+
+        // Most Popular Payment Methods
+        $topPaymentMethods = Payment::whereBetween('created_at', [$startDate, $endDate])
+            ->where('status', 'completed')
+            ->selectRaw('payment_method, COUNT(*) as count, SUM(amount) as total')
+            ->groupBy('payment_method')
+            ->orderByDesc('count')
+            ->limit(3)
+            ->get();
+
+        // Top Room Preferences
+        $topRoomPreferences = Booking::join('rooms', 'bookings.room_id', '=', 'rooms.id')
+            ->whereBetween('bookings.created_at', [$startDate, $endDate])
+            ->selectRaw('rooms.category, COUNT(*) as booking_count, COUNT(DISTINCT bookings.user_id) as unique_customers')
+            ->groupBy('rooms.category')
+            ->orderByDesc('booking_count')
+            ->limit(3)
+            ->get();
+
+        // Top Service Preferences
+        $topServicePreferences = ServiceRequest::join('services', 'service_requests.service_id', '=', 'services.id')
+            ->whereBetween('service_requests.created_at', [$startDate, $endDate])
+            ->selectRaw('services.name, COUNT(*) as request_count')
+            ->groupBy('services.name')
+            ->orderByDesc('request_count')
+            ->limit(3)
+            ->get();
+
+        // Top Food Items
+        $topFoodItems = FoodOrder::join('order_items', 'food_orders.id', '=', 'order_items.food_order_id')
+            ->join('menu_items', 'order_items.menu_item_id', '=', 'menu_items.id')
+            ->whereBetween('food_orders.created_at', [$startDate, $endDate])
+            ->selectRaw('menu_items.name, SUM(order_items.quantity) as total_orders')
+            ->groupBy('menu_items.name')
+            ->orderByDesc('total_orders')
+            ->limit(3)
+            ->get();
+
+        $routePrefix = $this->getRoutePrefix();
+
+        return view('manager.reports.customer-analytics', compact(
+            'totalCustomers',
+            'repeatCustomers',
+            'retentionRate',
+            'topRepeatCustomers',
+            'topPaymentMethods',
+            'topRoomPreferences',
+            'topServicePreferences',
+            'topFoodItems',
             'startDate',
             'endDate',
             'routePrefix'

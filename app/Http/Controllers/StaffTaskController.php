@@ -15,20 +15,78 @@ class StaffTaskController extends Controller
         $user = auth()->user();
         
         // Get tasks assigned to this staff member
-        $tasks = Task::with(['assignedBy', 'serviceRequest.guest'])
+        // For housekeeping tasks, only show if booking status is 'checked_out' or 'completed'
+        $tasks = Task::with(['assignedBy', 'serviceRequest.guest', 'booking.user', 'booking.room'])
             ->forUser($user->id)
             ->active()
+            ->where(function($query) {
+                // Show service request tasks (no booking filter)
+                $query->where('task_type', '!=', 'housekeeping')
+                    // OR show housekeeping tasks only if booking is checked_out or completed
+                    ->orWhere(function($subQuery) {
+                        $subQuery->where('task_type', 'housekeeping')
+                            ->whereHas('booking', function($bookingQuery) {
+                                $bookingQuery->whereIn('status', ['checked_out', 'completed']);
+                            });
+                    });
+            })
             ->orderBy('due_date', 'asc')
             ->orderBy('created_at', 'desc')
             ->paginate(15);
 
-        // Get task statistics
-        $pendingTasks = Task::forUser($user->id)->where('status', 'pending')->count();
-        $inProgressTasks = Task::forUser($user->id)->where('status', 'in_progress')->count();
-        $completedTasks = Task::forUser($user->id)->where('status', 'completed')
-            ->whereDate('completed_at', today())
+        // Get task statistics (with same filtering)
+        $pendingTasks = Task::forUser($user->id)
+            ->where('status', 'pending')
+            ->where(function($query) {
+                $query->where('task_type', '!=', 'housekeeping')
+                    ->orWhere(function($subQuery) {
+                        $subQuery->where('task_type', 'housekeeping')
+                            ->whereHas('booking', function($bookingQuery) {
+                                $bookingQuery->whereIn('status', ['checked_out', 'completed']);
+                            });
+                    });
+            })
             ->count();
-        $overdueTasks = Task::forUser($user->id)->overdue()->count();
+            
+        $inProgressTasks = Task::forUser($user->id)
+            ->where('status', 'in_progress')
+            ->where(function($query) {
+                $query->where('task_type', '!=', 'housekeeping')
+                    ->orWhere(function($subQuery) {
+                        $subQuery->where('task_type', 'housekeeping')
+                            ->whereHas('booking', function($bookingQuery) {
+                                $bookingQuery->whereIn('status', ['checked_out', 'completed']);
+                            });
+                    });
+            })
+            ->count();
+            
+        $completedTasks = Task::forUser($user->id)
+            ->where('status', 'completed')
+            ->whereDate('completed_at', today())
+            ->where(function($query) {
+                $query->where('task_type', '!=', 'housekeeping')
+                    ->orWhere(function($subQuery) {
+                        $subQuery->where('task_type', 'housekeeping')
+                            ->whereHas('booking', function($bookingQuery) {
+                                $bookingQuery->whereIn('status', ['checked_out', 'completed']);
+                            });
+                    });
+            })
+            ->count();
+            
+        $overdueTasks = Task::forUser($user->id)
+            ->overdue()
+            ->where(function($query) {
+                $query->where('task_type', '!=', 'housekeeping')
+                    ->orWhere(function($subQuery) {
+                        $subQuery->where('task_type', 'housekeeping')
+                            ->whereHas('booking', function($bookingQuery) {
+                                $bookingQuery->whereIn('status', ['checked_out', 'completed']);
+                            });
+                    });
+            })
+            ->count();
 
         return view('staff.tasks.index', compact(
             'tasks',

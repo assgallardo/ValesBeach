@@ -191,7 +191,14 @@
                         </p>
                         
                         <?php
-                            $pendingAssignments = \App\Models\ServiceRequest::whereIn('status', ['pending', 'confirmed'])->count();
+                            $pendingServiceRequests = \App\Models\ServiceRequest::whereIn('status', ['pending', 'confirmed'])->count();
+                            $pendingHousekeepingTasks = \App\Models\Task::where('task_type', 'housekeeping')
+                                ->whereIn('status', ['pending'])
+                                ->whereHas('booking', function($query) {
+                                    $query->whereIn('status', ['checked_out', 'completed']);
+                                })
+                                ->count();
+                            $pendingAssignments = $pendingServiceRequests + $pendingHousekeepingTasks;
                         ?>
                         
                         <!-- Pending Assignments Status Marker -->

@@ -205,7 +205,7 @@ class Payment extends Model
      */
     public function canBeRefunded()
     {
-        return $this->status === 'completed' && 
+        return in_array($this->status, ['completed', 'confirmed']) && 
                ($this->refund_amount === null || $this->refund_amount < $this->calculated_amount);
     }
 

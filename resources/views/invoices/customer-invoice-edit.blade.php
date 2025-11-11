@@ -5,7 +5,7 @@
 @section('content')
 <div class="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 py-8">
     <div class="max-w-6xl mx-auto px-4">
-        <form action="{{ isset($invoice) ? route('admin.invoices.update', $invoice->id) : route('admin.payments.customer.invoice.save', $customer->id) }}" method="POST" id="invoiceForm">
+        <form action="{{ isset($invoice) ? route('admin.invoices.update', $invoice->id) : route('admin.payments.customer.invoice.save', $customer->id) }}" method="POST" id="invoiceForm" onsubmit="return confirmInvoiceSubmit()">
             @csrf
             @if(isset($invoice))
                 @method('PATCH')
@@ -382,6 +382,33 @@ function calculateTotals() {
 document.addEventListener('DOMContentLoaded', function() {
     calculateTotals();
 });
+
+// Confirm invoice submission with extra charges
+function confirmInvoiceSubmit() {
+    const rows = document.querySelectorAll('.invoice-item-row');
+    const extraCharges = [];
+    
+    rows.forEach(row => {
+        const typeSelect = row.querySelector('.item-type');
+        if (typeSelect && typeSelect.value === 'extra') {
+            const description = row.querySelector('input[name*="[description]"]')?.value || 'Unnamed charge';
+            const amount = row.querySelector('.item-amount')?.value || '0';
+            extraCharges.push({ description, amount });
+        }
+    });
+    
+    if (extraCharges.length > 0) {
+        let message = 'You are about to add the following extra charge(s) to this invoice:\n\n';
+        extraCharges.forEach((charge, index) => {
+            message += `${index + 1}. ${charge.description} - ₱${parseFloat(charge.amount).toFixed(2)}\n`;
+        });
+        message += '\nThese charges will be added to the customer payment details table and included in the invoice.\n\nDo you want to proceed?';
+        
+        return confirm(message);
+    }
+    
+    return true;
+}
 </script>
 @endsection
 

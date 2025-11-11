@@ -44,6 +44,14 @@
             <button onclick="clearFilters()" class="bg-gray-600 text-white px-3 py-2 rounded text-sm hover:bg-gray-500">
                 Clear Filters
             </button>
+            
+            <div class="ml-auto">
+                <button onclick="toggleCompletedTasks()" id="completedTasksBtn" class="bg-green-600 text-white px-4 py-2 rounded text-sm hover:bg-green-700 flex items-center">
+                    <i class="fas fa-check-circle mr-2"></i>
+                    Completed Tasks
+                    <span class="ml-2 bg-green-800 px-2 py-0.5 rounded-full text-xs font-bold">{{ $completedTasks }}</span>
+                </button>
+            </div>
         </div>
     </div>
 
@@ -103,11 +111,22 @@
             <div class="flex items-start justify-between mb-3">
                 <div class="flex-1 min-w-0">
                     <h3 class="text-lg font-semibold text-green-100 mb-2 truncate">
+                        @if($task->task_type === 'housekeeping')
+                            <i class="fas fa-broom text-purple-400 mr-2"></i>
+                        @endif
                         {{ $task->title }}
                         @if($isOverdue)
                             <span class="text-red-400 text-xs ml-2">[OVERDUE]</span>
                         @endif
                     </h3>
+                    
+                    <!-- Task Type Badge -->
+                    @if($task->task_type === 'housekeeping')
+                    <span class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full bg-purple-900 text-purple-200 mb-2">
+                        <i class="fas fa-broom mr-1"></i>
+                        Housekeeping
+                    </span>
+                    @endif
                     
                     <!-- Status Badge -->
                     <div class="flex items-center space-x-2 mb-2">
@@ -169,7 +188,18 @@
                 </div>
 
                 <!-- Guest/Requestor Information -->
-                @if($task->serviceRequest)
+                @if($task->task_type === 'housekeeping' && $task->booking)
+                <div class="space-y-1">
+                    <label class="text-xs text-gray-400 uppercase tracking-wide font-medium">
+                        <i class="fas fa-broom mr-1"></i>Facility
+                    </label>
+                    <p class="text-purple-100 text-xs font-medium truncate">
+                        <i class="fas fa-door-open text-purple-400 mr-1"></i>
+                        {{ $task->booking->room->name ?? 'N/A' }}
+                    </p>
+                    <p class="text-xs text-gray-400">{{ $task->booking->room->category ?? '' }}</p>
+                </div>
+                @elseif($task->serviceRequest)
                 <div class="space-y-1">
                     <label class="text-xs text-gray-400 uppercase tracking-wide font-medium">Guest</label>
                     <p class="text-blue-100 text-xs font-medium truncate">
@@ -189,6 +219,17 @@
                         @if($isOverdue)
                             <span class="text-red-400 font-bold ml-1">⚠️</span>
                         @endif
+                    </p>
+                </div>
+                @endif
+                
+                <!-- Guest Name for Housekeeping -->
+                @if($task->task_type === 'housekeeping' && $task->booking)
+                <div class="space-y-1">
+                    <label class="text-xs text-gray-400 uppercase tracking-wide font-medium">Guest</label>
+                    <p class="text-purple-100 text-xs font-medium truncate">
+                        <i class="fas fa-user text-purple-400 mr-1"></i>
+                        {{ $task->booking->user->name ?? 'N/A' }}
                     </p>
                 </div>
                 @endif
@@ -609,12 +650,17 @@ function setViewMode(mode) {
 document.addEventListener('DOMContentLoaded', function() {
     const savedMode = localStorage.getItem('taskViewMode') || 'compact';
     setViewMode(savedMode);
+    
+    // Hide completed tasks by default (show only active tasks)
+    filterTasksByCompletion(false);
 });
 
 // Filtering
 function clearFilters() {
     document.getElementById('filterStatus').value = '';
-    filterTasks();
+    
+    // Reapply the current view mode (active or completed)
+    filterTasksByCompletion(showingCompleted);
 }
 
 function filterTasks() {
@@ -622,20 +668,31 @@ function filterTasks() {
     const cards = document.querySelectorAll('[data-task-id]');
     
     cards.forEach(card => {
+        const taskStatus = card.dataset.status;
         let show = true;
         
-        if (statusFilter) {
+        // First, check if we should show based on completed view mode
+        if (showingCompleted) {
+            // In completed view, only show completed tasks
+            show = taskStatus === 'completed';
+        } else {
+            // In active view, only show non-completed tasks
+            show = taskStatus !== 'completed';
+        }
+        
+        // Then apply status filter if any
+        if (show && statusFilter) {
             if (statusFilter === 'overdue') {
-                // Show only overdue tasks
                 show = card.dataset.overdue === 'true';
             } else {
-                // Show by status
-                show = card.dataset.status === statusFilter;
+                show = taskStatus === statusFilter;
             }
         }
         
         card.style.display = show ? 'block' : 'none';
     });
+    
+    updateEmptyState();
 }
 
 // Get status color class
@@ -670,6 +727,92 @@ function showNotification(message, type = 'info') {
     setTimeout(() => {
         notification.remove();
     }, 3000);
+}
+
+// Toggle completed tasks view
+let showingCompleted = false;
+
+function toggleCompletedTasks() {
+    showingCompleted = !showingCompleted;
+    filterTasksByCompletion(showingCompleted);
+}
+
+function filterTasksByCompletion(showOnlyCompleted) {
+    const btn = document.getElementById('completedTasksBtn');
+    const allTasks = document.querySelectorAll('[data-task-id]');
+    const header = document.querySelector('h1.text-3xl');
+    
+    // Update button appearance
+    if (showOnlyCompleted) {
+        btn.innerHTML = '<i class="fas fa-list mr-2"></i>View Active Tasks<span class="ml-2 bg-blue-800 px-2 py-0.5 rounded-full text-xs font-bold">Back</span>';
+        btn.className = 'bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700 flex items-center';
+        
+        // Update header
+        if (header) {
+            header.innerHTML = 'Completed Tasks <span class="text-green-400 text-xl ml-2">✓</span>';
+        }
+    } else {
+        btn.innerHTML = '<i class="fas fa-check-circle mr-2"></i>Completed Tasks<span class="ml-2 bg-green-800 px-2 py-0.5 rounded-full text-xs font-bold">{{ $completedTasks }}</span>';
+        btn.className = 'bg-green-600 text-white px-4 py-2 rounded text-sm hover:bg-green-700 flex items-center';
+        
+        // Restore header
+        if (header) {
+            header.innerHTML = 'My Tasks';
+        }
+    }
+    
+    // Filter tasks based on completion status
+    allTasks.forEach(task => {
+        const status = task.dataset.status;
+        if (showOnlyCompleted) {
+            task.style.display = status === 'completed' ? 'block' : 'none';
+        } else {
+            task.style.display = status !== 'completed' ? 'block' : 'none';
+        }
+    });
+    
+    // Update empty state message
+    updateEmptyState();
+}
+
+// Ensure a dedicated empty state element exists after the tasks container
+function ensureEmptyStateElement() {
+    let emptyEl = document.getElementById('tasksEmptyState');
+    if (!emptyEl) {
+        emptyEl = document.createElement('div');
+        emptyEl.id = 'tasksEmptyState';
+        emptyEl.className = 'bg-gray-800 rounded-lg p-8 text-center mt-4';
+        emptyEl.style.display = 'none';
+        const container = document.getElementById('tasksContainer');
+        if (container && container.parentNode) {
+            container.parentNode.insertBefore(emptyEl, container.nextSibling);
+        }
+    }
+    return emptyEl;
+}
+
+function updateEmptyState() {
+    const container = document.getElementById('tasksContainer');
+    const visibleTasks = Array
+        .from(container.querySelectorAll('[data-task-id]'))
+        .filter(task => task.style.display !== 'none');
+
+    const emptyEl = ensureEmptyStateElement();
+
+    if (visibleTasks.length === 0) {
+        // Set appropriate message
+        emptyEl.innerHTML = showingCompleted
+            ? '<i class="fas fa-check-circle text-4xl text-gray-600 mb-4"></i><p class="text-gray-400 text-lg">No completed tasks yet</p><p class="text-gray-500 text-sm">Completed tasks will appear here</p>'
+            : '<i class="fas fa-tasks text-4xl text-gray-600 mb-4"></i><p class="text-gray-400 text-lg">No active tasks assigned to you</p><p class="text-gray-500 text-sm">Tasks will appear here when managers assign them to you</p>';
+
+        // Show empty state element and optionally hide container
+        emptyEl.style.display = 'block';
+        container.style.display = 'none';
+    } else {
+        // Hide empty state element and show container
+        emptyEl.style.display = 'none';
+        container.style.display = '';
+    }
 }
 
 // Add event listeners for filters

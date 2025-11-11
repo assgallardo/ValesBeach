@@ -29,6 +29,18 @@ class StaffAssignmentController extends Controller
             ->orderBy('created_at', 'desc')
             ->paginate(15);
 
+        // Get housekeeping tasks (including completed ones to show history)
+        // Only show tasks for bookings with status 'checked_out' or 'completed'
+        $housekeepingTasks = Task::with(['assignedTo', 'assignedBy', 'booking.user', 'booking.room'])
+            ->where('task_type', 'housekeeping')
+            ->whereIn('status', ['pending', 'assigned', 'in_progress', 'completed'])
+            ->whereHas('booking', function($query) {
+                $query->whereIn('status', ['checked_out', 'completed']);
+            })
+            ->orderBy('due_date', 'asc')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
         // Get counts for statistics (excluding cancelled)
         $pendingRequests = ServiceRequest::active()->whereIn('status', ['pending', 'confirmed'])->count();
         $assignedRequests = ServiceRequest::active()->whereIn('status', ['assigned', 'in_progress'])->count();
@@ -37,14 +49,38 @@ class StaffAssignmentController extends Controller
             ->count();
         $overdueRequests = ServiceRequest::active()->where('deadline', '<', now())->whereNotIn('status', ['completed', 'cancelled'])->count();
 
+        // Add housekeeping tasks to statistics (only for checked_out or completed bookings)
+        $pendingHousekeeping = Task::where('task_type', 'housekeeping')
+            ->where('status', 'pending')
+            ->whereHas('booking', function($query) {
+                $query->whereIn('status', ['checked_out', 'completed']);
+            })
+            ->count();
+        $assignedHousekeeping = Task::where('task_type', 'housekeeping')
+            ->whereIn('status', ['assigned', 'in_progress'])
+            ->whereHas('booking', function($query) {
+                $query->whereIn('status', ['checked_out', 'completed']);
+            })
+            ->count();
+        $completedHousekeeping = Task::where('task_type', 'housekeeping')
+            ->where('status', 'completed')
+            ->whereHas('booking', function($query) {
+                $query->whereIn('status', ['checked_out', 'completed']);
+            })
+            ->count();
+
         return view('manager.staff-assignment.index', compact(
             'serviceRequests',
+            'housekeepingTasks',
             'availableStaff', 
             'availableServices',
             'pendingRequests',
             'assignedRequests',
             'completedRequests',
-            'overdueRequests'
+            'overdueRequests',
+            'pendingHousekeeping',
+            'assignedHousekeeping',
+            'completedHousekeeping'
         ));
     }
 
@@ -149,8 +185,34 @@ class StaffAssignmentController extends Controller
             'guests_count' => 'nullable|integer|min:1'
         ]);
 
+        // Handle assignment logic FIRST before general updates
+        if ($request->has('assigned_to')) {
+            if ($request->assigned_to) {
+                // Assigning to a staff member
+                $serviceRequest->update([
+                    'assigned_to' => $request->assigned_to,
+                    'assigned_at' => now(),
+                    'status' => $request->status ?? 'assigned'
+                ]);
+                
+                // Create or update task when assigning to staff
+                $this->createOrUpdateTask($serviceRequest, $request->assigned_to);
+            } else {
+                // Unassigning - set to null and reset status to pending
+                if ($serviceRequest->task) {
+                    $serviceRequest->task->update(['status' => 'cancelled']);
+                }
+                $serviceRequest->update([
+                    'assigned_to' => null,
+                    'assigned_at' => null,
+                    'status' => $request->status ?? 'pending'
+                ]);
+            }
+        }
+
+        // Handle other updates (excluding assigned_to as it's already handled)
         $updateData = $request->only([
-            'assigned_to', 'deadline', 'estimated_duration', 'status', 'manager_notes',
+            'deadline', 'estimated_duration', 'manager_notes',
             'service_type', 'description', 'guests_count'
         ]);
 
@@ -159,28 +221,13 @@ class StaffAssignmentController extends Controller
             return $value !== null && $value !== '';
         });
 
-        $serviceRequest->update($updateData);
+        if (!empty($updateData)) {
+            $serviceRequest->update($updateData);
+        }
 
-        // Handle assignment logic
-        if ($request->has('assigned_to') && $request->assigned_to) {
-            $serviceRequest->update(['assigned_at' => now()]);
-            
-            // Create or update task when assigning to staff
-            $this->createOrUpdateTask($serviceRequest, $request->assigned_to);
-            
-            // Set status to assigned if not already set
-            if (!$request->has('status') || !$request->status) {
-                $serviceRequest->update(['status' => 'assigned']);
-            }
-        } elseif ($request->has('assigned_to') && !$request->assigned_to) {
-            // Unassigning - remove task and reset status
-            if ($serviceRequest->task) {
-                $serviceRequest->task->update(['status' => 'cancelled']);
-            }
-            $serviceRequest->update([
-                'assigned_at' => null,
-                'status' => 'confirmed'
-            ]);
+        // Handle status change separately if provided and not already handled by assignment
+        if ($request->has('status') && !$request->has('assigned_to')) {
+            $serviceRequest->update(['status' => $request->status]);
         }
 
         // Update completion timestamp
@@ -395,5 +442,40 @@ class StaffAssignmentController extends Controller
                 'due_date' => $serviceRequest->deadline ?? now()->addHours(24)
             ]
         );
+    }
+
+    /**
+     * Update housekeeping task assignment
+     */
+    public function updateHousekeepingTask(Request $request, Task $task)
+    {
+        $request->validate([
+            'assigned_to' => 'nullable|exists:users,id',
+            'status' => 'nullable|in:pending,assigned,in_progress,completed',
+        ]);
+
+        $updateData = [];
+        
+        if ($request->has('assigned_to')) {
+            $updateData['assigned_to'] = $request->assigned_to;
+            if ($request->assigned_to && $task->status === 'pending') {
+                $updateData['status'] = 'assigned';
+            }
+        }
+
+        if ($request->has('status')) {
+            $updateData['status'] = $request->status;
+            // Add completed timestamp when task is marked as completed
+            if ($request->status === 'completed') {
+                $updateData['completed_at'] = now();
+            }
+        }
+
+        $task->update($updateData);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Housekeeping task updated successfully'
+        ]);
     }
 }

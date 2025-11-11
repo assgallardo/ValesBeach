@@ -921,7 +921,7 @@
                         @method('PATCH')
                         <div>
                             <label for="status" class="block text-sm font-medium text-gray-300 mb-2">Status</label>
-                            <select name="status" id="status"
+                            <select name="status" id="status" onchange="handleStatusChange(this.value)"
                                     class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white">
                                 @foreach($statuses as $status)
                                     <option value="{{ $status }}">
@@ -930,12 +930,33 @@
                                 @endforeach
                             </select>
                         </div>
+                        
+                        <!-- Checkout Confirmation Notice -->
+                        <div id="checkoutNotice" class="hidden bg-purple-900/50 border border-purple-600 rounded-lg p-4">
+                            <div class="flex items-start space-x-3">
+                                <svg class="w-6 h-6 text-purple-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                                <div class="flex-1">
+                                    <h4 class="text-purple-100 font-semibold mb-2">
+                                        <i class="fas fa-broom mr-2"></i>Housekeeping Will Be Deployed
+                                    </h4>
+                                    <p class="text-purple-200 text-sm">
+                                        When you confirm checkout, a housekeeping task will be automatically created and sent to the Task Assignment module. You can then assign the task to available staff to clean and prepare the room.
+                                    </p>
+                                    <div class="mt-3 text-xs text-purple-300">
+                                        <i class="fas fa-clock mr-1"></i> Task deadline: 2 hours from checkout
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
                         <div class="flex justify-end space-x-3">
                             <button type="button" onclick="closeModal()"
                                     class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-500 transition-colors">
                                 Cancel
                             </button>
-                            <button type="submit"
+                            <button type="submit" id="updateStatusBtn"
                                     class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-500 transition-colors">
                                 Update
                             </button>
@@ -1355,7 +1376,30 @@ function updateStatus(bookingId) {
     const modal = document.getElementById('statusModal');
     const form = document.getElementById('statusForm');
     form.action = `/manager/bookings/${bookingId}/status`;
+    
+    // Reset checkout notice visibility
+    document.getElementById('checkoutNotice').classList.add('hidden');
+    document.getElementById('updateStatusBtn').textContent = 'Update';
+    
     modal.classList.remove('hidden');
+}
+
+// Handle status change to show checkout confirmation
+function handleStatusChange(selectedStatus) {
+    const checkoutNotice = document.getElementById('checkoutNotice');
+    const updateBtn = document.getElementById('updateStatusBtn');
+    
+    if (selectedStatus === 'checked_out') {
+        checkoutNotice.classList.remove('hidden');
+        updateBtn.textContent = 'Confirm Checkout & Deploy Housekeeping';
+        updateBtn.classList.remove('bg-blue-600', 'hover:bg-blue-500');
+        updateBtn.classList.add('bg-purple-600', 'hover:bg-purple-500');
+    } else {
+        checkoutNotice.classList.add('hidden');
+        updateBtn.textContent = 'Update';
+        updateBtn.classList.remove('bg-purple-600', 'hover:bg-purple-500');
+        updateBtn.classList.add('bg-blue-600', 'hover:bg-blue-500');
+    }
 }
 
 function closeModal() {

@@ -14,8 +14,7 @@
                     <h1 class="text-3xl font-bold text-green-50">Customer Payment Details</h1>
                 </div>
                 <a href="{{ route('admin.payments.customer.invoice', $customer->id) }}" 
-                   class="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
-                   target="_blank">
+                   class="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
                     <i class="fas fa-file-invoice-dollar mr-2"></i>
                     Generate Invoice
                 </a>
@@ -251,24 +250,18 @@
                                 <!-- Status -->
                                 <td class="px-4 py-3">
                                     <select onchange="updatePaymentStatus({{ $payment->id }}, this.value)" 
-                                            class="w-full text-xs rounded px-2 py-1 border-0 focus:ring-2 focus:ring-green-500
-                                            @if($payment->status === 'completed') bg-green-600 text-white
-                                            @elseif($payment->status === 'pending') bg-yellow-600 text-white
-                                            @elseif($payment->status === 'confirmed') bg-blue-600 text-white
-                                            @elseif($payment->status === 'overdue') bg-orange-600 text-white
-                                            @elseif($payment->status === 'processing') bg-indigo-600 text-white
-                                            @elseif($payment->status === 'failed') bg-red-600 text-white
-                                            @elseif($payment->status === 'refunded') bg-gray-600 text-white
-                                            @elseif($payment->status === 'cancelled') bg-gray-700 text-gray-300
-                                            @else bg-gray-700 text-gray-300
-                                            @endif">
+                                        class="w-full text-xs rounded px-2 py-1 border-0 focus:ring-2 focus:ring-green-500
+                                        @if($payment->status === 'completed') bg-green-600 text-white
+                                        @elseif($payment->status === 'pending') bg-yellow-600 text-white
+                                        @elseif($payment->status === 'confirmed') bg-blue-600 text-white
+                                        @elseif($payment->status === 'overdue') bg-orange-600 text-white
+                                        @elseif($payment->status === 'cancelled') bg-red-600 text-white
+                                        @else bg-gray-700 text-gray-300
+                                        @endif">
                                         <option value="pending" {{ $payment->status === 'pending' ? 'selected' : '' }}>Pending</option>
                                         <option value="confirmed" {{ $payment->status === 'confirmed' ? 'selected' : '' }}>Confirmed</option>
                                         <option value="completed" {{ $payment->status === 'completed' ? 'selected' : '' }}>Completed</option>
                                         <option value="overdue" {{ $payment->status === 'overdue' ? 'selected' : '' }}>Overdue</option>
-                                        <option value="processing" {{ $payment->status === 'processing' ? 'selected' : '' }}>Processing</option>
-                                        <option value="failed" {{ $payment->status === 'failed' ? 'selected' : '' }}>Failed</option>
-                                        <option value="refunded" {{ $payment->status === 'refunded' ? 'selected' : '' }}>Refunded</option>
                                         <option value="cancelled" {{ $payment->status === 'cancelled' ? 'selected' : '' }}>Cancelled</option>
                                     </select>
                                 </td>
@@ -303,6 +296,14 @@
                                                     title="Process Refund">
                                                 <i class="fas fa-undo"></i>
                                             </button>
+                                        @endif
+                                        @if($payment->refund_amount > 0)
+                                            <form method="POST" action="{{ route('admin.payments.cancelRefund', $payment) }}" style="display:inline;">
+                                                @csrf
+                                                <button type="submit" class="inline-flex items-center px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors" title="Cancel Refund" onclick="return confirm('Are you sure you want to cancel this refund and restore the original payment amount?')">
+                                                    <i class="fas fa-undo-alt"></i>
+                                                </button>
+                                            </form>
                                         @elseif($payment->status === 'refunded' || ($payment->refund_amount > 0 && $remainingAmount <= 0))
                                             <span class="inline-flex items-center px-2 py-1 text-xs bg-gray-600 text-gray-400 rounded" 
                                                   title="Fully Refunded">

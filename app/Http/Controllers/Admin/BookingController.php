@@ -7,6 +7,7 @@ use App\Models\Booking;
 use App\Models\Room;
 use App\Models\User;
 use App\Models\HousekeepingRequest;
+use App\Models\Task;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
@@ -27,9 +28,31 @@ class BookingController extends Controller
                     $oldStatus = $booking->status;
                     $booking->update(['status' => $request->new_status]);
                     
-                    // Automatically trigger housekeeping when guest checks out
-                    if ($request->new_status === 'checked_out' && $oldStatus !== 'checked_out') {
-                        $this->triggerHousekeeping($booking);
+                    // Handle housekeeping tasks based on status
+                    if ($request->new_status === 'checked_out') {
+                        // Check if housekeeping task already exists
+                        $existingTask = Task::where('booking_id', $booking->id)
+                            ->where('task_type', 'housekeeping')
+                            ->first();
+                        
+                        // Only create if no task exists
+                        if (!$existingTask) {
+                            $this->triggerHousekeeping($booking);
+                        }
+                    }
+                    elseif ($request->new_status === 'completed' && $oldStatus === 'checked_out') {
+                        // When booking completed from checked_out, mark task as completed
+                        Task::where('booking_id', $booking->id)
+                            ->where('task_type', 'housekeeping')
+                            ->where('status', '!=', 'completed')
+                            ->update(['status' => 'completed', 'completed_at' => now()]);
+                    }
+                    elseif (!in_array($request->new_status, ['checked_out', 'completed'])) {
+                        // Remove non-completed housekeeping tasks if status is not checked_out or completed
+                        Task::where('booking_id', $booking->id)
+                            ->where('task_type', 'housekeeping')
+                            ->where('status', '!=', 'completed')
+                            ->delete();
                     }
                     
                     // Set success message for display
@@ -778,9 +801,10 @@ class BookingController extends Controller
         // Automatically trigger housekeeping when guest checks out
         if ($request->status === 'checked_out' && $oldStatus !== 'checked_out') {
             $this->triggerHousekeeping($booking);
+            return redirect()->back()->with('success', 'Booking status updated to Checked Out. Housekeeping task created successfully!');
         }
 
-        return redirect()->back()->with('success', 'Booking updated.');
+        return redirect()->back()->with('success', 'Booking status updated successfully.');
     }
 
     /**
@@ -805,6 +829,53 @@ class BookingController extends Controller
                 'booking_id' => $booking->id,
                 'room_id' => $booking->room_id,
             ]);
+        }
+
+        // Also create a housekeeping task in the task management system
+        $this->createHousekeepingTask($booking);
+    }
+
+    /**
+     * Create a housekeeping task in the task management system
+     */
+    private function createHousekeepingTask($booking)
+    {
+        try {
+            // Check if a housekeeping task already exists for this booking
+            $existingTask = \App\Models\Task::where('booking_id', $booking->id)
+                ->where('task_type', 'housekeeping')
+                ->first();
+            
+            if ($existingTask) {
+                \Log::info('Housekeeping task already exists', [
+                    'task_id' => $existingTask->id,
+                    'booking_id' => $booking->id,
+                    'room' => $booking->room->name
+                ]);
+                return $existingTask;
+            }
+            
+            $task = \App\Models\Task::create([
+                'title' => 'Housekeeping Required',
+                'description' => "Room cleanup required after guest check-out.\n\nFacility: {$booking->room->name}\nCategory: {$booking->room->category}\nGuest: {$booking->user->name}\nCheck-out: " . $booking->check_out->format('M d, Y g:i A'),
+                'booking_id' => $booking->id,
+                'task_type' => 'housekeeping',
+                'assigned_by' => auth()->id(),
+                'assigned_to' => null, // Initially unassigned
+                'status' => 'pending',
+                'due_date' => now()->addHours(2), // 2 hours to complete housekeeping
+            ]);
+
+            \Log::info('Housekeeping task created', [
+                'task_id' => $task->id,
+                'booking_id' => $booking->id,
+                'room' => $booking->room->name
+            ]);
+
+            return $task;
+        } catch (\Exception $e) {
+            \Log::error('Failed to create housekeeping task: ' . $e->getMessage());
+            return null;
         }
     }
 

@@ -16,6 +16,26 @@ use Illuminate\Support\Facades\Response;
 class PaymentController extends Controller
 {
     /**
+     * Cancel a refund and restore the original payment amount
+     */
+    public function cancelRefund(Request $request, Payment $payment)
+    {
+        // Only allow if payment has a refund
+        if ($payment->refund_amount > 0) {
+            $payment->refund_amount = 0;
+            $payment->refund_reason = null;
+            $payment->refunded_at = null;
+            $payment->refunded_by = null;
+            // Optionally, reset status if it was set to refunded
+            if ($payment->status === 'refunded') {
+                $payment->status = 'completed';
+            }
+            $payment->save();
+            return back()->with('success', 'Refund cancelled and original payment restored.');
+        }
+        return back()->with('error', 'No refund to cancel for this payment.');
+    }
+    /**
      * Display payment form for a booking
      */
     public function create(Booking $booking)
@@ -481,18 +501,19 @@ class PaymentController extends Controller
 
         $request->validate([
             'refund_amount' => 'required|numeric|min:0.01|max:' . $payment->getRemainingRefundableAmount(),
-            'refund_reason' => 'required|string|max:500',
+            'refund_reason' => 'nullable|string|max:500',
         ]);
 
         DB::beginTransaction();
         try {
             $refundAmount = $request->refund_amount;
+            $refundReason = $request->refund_reason ?? null;
             $totalRefunded = ($payment->refund_amount ?? 0) + $refundAmount;
 
             // Update payment with refund information
             $payment->update([
                 'refund_amount' => $totalRefunded,
-                'refund_reason' => $request->refund_reason,
+                'refund_reason' => $refundReason,
                 'refunded_at' => now(),
                 'refunded_by' => auth()->id(),
                 'status' => $totalRefunded >= $payment->calculated_amount ? 'refunded' : $payment->status,
@@ -505,7 +526,7 @@ class PaymentController extends Controller
                     $payment->serviceRequest->update([
                         'status' => 'cancelled',
                         'cancelled_at' => now(),
-                        'cancellation_reason' => 'Fully refunded: ' . $request->refund_reason
+                        'cancellation_reason' => 'Fully refunded' . ($refundReason ? (': ' . $refundReason) : '')
                     ]);
                 }
             }
@@ -517,7 +538,7 @@ class PaymentController extends Controller
                     $payment->booking->update([
                         'status' => 'cancelled',
                         'cancelled_at' => now(),
-                        'cancellation_reason' => 'Fully refunded: ' . $request->refund_reason
+                        'cancellation_reason' => 'Fully refunded' . ($refundReason ? (': ' . $refundReason) : '')
                     ]);
                 }
             }
@@ -930,9 +951,9 @@ class PaymentController extends Controller
         // Add bookings
         foreach ($customer->bookings as $booking) {
             if ($booking->total_price > 0) {
-                $paid = $booking->payments->sum('amount');
+                // Sum net amounts for all payments (amount - refund_amount)
+                $paid = $booking->payments->sum(function($p) { return $p->amount - ($p->refund_amount ?? 0); });
                 $balance = $booking->total_price - $paid;
-                
                 $items[] = [
                     'type' => 'booking',
                     'description' => $booking->room->name ?? 'Room Booking',
@@ -943,7 +964,6 @@ class PaymentController extends Controller
                     'paid' => $paid,
                     'balance' => $balance
                 ];
-                
                 $totalAmount += $booking->total_price;
                 $totalPaid += $paid;
             }
@@ -951,18 +971,13 @@ class PaymentController extends Controller
 
         // Add services
         foreach ($customer->serviceRequests as $serviceRequest) {
-            // Get the price from the service or payment
             $servicePrice = $serviceRequest->service->price ?? 0;
-            $paid = $serviceRequest->payment ? $serviceRequest->payment->amount : 0;
-            
-            // If there's a payment but no service price, use the payment amount as the price
+            $paid = $serviceRequest->payment ? ($serviceRequest->payment->amount - ($serviceRequest->payment->refund_amount ?? 0)) : 0;
             if ($paid > 0 && $servicePrice == 0) {
                 $servicePrice = $paid;
             }
-            
             if ($servicePrice > 0) {
                 $balance = $servicePrice - $paid;
-                
                 $items[] = [
                     'type' => 'service',
                     'description' => $serviceRequest->service->name ?? 'Service Request',
@@ -972,7 +987,6 @@ class PaymentController extends Controller
                     'paid' => $paid,
                     'balance' => $balance
                 ];
-                
                 $totalAmount += $servicePrice;
                 $totalPaid += $paid;
             }
@@ -981,17 +995,14 @@ class PaymentController extends Controller
         // Add food orders
         foreach ($customer->foodOrders as $foodOrder) {
             if ($foodOrder->total_amount > 0) {
-                $paid = $foodOrder->payment ? $foodOrder->payment->amount : 0;
+                $paid = $foodOrder->payment ? ($foodOrder->payment->amount - ($foodOrder->payment->refund_amount ?? 0)) : 0;
                 $balance = $foodOrder->total_amount - $paid;
-                
                 $itemsList = $foodOrder->orderItems->map(function($item) {
                     return $item->menuItem->name ?? 'Item';
                 })->take(3)->implode(', ');
-                
                 if ($foodOrder->orderItems->count() > 3) {
                     $itemsList .= '...';
                 }
-                
                 $items[] = [
                     'type' => 'food',
                     'description' => 'Food Order #' . $foodOrder->order_number,
@@ -1001,7 +1012,6 @@ class PaymentController extends Controller
                     'paid' => $paid,
                     'balance' => $balance
                 ];
-                
                 $totalAmount += $foodOrder->total_amount;
                 $totalPaid += $paid;
             }
@@ -1023,11 +1033,9 @@ class PaymentController extends Controller
             $reference = $paymentDetails['reference'] ?? ($extraPayment->payment_reference ?? 'N/A');
             $details = $paymentDetails['details'] ?? '';
             $invoiceNumber = $paymentDetails['invoice_number'] ?? '';
-            
             $amount = $extraPayment->amount ?? 0;
-            $paid = ($extraPayment->status === 'completed') ? $amount : 0;
+            $paid = ($extraPayment->status === 'completed') ? ($amount - ($extraPayment->refund_amount ?? 0)) : 0;
             $balance = $amount - $paid;
-            
             $items[] = [
                 'type' => 'extra',
                 'description' => $description,
@@ -1040,9 +1048,7 @@ class PaymentController extends Controller
                 'payment_reference' => $extraPayment->payment_reference,
                 'invoice_number' => $invoiceNumber
             ];
-            
             $loadedPaymentIds[] = $extraPayment->id;
-            
             $totalAmount += $amount;
             $totalPaid += $paid;
         }
@@ -1088,33 +1094,18 @@ class PaymentController extends Controller
                 ->with('error', 'Please add at least one item to the invoice.');
         }
 
-        // Calculate totals
+        // Calculate totals - first pass
         $totalAmount = 0;
         $totalPaid = 0;
-        $items = [];
 
         foreach ($validated['items'] as $item) {
-            $amount = floatval($item['amount']);
-            $paid = floatval($item['paid']);
-            $balance = $amount - $paid;
-
-            $items[] = [
-                'type' => $item['type'],
-                'description' => $item['description'],
-                'reference' => $item['reference'] ?? '',
-                'details' => $item['details'] ?? '',
-                'amount' => $amount,
-                'paid' => $paid,
-                'balance' => $balance
-            ];
-
-            $totalAmount += $amount;
-            $totalPaid += $paid;
+            $totalAmount += floatval($item['amount']);
+            $totalPaid += floatval($item['paid']);
         }
 
         $totalBalance = $totalAmount - $totalPaid;
 
-        // Create invoice
+        // Create invoice first to get invoice number
         $invoice = \App\Models\Invoice::create([
             'user_id' => $customer->id,
             'invoice_number' => 'INV-' . strtoupper(uniqid()),
@@ -1127,7 +1118,7 @@ class PaymentController extends Controller
             'balance_due' => $totalBalance,
             'status' => $totalBalance <= 0 ? 'paid' : 'sent',
             'notes' => $validated['notes'] ?? '',
-            'items' => $items,
+            'items' => [], // Will be updated after creating payments
             'created_by' => auth()->id()
         ]);
 
@@ -1153,12 +1144,46 @@ class PaymentController extends Controller
             ->toArray();
         
         $newExtraPaymentIds = [];
+        $items = [];
         
-        // Create Payment records for extra charges (type='extra')
+        // Process all items and create Payment records for extra charges
         foreach ($validated['items'] as $item) {
-            if ($item['type'] === 'extra' && floatval($item['amount']) > 0) {
-                $amount = floatval($item['amount']);
-                $paid = floatval($item['paid']);
+            $amount = floatval($item['amount']);
+            $paid = floatval($item['paid']);
+            $balance = $amount - $paid;
+            
+            \Log::info('Processing item in saveCustomerInvoice', [
+                'type' => $item['type'],
+                'description' => $item['description'],
+                'amount' => $amount,
+                'paid' => $paid,
+                'has_payment_id' => !empty($item['payment_id'])
+            ]);
+            
+            $itemData = [
+                'type' => $item['type'],
+                'description' => $item['description'],
+                'reference' => $item['reference'] ?? '',
+                'details' => $item['details'] ?? '',
+                'amount' => $amount,
+                'paid' => $paid,
+                'balance' => $balance
+            ];
+            
+            \Log::info('Before checking extra condition', [
+                'item_type' => $item['type'],
+                'item_type_is_extra' => $item['type'] === 'extra',
+                'amount' => $amount,
+                'amount_greater_than_zero' => $amount > 0,
+                'will_create_payment' => ($item['type'] === 'extra' && $amount > 0)
+            ]);
+            
+            // Create Payment record for extra charges
+            if ($item['type'] === 'extra' && $amount > 0) {
+                \Log::info('Creating/updating extra charge payment', [
+                    'has_existing_payment_id' => !empty($item['payment_id']),
+                    'payment_id' => $item['payment_id'] ?? null
+                ]);
                 
                 // If payment_id exists, update it; otherwise create new
                 if (!empty($item['payment_id'])) {
@@ -1185,40 +1210,57 @@ class PaymentController extends Controller
                             ]
                         ]);
                         $newExtraPaymentIds[] = $payment->id;
-                        continue;
+                        $itemData['payment_id'] = $payment->id;
+                        $itemData['payment_reference'] = $payment->payment_reference;
                     }
+                } else {
+                    // Create payment record for extra charge
+                    \Log::info('Creating NEW extra charge payment record');
+                    
+                    $payment = Payment::create([
+                        'user_id' => $customer->id,
+                        'booking_id' => null,
+                        'service_request_id' => null,
+                        'food_order_id' => null,
+                        'payment_reference' => 'EXT-' . strtoupper(uniqid()),
+                        'amount' => $amount,
+                        'payment_method' => 'cash', // Default, can be updated later
+                        'status' => $paid >= $amount ? 'completed' : 'pending',
+                        'payment_date' => $paid > 0 ? now() : null,
+                        'notes' => sprintf(
+                            'Invoice #%s - Extra Charge: %s%s%s',
+                            $invoice->invoice_number,
+                            $item['description'],
+                            $item['reference'] ? ' (Ref: ' . $item['reference'] . ')' : '',
+                            $item['details'] ? ' - ' . $item['details'] : ''
+                        ),
+                        'payment_details' => [
+                            'invoice_id' => $invoice->id,
+                            'invoice_number' => $invoice->invoice_number,
+                            'extra_charge' => true,
+                            'description' => $item['description'],
+                            'reference' => $item['reference'] ?? '',
+                            'details' => $item['details'] ?? ''
+                        ]
+                    ]);
+                    
+                    \Log::info('Created extra charge payment', [
+                        'payment_id' => $payment->id,
+                        'payment_reference' => $payment->payment_reference,
+                        'amount' => $payment->amount
+                    ]);
+                    
+                    $newExtraPaymentIds[] = $payment->id;
+                    $itemData['payment_id'] = $payment->id;
+                    $itemData['payment_reference'] = $payment->payment_reference;
                 }
-                
-                // Create payment record for extra charge
-                $payment = Payment::create([
-                    'user_id' => $customer->id,
-                    'booking_id' => null,
-                    'service_request_id' => null,
-                    'food_order_id' => null,
-                    'payment_reference' => 'EXT-' . strtoupper(uniqid()),
-                    'amount' => $amount,
-                    'payment_method' => 'cash', // Default, can be updated later
-                    'status' => $paid >= $amount ? 'completed' : 'pending',
-                    'payment_date' => $paid > 0 ? now() : null,
-                    'notes' => sprintf(
-                        'Invoice #%s - Extra Charge: %s%s%s',
-                        $invoice->invoice_number,
-                        $item['description'],
-                        $item['reference'] ? ' (Ref: ' . $item['reference'] . ')' : '',
-                        $item['details'] ? ' - ' . $item['details'] : ''
-                    ),
-                    'payment_details' => [
-                        'invoice_id' => $invoice->id,
-                        'invoice_number' => $invoice->invoice_number,
-                        'extra_charge' => true,
-                        'description' => $item['description'],
-                        'reference' => $item['reference'] ?? '',
-                        'details' => $item['details'] ?? ''
-                    ]
-                ]);
-                $newExtraPaymentIds[] = $payment->id;
             }
+            
+            $items[] = $itemData;
         }
+        
+        // Update invoice with items that now include payment_id for extra charges
+        $invoice->update(['items' => $items]);
         
         // Delete extra charge payments that were removed from invoice
         // Get payments that were loaded in the generateCustomerInvoice page but are not in submitted items
@@ -1234,19 +1276,15 @@ class PaymentController extends Controller
         if (!empty($loadedExtraPaymentIds)) {
             // Only delete payments that were explicitly loaded and shown in the form
             $paymentIdsToDelete = array_diff($loadedExtraPaymentIds, $newExtraPaymentIds);
-        } else {
-            // Fallback: if no session data, compare all current extra charge payments
-            // with what was submitted - anything missing should be deleted
-            $paymentIdsToDelete = array_diff($allCurrentExtraPaymentIds, $newExtraPaymentIds);
         }
+        // No fallback deletion for new invoices - only delete if we have session data
         
         if (!empty($paymentIdsToDelete)) {
             \Log::info('Deleting extra charge payments from saveCustomerInvoice', [
                 'payment_ids' => $paymentIdsToDelete,
                 'customer_id' => $customer->id,
                 'loaded_ids' => $loadedExtraPaymentIds,
-                'new_ids' => $newExtraPaymentIds,
-                'all_current_ids' => $allCurrentExtraPaymentIds
+                'new_ids' => $newExtraPaymentIds
             ]);
             
             $deletedCount = Payment::whereIn('id', $paymentIdsToDelete)
@@ -1267,7 +1305,7 @@ class PaymentController extends Controller
         session()->forget('generated_invoice_payment_ids');
 
         return redirect()->route('invoices.show', $invoice->id)
-            ->with('success', 'Invoice generated successfully!');
+            ->with('success', 'Invoice generated successfully! Extra charges have been added to payment records.');
     }
 
     /**
@@ -1368,6 +1406,60 @@ class PaymentController extends Controller
                 ->with('error', 'Please add at least one item to the invoice.');
         }
 
+        // Calculate totals
+        $totalAmount = 0;
+        $totalPaid = 0;
+        $items = [];
+
+        foreach ($validated['items'] as $item) {
+            $amount = floatval($item['amount']);
+            $paid = floatval($item['paid']);
+            $balance = $amount - $paid;
+
+            $itemData = [
+                'type' => $item['type'],
+                'description' => $item['description'],
+                'reference' => $item['reference'] ?? '',
+                'details' => $item['details'] ?? '',
+                'amount' => $amount,
+                'paid' => $paid,
+                'balance' => $balance
+            ];
+            
+            // Include payment_id for extra charges so we can track them
+            if ($item['type'] === 'extra' && !empty($item['payment_id'])) {
+                $itemData['payment_id'] = $item['payment_id'];
+                if (!empty($item['payment_reference'])) {
+                    $itemData['payment_reference'] = $item['payment_reference'];
+                }
+            }
+            
+            $items[] = $itemData;
+
+            $totalAmount += $amount;
+            $totalPaid += $paid;
+        }
+
+        $totalBalance = $totalAmount - $totalPaid;
+
+        // Get existing invoice items to compare (not needed for deletion logic, but keep for reference)
+        $existingItems = $invoice->items ?? [];
+        $existingExtraPaymentIds = [];
+        foreach ($existingItems as $existingItem) {
+            if ($existingItem['type'] === 'extra' && isset($existingItem['payment_id'])) {
+                $existingExtraPaymentIds[] = $existingItem['payment_id'];
+            }
+        }
+        
+        // Get all current extra charge payment IDs
+        $allCurrentExtraPaymentIds = \App\Models\Payment::where('user_id', $customer->id)
+            ->whereNull('booking_id')
+            ->whereNull('service_request_id')
+            ->whereNull('food_order_id')
+            ->where('payment_reference', 'LIKE', 'EXT-%')
+            ->pluck('id')
+            ->toArray();
+        
         // Calculate totals
         $totalAmount = 0;
         $totalPaid = 0;

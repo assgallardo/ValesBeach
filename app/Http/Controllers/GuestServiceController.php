@@ -146,19 +146,34 @@ class GuestServiceController extends Controller
         }
     }
 
-    public function history()
+    public function history(Request $request)
     {
         try {
             $user = Auth::user();
             
-            // Load service requests WITH the service relationship (this is key for pricing)
-            $serviceRequests = ServiceRequest::with(['service']) // Add this relationship
+            // Base query: service requests WITH the service relationship (for pricing)
+            $query = ServiceRequest::with(['service'])
                 ->where(function($query) use ($user) {
                     $query->where('guest_id', $user->id)
                           ->orWhere('guest_email', $user->email);
-                })
+                });
+
+            // Optional server-side filtering to support pagination-aware views
+            $status = strtolower($request->query('status', ''));
+            $view = strtolower($request->query('view', ''));
+
+            if (!empty($status)) {
+                $query->where('status', $status);
+            } elseif ($view === 'completed') {
+                $query->where('status', 'completed');
+            } elseif ($view === 'active') {
+                $query->whereIn('status', ['pending', 'confirmed', 'assigned', 'in_progress']);
+            }
+
+            $serviceRequests = $query
                 ->orderBy('created_at', 'desc')
-                ->paginate(10);
+                ->paginate(10)
+                ->withQueryString();
 
             // Calculate stats
             $allRequests = ServiceRequest::where(function($query) use ($user) {
@@ -171,6 +186,7 @@ class GuestServiceController extends Controller
             $completedRequests = (clone $allRequests)->where('status', 'completed')->count();
             $cancelledRequests = (clone $allRequests)->where('status', 'cancelled')->count();
             $totalRequests = (clone $allRequests)->count();
+            $activeRequests = $pendingRequests + $inProgressRequests; // Active excludes completed & cancelled
 
             return view('guest.services.history', compact(
                 'serviceRequests',
@@ -178,7 +194,8 @@ class GuestServiceController extends Controller
                 'inProgressRequests',
                 'completedRequests',
                 'cancelledRequests',
-                'totalRequests'
+                'totalRequests',
+                'activeRequests'
             ));
             
         } catch (\Exception $e) {
@@ -190,7 +207,8 @@ class GuestServiceController extends Controller
                 'inProgressRequests' => 0,
                 'completedRequests' => 0,
                 'cancelledRequests' => 0,
-                'totalRequests' => 0
+                'totalRequests' => 0,
+                'activeRequests' => 0
             ]);
         }
     }

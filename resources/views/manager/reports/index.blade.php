@@ -106,8 +106,8 @@
                                    class="flex items-center px-4 py-2.5 text-gray-300 hover:bg-gray-700 hover:text-green-400 transition-colors">
                                     <i class="fas fa-user-check mr-3 text-cyan-400"></i>
                                     <div>
-                                        <div class="font-medium">Repeat Customers</div>
-                                        <div class="text-xs text-gray-500">Loyalty analysis</div>
+                                        <div class="font-medium">Customer Reports</div>
+                                        <div class="text-xs text-gray-500">Customer data</div>
                                     </div>
                                 </a>
                                 <a href="{{ route('manager.reports.export', ['type' => 'customer-preferences'] + request()->query()) }}" 
@@ -209,16 +209,35 @@
                 <h2 class="text-2xl font-bold text-white">Customer Analytics</h2>
             </div>
             
+            <!-- Summary Card -->
+            <a href="{{ route($routePrefix . '.reports.customer-analytics', request()->query()) }}" 
+               class="group bg-gradient-to-br from-cyan-900/40 to-cyan-800/30 rounded-lg border-2 border-cyan-500/50 p-6 mb-6 block hover:border-cyan-400/70 transition-all duration-200 shadow-lg hover:shadow-xl">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <div class="w-16 h-16 bg-cyan-600/30 rounded-xl flex items-center justify-center mr-4">
+                            <i class="fas fa-chart-line text-cyan-400 text-3xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-white font-bold text-xl mb-1">Customer Analytics Summary</h3>
+                            <p class="text-cyan-200 text-sm">Comprehensive overview of customer behavior, preferences, and payment trends</p>
+                        </div>
+                    </div>
+                    <div class="text-cyan-400 group-hover:text-cyan-300 transition-colors">
+                        <i class="fas fa-arrow-right text-2xl"></i>
+                    </div>
+                </div>
+            </a>
+            
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <!-- Repeat Customers -->
+                <!-- Customer Reports -->
                 <a href="{{ route($routePrefix . '.reports.repeat-customers', request()->query()) }}" 
                    class="group bg-gradient-to-br from-cyan-600 to-cyan-700 rounded-lg p-5 hover:from-cyan-700 hover:to-cyan-800 transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-105">
                     <div class="flex flex-col items-center text-center">
                         <div class="w-14 h-14 bg-white/20 rounded-xl flex items-center justify-center mb-3 group-hover:bg-white/30 transition-colors">
                             <i class="fas fa-user-check text-white text-2xl"></i>
                         </div>
-                        <h3 class="text-white font-bold text-sm mb-1">Repeat Customers</h3>
-                        <p class="text-cyan-100 text-xs">Loyalty Analysis</p>
+                        <h3 class="text-white font-bold text-sm mb-1">Customer Reports</h3>
+                        <p class="text-cyan-100 text-xs">Customer data & transactions</p>
                     </div>
                 </a>
 

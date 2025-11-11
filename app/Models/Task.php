@@ -13,6 +13,8 @@ class Task extends Model
         'assigned_to',
         'assigned_by',
         'service_request_id',
+        'booking_id',
+        'task_type',
         'status',
         'due_date',
         'completed_at',
@@ -46,6 +48,14 @@ class Task extends Model
     public function serviceRequest()
     {
         return $this->belongsTo(ServiceRequest::class);
+    }
+
+    /**
+     * Get the booking this task is related to (for housekeeping tasks)
+     */
+    public function booking()
+    {
+        return $this->belongsTo(Booking::class);
     }
 
     /**

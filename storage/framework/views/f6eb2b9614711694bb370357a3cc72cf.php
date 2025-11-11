@@ -18,30 +18,6 @@
             </div>
         </div>
 
-        <!-- Quick Stats -->
-        <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
-            <div class="bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg p-6 text-white shadow-lg">
-                <div class="text-3xl font-bold mb-1"><?php echo e($pendingRequests); ?></div>
-                <div class="text-blue-100 text-sm font-medium">Pending</div>
-            </div>
-            <div class="bg-gradient-to-br from-orange-600 to-orange-700 rounded-lg p-6 text-white shadow-lg">
-                <div class="text-3xl font-bold mb-1"><?php echo e($inProgressRequests); ?></div>
-                <div class="text-orange-100 text-sm font-medium">In Progress</div>
-            </div>
-            <div class="bg-gradient-to-br from-green-600 to-green-700 rounded-lg p-6 text-white shadow-lg">
-                <div class="text-3xl font-bold mb-1"><?php echo e($completedRequests); ?></div>
-                <div class="text-green-100 text-sm font-medium">Completed</div>
-            </div>
-            <div class="bg-gradient-to-br from-red-600 to-red-700 rounded-lg p-6 text-white shadow-lg">
-                <div class="text-3xl font-bold mb-1"><?php echo e($cancelledRequests); ?></div>
-                <div class="text-red-100 text-sm font-medium">Cancelled</div>
-            </div>
-            <div class="bg-gradient-to-br from-gray-600 to-gray-700 rounded-lg p-6 text-white shadow-lg">
-                <div class="text-3xl font-bold mb-1"><?php echo e($totalRequests); ?></div>
-                <div class="text-gray-100 text-sm font-medium">Total</div>
-            </div>
-        </div>
-
         <!-- Filter Bar -->
         <div class="bg-gray-800 rounded-lg p-4 mb-6 shadow-lg">
             <div class="flex flex-wrap gap-3 items-center">
@@ -57,6 +33,12 @@
                 
                 <button onclick="clearFilters()" class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
                     Clear Filters
+                </button>
+
+                <!-- Completed/Active Toggle (like Manager view) -->
+                <button id="completedRequestsBtn" onclick="toggleCompleted()" 
+                        class="bg-green-700 hover:bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                    Show Completed
                 </button>
                 
                 <?php if($cancelledRequests > 0): ?>
@@ -325,6 +307,23 @@
 
 <script>
 let deleteAction = null;
+let showingCompleted = false; // false = Active, true = Completed
+
+// Helpers to read/write URL params
+function getSearchParams() {
+    return new URLSearchParams(window.location.search);
+}
+
+function setParamAndNavigate(param, value) {
+    const params = getSearchParams();
+    if (value === null || value === undefined || value === '') {
+        params.delete(param);
+    } else {
+        params.set(param, value);
+    }
+    const newUrl = window.location.pathname + (params.toString() ? ('?' + params.toString()) : '');
+    window.location.assign(newUrl);
+}
 
 function viewRequestDetails(requestId) {
     const modalContent = document.getElementById('requestModalContent');
@@ -595,18 +594,83 @@ function closeConfirmModal() {
 }
 
 function clearFilters() {
+    // Reset dropdown immediately for UX
     document.getElementById('filterStatus').value = '';
-    filterRequests();
+    // Navigate to Active view without status param so server returns the right set (fixes pagination cases)
+    const params = getSearchParams();
+    params.set('view', 'active');
+    params.delete('status');
+    const newUrl = window.location.pathname + (params.toString() ? ('?' + params.toString()) : '');
+    window.location.assign(newUrl);
 }
 
-function filterRequests() {
-    const statusFilter = document.getElementById('filterStatus').value;
+function toggleCompleted() {
+    // Flip the view and navigate so server can paginate the correct dataset
+    const currentStatus = (document.getElementById('filterStatus').value || '').trim();
+    const params = getSearchParams();
+    const nextView = (params.get('view') === 'completed') ? 'active' : 'completed';
+    params.set('view', nextView);
+    if (currentStatus) params.set('status', currentStatus); else params.delete('status');
+    const newUrl = window.location.pathname + (params.toString() ? ('?' + params.toString()) : '');
+    window.location.assign(newUrl);
+}
+
+function updateCompletedBtn() {
+    const btn = document.getElementById('completedRequestsBtn');
+    if (!btn) return;
+    if (showingCompleted) {
+        btn.textContent = 'Show Active';
+        btn.classList.remove('bg-green-700');
+        btn.classList.add('bg-gray-700');
+    } else {
+        btn.textContent = 'Show Completed';
+        btn.classList.remove('bg-gray-700');
+        btn.classList.add('bg-green-700');
+    }
+}
+
+function applyFilters() {
+    const statusFilter = (document.getElementById('filterStatus').value || '').toLowerCase();
     const cards = document.querySelectorAll('.request-card');
-    
     cards.forEach(card => {
-        const show = !statusFilter || card.dataset.status === statusFilter;
+        const status = (card.dataset.status || '').toLowerCase().trim();
+        // Completed/Active separation
+        const passCompletion = showingCompleted ? (status === 'completed') : (status !== 'completed');
+        // Optional manual status filter
+        const passStatus = !statusFilter || status === statusFilter;
+        const show = passCompletion && passStatus;
         card.style.display = show ? 'block' : 'none';
     });
+    updateEmptyState();
+}
+
+// Show a clear empty state when filters result in no visible cards
+function updateEmptyState() {
+    const container = document.getElementById('requestsContainer');
+    if (!container) return;
+    // Remove any previously added dynamic empty state
+    const prior = document.getElementById('requestsEmptyState');
+    if (prior) prior.remove();
+
+    const allCards = container.querySelectorAll('.request-card');
+    // If there are truly no cards rendered by server, let the Blade "empty" block handle it
+    if (allCards.length === 0) return;
+
+    const visibleCards = Array.from(allCards).filter(c => c.style.display !== 'none');
+    if (visibleCards.length > 0) return;
+
+    // Build a context-aware empty state
+    const empty = document.createElement('div');
+    empty.id = 'requestsEmptyState';
+    empty.className = 'bg-gray-800 rounded-lg p-12 text-center shadow-lg';
+    empty.innerHTML = `
+        <svg class="w-20 h-20 text-gray-600 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+        </svg>
+        <h3 class="text-2xl font-bold text-white mb-2">${showingCompleted ? 'No Completed Service Requests' : 'No Active Service Requests'}</h3>
+        <p class="text-gray-400 mb-6">${showingCompleted ? 'You have not completed any service requests yet.' : 'You have no active service requests at the moment.'}</p>
+    `;
+    container.appendChild(empty);
 }
 
 function showNotification(message, type = 'info') {
@@ -626,7 +690,11 @@ function showNotification(message, type = 'info') {
 }
 
 // Event listeners
-document.getElementById('filterStatus').addEventListener('change', filterRequests);
+document.getElementById('filterStatus').addEventListener('change', function() {
+    // Persist the selected status in the URL and let server provide the correct page
+    const val = this.value;
+    setParamAndNavigate('status', val);
+});
 
 // Close modals on outside click
 document.getElementById('requestModal').addEventListener('click', function(e) {
@@ -635,6 +703,21 @@ document.getElementById('requestModal').addEventListener('click', function(e) {
 
 document.getElementById('confirmModal').addEventListener('click', function(e) {
     if (e.target === this) closeConfirmModal();
+});
+
+// Initialize view and status from URL params on load, then apply client-side filter for this page
+document.addEventListener('DOMContentLoaded', function() {
+    const params = getSearchParams();
+    const view = (params.get('view') || '').toLowerCase();
+    const status = (params.get('status') || '').toLowerCase();
+    // Sync UI from params
+    showingCompleted = (view === 'completed');
+    if (status) {
+        const sel = document.getElementById('filterStatus');
+        if (sel) sel.value = status;
+    }
+    updateCompletedBtn();
+    applyFilters();
 });
 
 // ESC key to close modals
