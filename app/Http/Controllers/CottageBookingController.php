@@ -64,7 +64,7 @@ class CottageBookingController extends Controller
         $validated = $request->validate([
             'booking_type' => 'required|in:day_use,overnight,hourly,event',
             'check_in_date' => 'required|date|after_or_equal:today',
-            'check_out_date' => 'required_if:booking_type,overnight|date|after:check_in_date',
+            'check_out_date' => 'required_if:booking_type,overnight|date|after_or_equal:check_in_date',
             'hours' => 'required_if:booking_type,hourly|integer|min:' . ($cottage->min_hours ?? 1) . '|max:' . ($cottage->max_hours ?? 12),
             'guests' => 'required|integer|min:1|max:' . $cottage->capacity,
             'children' => 'nullable|integer|min:0',
@@ -169,7 +169,7 @@ class CottageBookingController extends Controller
     {
         $validated = $request->validate([
             'check_in' => 'required|date',
-            'check_out' => 'required|date|after:check_in',
+            'check_out' => 'required|date|after_or_equal:check_in',
         ]);
 
         $checkIn = Carbon::parse($validated['check_in']);

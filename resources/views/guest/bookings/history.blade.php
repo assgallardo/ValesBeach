@@ -15,10 +15,10 @@
                                 {{ $booking->room->name ?? 'Room' }}
                             </h3>
                             <p class="text-gray-300">
-                                Check-in: {{ \Carbon\Carbon::parse($booking->check_in ?? $booking->check_in_date)->format('M d, Y \a\t g:i A') }}
+                                Check-in: {{ \Carbon\Carbon::parse($booking->check_in ?? $booking->check_in_date)->format('M d, Y') }} at {{ $booking->room && $booking->room->check_in_time ? \Carbon\Carbon::parse($booking->room->check_in_time)->format('g:i A') : '12:00 AM' }}
                             </p>
                             <p class="text-gray-300">
-                                Check-out: {{ \Carbon\Carbon::parse($booking->check_out ?? $booking->check_out_date)->format('M d, Y \a\t g:i A') }}
+                                Check-out: {{ \Carbon\Carbon::parse($booking->check_out ?? $booking->check_out_date)->format('M d, Y') }} at {{ $booking->room && $booking->room->check_out_time ? \Carbon\Carbon::parse($booking->room->check_out_time)->format('g:i A') : '12:00 AM' }}
                             </p>
                         </div>
                         <div class="text-right">

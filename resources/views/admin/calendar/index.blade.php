@@ -275,12 +275,12 @@ function showBookingDetails(bookingId) {
             <div>
                 <label class="text-sm text-gray-400">Check-in</label>
                 <p class="text-white font-medium">${checkIn.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
-                <p class="text-sm text-gray-400">${checkIn.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}</p>
+                ${booking.room.check_in_time ? `<p class="text-green-400 text-sm mt-1"><i class="fas fa-clock mr-1"></i>Check-in time: ${new Date('2000-01-01 ' + booking.room.check_in_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}</p>` : ''}
             </div>
             <div>
                 <label class="text-sm text-gray-400">Check-out</label>
                 <p class="text-white font-medium">${checkOut.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
-                <p class="text-sm text-gray-400">${checkOut.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}</p>
+                ${booking.room.check_out_time ? `<p class="text-yellow-400 text-sm mt-1"><i class="fas fa-clock mr-1"></i>Check-out time: ${new Date('2000-01-01 ' + booking.room.check_out_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}</p>` : ''}
             </div>
             <div>
                 <label class="text-sm text-gray-400">Total</label>

@@ -76,7 +76,15 @@
                             
                             <div>
                                 <label class="block text-green-200 text-sm font-medium mb-2">Nights</label>
-                                <p class="text-green-50">{{ Carbon\Carbon::parse($booking->check_in_date)->diffInDays(Carbon\Carbon::parse($booking->check_out_date)) }}</p>
+                                <p class="text-green-50">
+                                    @php
+                                        $checkIn = Carbon\Carbon::parse($booking->check_in_date)->startOfDay();
+                                        $checkOut = Carbon\Carbon::parse($booking->check_out_date)->startOfDay();
+                                        $daysDiff = $checkIn->diffInDays($checkOut);
+                                        $nights = $daysDiff === 0 ? 1 : $daysDiff;
+                                    @endphp
+                                    {{ $nights }}
+                                </p>
                             </div>
                         </div>
                         

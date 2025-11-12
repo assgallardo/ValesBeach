@@ -72,6 +72,8 @@ class RoomController extends Controller
             'capacity' => 'required|integer|min:1',
             'beds' => 'required|integer|min:0',
             'amenities' => 'nullable|array',
+            'check_in_time' => 'nullable|date_format:H:i',
+            'check_out_time' => 'nullable|date_format:H:i',
             'images' => 'nullable|array|max:10',        // CHANGED FROM room_images
             'images.*' => 'image|mimes:jpeg,png,jpg|max:2048'  // CHANGED FROM room_images.*
         ]);
@@ -87,6 +89,8 @@ class RoomController extends Controller
                 'capacity' => $validated['capacity'],
                 'beds' => $validated['beds'],
                 'amenities' => isset($validated['amenities']) ? json_encode($validated['amenities']) : null,
+                'check_in_time' => $validated['check_in_time'] ?? null,
+                'check_out_time' => $validated['check_out_time'] ?? null,
                 'is_available' => $request->has('is_available')
             ]);
 
@@ -137,6 +141,8 @@ class RoomController extends Controller
             'capacity' => 'required|integer|min:1',
             'beds' => 'required|integer|min:0',
             'amenities' => 'nullable|array',
+            'check_in_time' => 'nullable|date_format:H:i',
+            'check_out_time' => 'nullable|date_format:H:i',
             'room_images.*' => 'image|mimes:jpeg,png,jpg|max:2048'
         ]);
 

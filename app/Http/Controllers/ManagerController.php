@@ -9,6 +9,7 @@ use App\Models\Booking;
 use App\Models\RoomType;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 
 class ManagerController extends Controller
 {
@@ -349,46 +350,72 @@ class ManagerController extends Controller
      */
     public function storeBooking(Request $request)
     {
-        $checkinColumn = $this->getCheckinColumn() ?: 'check_in_date';
-        $checkoutColumn = $this->getCheckoutColumn() ?: 'check_out_date';
-        $guestsColumn = $this->getGuestsColumn() ?: 'guests';
-        $priceColumn = $this->getPriceColumn() ?: 'total_price';
-        $referenceColumn = $this->getReferenceColumn() ?: 'booking_reference';
+        // Check if it's a new guest or existing guest
+        $isNewGuest = $request->filled('guest_name') && $request->filled('guest_email');
 
-        $request->validate([
-            'user_id' => 'required|exists:users,id',
-            'room_id' => 'required|exists:rooms,id',
-            'check_in_date' => 'required|date|after_or_equal:today',
-            'check_out_date' => 'required|date|after:check_in_date',
-            'guests' => 'required|integer|min:1|max:10',
-            'total_price' => 'required|numeric|min:0',
-            'special_requests' => 'nullable|string',
+        if ($isNewGuest) {
+            // Validate for new guest creation
+            $request->validate([
+                'guest_name' => 'required|string|max:255',
+                'guest_email' => 'required|email|unique:users,email',
+                'room_id' => 'required|exists:rooms,id',
+                'check_in' => 'required|date|after_or_equal:today',
+                'check_out' => 'required|date|after_or_equal:check_in',
+                'guests' => 'required|integer|min:1',
+                'status' => 'required|in:confirmed,pending,checked_in,checked_out,cancelled',
+            ]);
+
+            // Create new guest user
+            $user = User::create([
+                'name' => $request->guest_name,
+                'email' => $request->guest_email,
+                'password' => bcrypt(Str::random(16)), // Random password
+                'role' => 'guest',
+            ]);
+
+            $userId = $user->id;
+        } else {
+            // Validate for existing guest
+            $request->validate([
+                'user_id' => 'required|exists:users,id',
+                'room_id' => 'required|exists:rooms,id',
+                'check_in' => 'required|date|after_or_equal:today',
+                'check_out' => 'required|date|after_or_equal:check_in',
+                'guests' => 'required|integer|min:1',
+                'status' => 'required|in:confirmed,pending,checked_in,checked_out,cancelled',
+            ]);
+
+            $userId = $request->user_id;
+        }
+
+        // Get room to calculate price
+        $room = Room::findOrFail($request->room_id);
+        
+        // Calculate nights and total price
+        $checkIn = Carbon::parse($request->check_in);
+        $checkOut = Carbon::parse($request->check_out);
+        $nights = $checkOut->diffInDays($checkIn);
+        
+        // Same-day booking counts as 1 night
+        if ($nights == 0) {
+            $nights = 1;
+        }
+        
+        $totalPrice = $room->price * $nights;
+
+        // Create booking
+        $booking = Booking::create([
+            'user_id' => $userId,
+            'room_id' => $request->room_id,
+            'check_in' => $request->check_in,
+            'check_out' => $request->check_out,
+            'guests' => $request->guests,
+            'total_price' => $totalPrice,
+            'status' => $request->status,
         ]);
 
-        $bookingData = [
-            'user_id' => $request->user_id,
-            'room_id' => $request->room_id,
-            $checkinColumn => $request->check_in_date,
-            $checkoutColumn => $request->check_out_date,
-            $guestsColumn => $request->guests,
-            $priceColumn => $request->total_price,
-            'status' => 'confirmed',
-        ];
-
-        // Add reference if column exists
-        if (Schema::hasColumn('bookings', $referenceColumn)) {
-            $bookingData[$referenceColumn] = 'VB' . strtoupper(substr(uniqid(), -8));
-        }
-
-        // Add special requests if column exists
-        if (Schema::hasColumn('bookings', 'special_requests')) {
-            $bookingData['special_requests'] = $request->special_requests;
-        }
-
-        Booking::create($bookingData);
-
         return redirect()->route('manager.bookings.index')
-                        ->with('success', 'Booking created successfully.');
+                        ->with('success', 'Booking created successfully for ' . $room->name . '!');
     }
 
     /**
@@ -421,6 +448,42 @@ class ManagerController extends Controller
     }
 
     /**
+     * Check room availability for booking dates
+     */
+    public function checkAvailability(Request $request)
+    {
+        $request->validate([
+            'room_id' => 'required|exists:rooms,id',
+            'check_in' => 'required|date',
+            'check_out' => 'required|date|after_or_equal:check_in',
+            'booking_id' => 'nullable|exists:bookings,id',
+        ]);
+
+        // Check for conflicting bookings (exclude current booking if provided)
+        $query = Booking::where('room_id', $request->room_id)
+            ->where('status', '!=', 'cancelled');
+        
+        if ($request->has('booking_id')) {
+            $query->where('id', '!=', $request->booking_id);
+        }
+        
+        $existingBooking = $query->where(function ($q) use ($request) {
+                $q->whereBetween('check_in', [$request->check_in, $request->check_out])
+                  ->orWhereBetween('check_out', [$request->check_in, $request->check_out])
+                  ->orWhere(function ($subQuery) use ($request) {
+                      $subQuery->where('check_in', '<=', $request->check_in)
+                                ->where('check_out', '>=', $request->check_out);
+                  });
+            })
+            ->first();
+
+        return response()->json([
+            'available' => !$existingBooking,
+            'message' => $existingBooking ? 'This facility already has a booking for the selected dates.' : 'Facility is available.'
+        ]);
+    }
+
+    /**
      * Update booking
      */
     public function updateBooking(Request $request, $id)
@@ -431,7 +494,7 @@ class ManagerController extends Controller
             $request->validate([
                 'room_id' => 'required|exists:rooms,id',
                 'check_in' => 'required|date',
-                'check_out' => 'required|date|after:check_in',
+                'check_out' => 'required|date|after_or_equal:check_in',
                 'guests' => 'required|integer|min:1',
                 'special_requests' => 'nullable|string'
             ]);
@@ -439,8 +502,14 @@ class ManagerController extends Controller
             // Calculate total price
             $room = Room::findOrFail($request->room_id);
             $checkIn = new \DateTime($request->check_in);
+            $checkIn->setTime(0, 0, 0);
             $checkOut = new \DateTime($request->check_out);
-            $nights = $checkIn->diff($checkOut)->days;
+            $checkOut->setTime(0, 0, 0);
+            
+            // Calculate nights: same day = 1 night, otherwise count days difference
+            $daysDiff = $checkIn->diff($checkOut)->days;
+            $nights = $daysDiff === 0 ? 1 : $daysDiff; // Same day counts as 1 night
+            
             $totalPrice = $nights * $room->price;
 
             // Update booking
@@ -566,9 +635,16 @@ class ManagerController extends Controller
                 return $existingTask;
             }
             
+            // Format check-out datetime with facility time
+            $checkOutDate = $booking->check_out->format('M d, Y');
+            $checkOutTime = $booking->room->check_out_time 
+                ? \Carbon\Carbon::parse($booking->room->check_out_time)->format('g:i A')
+                : '12:00 AM';
+            $checkOutDisplay = "{$checkOutDate} {$checkOutTime}";
+            
             $task = \App\Models\Task::create([
                 'title' => 'Housekeeping Required',
-                'description' => "Room cleanup required after guest check-out.\n\nFacility: {$booking->room->name}\nCategory: {$booking->room->category}\nGuest: {$booking->user->name}\nCheck-out: " . $booking->check_out->format('M d, Y g:i A'),
+                'description' => "Room cleanup required after guest check-out.\n\nFacility: {$booking->room->name}\nCategory: {$booking->room->category}\nGuest: {$booking->user->name}\nCheck-out: {$checkOutDisplay}",
                 'booking_id' => $booking->id,
                 'task_type' => 'housekeeping',
                 'assigned_by' => auth()->id(),

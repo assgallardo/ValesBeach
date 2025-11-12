@@ -217,30 +217,33 @@ class Cottage extends Model
      */
     public function calculatePrice($checkIn, $checkOut, $bookingType = 'day_use', $hours = null): float
     {
-        $checkInDate = is_string($checkIn) ? \Carbon\Carbon::parse($checkIn) : $checkIn;
-        $checkOutDate = is_string($checkOut) ? \Carbon\Carbon::parse($checkOut) : $checkOut;
+        $checkInDate = is_string($checkIn) ? \Carbon\Carbon::parse($checkIn)->startOfDay() : $checkIn->copy()->startOfDay();
+        $checkOutDate = is_string($checkOut) ? \Carbon\Carbon::parse($checkOut)->startOfDay() : $checkOut->copy()->startOfDay();
 
         if ($bookingType === 'hourly' && $hours) {
-            return ($this->price_per_hour ?? 0) * $hours;
+            return ($this->price_per_hour ?? $this->price ?? 0) * $hours;
         }
 
         $days = $checkInDate->diffInDays($checkOutDate);
         if ($days == 0) {
-            $days = 1; // Day use
+            $days = 1; // Same-day booking counts as 1 day
         }
 
-        $basePrice = $this->price_per_day * $days;
+        // Use price_per_day if available, otherwise fallback to price
+        $pricePerDay = $this->price_per_day ?? $this->price ?? 0;
+        $basePrice = $pricePerDay * $days;
 
         // Add weekend surcharge if applicable
         $weekendDays = 0;
-        for ($date = $checkInDate->copy(); $date->lte($checkOutDate); $date->addDay()) {
+        for ($date = $checkInDate->copy(); $date->lt($checkOutDate) || ($days == 1 && $date->equalTo($checkOutDate)); $date->addDay()) {
             if ($date->isWeekend()) {
                 $weekendDays++;
             }
+            if ($days == 1) break; // For same-day bookings, only check the single day
         }
 
         if ($weekendDays > 0 && $this->weekend_rate) {
-            $weekendSurcharge = ($this->weekend_rate - $this->price_per_day) * $weekendDays;
+            $weekendSurcharge = ($this->weekend_rate - $pricePerDay) * $weekendDays;
             $basePrice += $weekendSurcharge;
         }
 

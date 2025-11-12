@@ -29,7 +29,7 @@
                     <select name="user_id" required 
                             class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
                         <option value="">Choose a guest...</option>
-                        @foreach($users as $user)
+                        @foreach($users->where('role', 'guest') as $user)
                             <option value="{{ $user->id }}" {{ old('user_id') == $user->id ? 'selected' : '' }}>
                                 {{ $user->name }} ({{ $user->email }})
                             </option>
@@ -212,8 +212,8 @@
                 <div>
                     <label class="block text-sm font-medium text-gray-300 mb-2">Check-out Date *</label>
                     <input type="date" name="check_out" required id="check_out"
-                           value="{{ old('check_out', date('Y-m-d', strtotime('+1 day'))) }}"
-                           min="{{ date('Y-m-d', strtotime('+1 day')) }}"
+                           value="{{ old('check_out', date('Y-m-d')) }}"
+                           min="{{ date('Y-m-d') }}"
                            class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
                     @error('check_out')
                         <p class="text-red-400 text-sm mt-1">{{ $message }}</p>
@@ -293,9 +293,15 @@ document.addEventListener('DOMContentLoaded', function() {
         const checkInDate = new Date(checkInInput.value);
         const checkOutDate = new Date(checkOutInput.value);
 
-        if (selectedRoom.value && checkInInput.value && checkOutInput.value && checkOutDate > checkInDate) {
+        if (selectedRoom.value && checkInInput.value && checkOutInput.value && checkOutDate >= checkInDate) {
             const pricePerNight = parseFloat(selectedRoom.dataset.price);
-            const nights = Math.ceil((checkOutDate - checkInDate) / (1000 * 60 * 60 * 24));
+            let nights = Math.ceil((checkOutDate - checkInDate) / (1000 * 60 * 60 * 24));
+            
+            // Same-day booking counts as 1 night
+            if (nights === 0) {
+                nights = 1;
+            }
+            
             const total = pricePerNight * nights;
             
             totalPreview.textContent = `₱${total.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (${nights} night${nights > 1 ? 's' : ''})`;
@@ -334,12 +340,12 @@ document.addEventListener('DOMContentLoaded', function() {
     // Update check-out minimum date when check-in changes
     checkInInput.addEventListener('change', function() {
         const checkInDate = new Date(this.value);
-        const nextDay = new Date(checkInDate);
-        nextDay.setDate(nextDay.getDate() + 1);
-        checkOutInput.min = nextDay.toISOString().split('T')[0];
+        // Allow same-day booking - min checkout is same as check-in
+        checkOutInput.min = this.value;
         
-        if (checkOutInput.value && new Date(checkOutInput.value) <= checkInDate) {
-            checkOutInput.value = nextDay.toISOString().split('T')[0];
+        // If checkout is before check-in, set it to check-in date (same-day booking)
+        if (checkOutInput.value && new Date(checkOutInput.value) < checkInDate) {
+            checkOutInput.value = this.value;
         }
         
         updateTotalPreview();

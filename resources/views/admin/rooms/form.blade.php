@@ -105,6 +105,32 @@
                         </div>
                     </div>
 
+                    <!-- Optional Check-in/Check-out Time -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="check_in_time" class="block text-sm font-medium text-white mb-2">Check-in Time (optional)</label>
+                            <input type="time"
+                                   id="check_in_time"
+                                   name="check_in_time"
+                                   value="{{ old('check_in_time', $room->check_in_time ?? '') }}"
+                                   class="w-full px-4 py-2 bg-gray-900 border border-green-700 rounded-lg text-white placeholder-gray-400 focus:border-green-500 focus:ring-1 focus:ring-green-500">
+                            @error('check_in_time')
+                                <p class="mt-1 text-sm text-red-400">{{ $message }}</p>
+                            @enderror
+                        </div>
+                        <div>
+                            <label for="check_out_time" class="block text-sm font-medium text-white mb-2">Check-out Time (optional)</label>
+                            <input type="time"
+                                   id="check_out_time"
+                                   name="check_out_time"
+                                   value="{{ old('check_out_time', $room->check_out_time ?? '') }}"
+                                   class="w-full px-4 py-2 bg-gray-900 border border-green-700 rounded-lg text-white placeholder-gray-400 focus:border-green-500 focus:ring-1 focus:ring-green-500">
+                            @error('check_out_time')
+                                <p class="mt-1 text-sm text-red-400">{{ $message }}</p>
+                            @enderror
+                        </div>
+                    </div>
+
                     <!-- Amenities -->
                     <div>
                         <label class="block text-sm font-medium text-white mb-2">Amenities</label>

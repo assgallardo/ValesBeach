@@ -173,7 +173,19 @@ class CottageBooking extends Model
      */
     public function getFormattedTotalPriceAttribute(): string
     {
-        return '₱' . number_format($this->total_price, 2);
+        $price = $this->total_price;
+        
+        // Recalculate if price is 0 and booking exists
+        if ($price == 0 && $this->cottage && $this->check_in_date && $this->check_out_date) {
+            $price = $this->cottage->calculatePrice(
+                $this->check_in_date,
+                $this->check_out_date,
+                $this->booking_type ?? 'day_use',
+                $this->hours ?? null
+            );
+        }
+        
+        return '₱' . number_format($price, 2);
     }
 
     /**

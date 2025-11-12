@@ -37,12 +37,22 @@
                     <div>
                         <h3 class="text-sm font-medium text-gray-400 mb-1">Check-in</h3>
                         <p class="text-white text-lg">{{ $booking->check_in->format('M d, Y') }}</p>
-                        <p class="text-gray-400 text-sm">{{ $booking->check_in->format('l \a\t g:i A') }}</p>
+                        <p class="text-gray-400 text-sm">{{ $booking->check_in->format('l') }}</p>
+                        @if($booking->room->check_in_time)
+                        <p class="text-green-400 text-sm mt-1">
+                            <i class="fas fa-clock mr-1"></i>Check-in time: {{ \Carbon\Carbon::parse($booking->room->check_in_time)->format('g:i A') }}
+                        </p>
+                        @endif
                     </div>
                     <div>
                         <h3 class="text-sm font-medium text-gray-400 mb-1">Check-out</h3>
                         <p class="text-white text-lg">{{ $booking->check_out->format('M d, Y') }}</p>
-                        <p class="text-gray-400 text-sm">{{ $booking->check_out->format('l \a\t g:i A') }}</p>
+                        <p class="text-gray-400 text-sm">{{ $booking->check_out->format('l') }}</p>
+                        @if($booking->room->check_out_time)
+                        <p class="text-yellow-400 text-sm mt-1">
+                            <i class="fas fa-clock mr-1"></i>Check-out time: {{ \Carbon\Carbon::parse($booking->room->check_out_time)->format('g:i A') }}
+                        </p>
+                        @endif
                     </div>
                 </div>
 

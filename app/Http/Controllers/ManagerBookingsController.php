@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Booking;
 use App\Models\Room;
 use App\Models\User; // Add this import
+use App\Models\Service;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
@@ -94,16 +95,46 @@ class ManagerBookingsController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
-            'user_id' => 'required|exists:users,id',
-            'room_id' => 'required|exists:rooms,id',
-            'check_in' => 'required|date|after_or_equal:today',
-            'check_out' => 'required|date|after:check_in',
-            'guests' => 'required|integer|min:1',
-            'special_requests' => 'nullable|string|max:1000',
-            'services' => 'nullable|array',
-            'services.*' => 'exists:services,id',
-        ]);
+        // Determine if we're creating a new guest or using existing
+        $isNewGuest = $request->filled('guest_name') && $request->filled('guest_email');
+        
+        if ($isNewGuest) {
+            $request->validate([
+                'guest_name' => 'required|string|max:255',
+                'guest_email' => 'required|email|unique:users,email',
+                'room_id' => 'required|exists:rooms,id',
+                'check_in' => 'required|date|after_or_equal:today',
+                'check_out' => 'required|date|after_or_equal:check_in',
+                'guests' => 'required|integer|min:1',
+                'special_requests' => 'nullable|string|max:1000',
+                'services' => 'nullable|array',
+                'services.*' => 'exists:services,id',
+            ]);
+            
+            // Create new guest user
+            $user = User::create([
+                'name' => $request->guest_name,
+                'email' => $request->guest_email,
+                'email_verified_at' => now(),
+                'password' => bcrypt('password123'), // Default password
+                'role' => 'guest'
+            ]);
+            
+            $userId = $user->id;
+        } else {
+            $request->validate([
+                'user_id' => 'required|exists:users,id',
+                'room_id' => 'required|exists:rooms,id',
+                'check_in' => 'required|date|after_or_equal:today',
+                'check_out' => 'required|date|after_or_equal:check_in',
+                'guests' => 'required|integer|min:1',
+                'special_requests' => 'nullable|string|max:1000',
+                'services' => 'nullable|array',
+                'services.*' => 'exists:services,id',
+            ]);
+            
+            $userId = $request->user_id;
+        }
 
         DB::beginTransaction();
         try {
@@ -133,6 +164,11 @@ class ManagerBookingsController extends Controller
 
             // Calculate stay duration and total price
             $nights = $checkIn->diffInDays($checkOut);
+            // Same-day booking counts as 1 night
+            // Note: diffInDays returns float, use == not ===
+            if ($nights == 0) {
+                $nights = 1;
+            }
             $roomTotal = $room->price * $nights;
             
             // Calculate services total
@@ -147,7 +183,7 @@ class ManagerBookingsController extends Controller
 
             // Create booking
             $booking = Booking::create([
-                'user_id' => $request->user_id,
+                'user_id' => $userId,
                 'room_id' => $request->room_id,
                 'check_in' => $checkIn,
                 'check_out' => $checkOut,
@@ -170,8 +206,12 @@ class ManagerBookingsController extends Controller
 
             DB::commit();
 
+            $successMessage = $isNewGuest 
+                ? 'Booking created successfully with new guest account!' 
+                : 'Booking created successfully!';
+
             return redirect()->route('manager.bookings.index')
-                           ->with('success', 'Booking created successfully!');
+                           ->with('success', $successMessage);
 
         } catch (\Exception $e) {
             DB::rollback();
@@ -214,7 +254,7 @@ class ManagerBookingsController extends Controller
             $validated = $request->validate([
                 'room_id' => 'required|exists:rooms,id',
                 'check_in' => 'required|date',
-                'check_out' => 'required|date|after:check_in',
+                'check_out' => 'required|date|after_or_equal:check_in',
                 'guests' => 'required|integer|min:1|max:20',
                 'special_requests' => 'nullable|string|max:1000',
             ]);
@@ -223,12 +263,14 @@ class ManagerBookingsController extends Controller
             $room = Room::findOrFail($validated['room_id']);
             
             // Calculate total price
-            $checkIn = Carbon::parse($validated['check_in']);
-            $checkOut = Carbon::parse($validated['check_out']);
+            $checkIn = Carbon::parse($validated['check_in'])->startOfDay();
+            $checkOut = Carbon::parse($validated['check_out'])->startOfDay();
             $nights = $checkIn->diffInDays($checkOut);
             
-            if ($nights <= 0) {
-                throw new \Exception('Check-out date must be after check-in date');
+            // Same-day booking counts as 1 night
+            // Note: diffInDays returns float, use == not ===
+            if ($nights == 0) {
+                $nights = 1;
             }
             
             $totalPrice = $room->price * $nights;

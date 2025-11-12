@@ -80,6 +80,19 @@
                             <span class="block text-gray-300 text-sm">Beds</span>
                             <span class="text-white font-semibold">{{ $room->beds }}</span>
                         </div>
+                        @if(!empty($room->check_in_time) || !empty($room->check_out_time))
+                        <div class="bg-green-800/50 p-4 rounded-lg col-span-2 md:col-span-1">
+                            <span class="block text-gray-300 text-sm">Check-in / Check-out</span>
+                            <span class="text-white font-semibold">
+                                @if(!empty($room->check_in_time))
+                                    Check-in: {{ \Carbon\Carbon::createFromFormat('H:i:s', $room->check_in_time)->format('g:i A') }}<br>
+                                @endif
+                                @if(!empty($room->check_out_time))
+                                    Check-out: {{ \Carbon\Carbon::createFromFormat('H:i:s', $room->check_out_time)->format('g:i A') }}
+                                @endif
+                            </span>
+                        </div>
+                        @endif
                     </div>
 
                     <!-- Description -->
@@ -121,7 +134,12 @@
                                 if (this.checkIn && this.checkOut) {
                                     const start = new Date(this.checkIn);
                                     const end = new Date(this.checkOut);
-                                    this.nights = Math.max(0, Math.ceil((end - start) / (1000 * 60 * 60 * 24)));
+                                    const msPerDay = 1000 * 60 * 60 * 24;
+                                    // Calculate difference in days
+                                    const diff = (end - start) / msPerDay;
+                                    this.nights = diff >= 0 ? (diff === 0 ? 1 : diff) : 0;
+                                } else {
+                                    this.nights = 0;
                                 }
                             }
                          }">
@@ -140,6 +158,17 @@
                         </div>
 
                         @if($isAvailable)
+                            <!-- Display any errors -->
+                            @if ($errors->any())
+                                <div class="bg-red-500/10 border border-red-500 text-red-400 px-4 py-3 rounded-lg mb-4">
+                                    <ul class="list-disc list-inside">
+                                        @foreach ($errors->all() as $error)
+                                            <li>{{ $error }}</li>
+                                        @endforeach
+                                    </ul>
+                                </div>
+                            @endif
+
                             <!-- Booking Form -->
                             <form action="{{ route('guest.rooms.book.store', $room) }}" method="POST">
                                 @csrf

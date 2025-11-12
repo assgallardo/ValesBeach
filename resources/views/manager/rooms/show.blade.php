@@ -54,6 +54,20 @@
                         <h4 class="text-lg font-semibold text-white mb-2">Beds</h4>
                         <p class="text-gray-300">{{ $room->beds }} {{ Str::plural('bed', $room->beds) }}</p>
                     </div>
+
+                    @if(!empty($room->check_in_time) || !empty($room->check_out_time))
+                    <div>
+                        <h4 class="text-lg font-semibold text-white mb-2">Check-in / Check-out Time</h4>
+                        <p class="text-gray-300">
+                            @if(!empty($room->check_in_time))
+                                Check-in: {{ \Carbon\Carbon::createFromFormat('H:i:s', $room->check_in_time)->format('g:i A') }}<br>
+                            @endif
+                            @if(!empty($room->check_out_time))
+                                Check-out: {{ \Carbon\Carbon::createFromFormat('H:i:s', $room->check_out_time)->format('g:i A') }}
+                            @endif
+                        </p>
+                    </div>
+                    @endif
                 </div>
 
                 <!-- Right Column -->

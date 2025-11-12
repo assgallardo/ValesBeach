@@ -33,7 +33,7 @@ class StaffAssignmentController extends Controller
         // Only show tasks for bookings with status 'checked_out' or 'completed'
         $housekeepingTasks = Task::with(['assignedTo', 'assignedBy', 'booking.user', 'booking.room'])
             ->where('task_type', 'housekeeping')
-            ->whereIn('status', ['pending', 'assigned', 'in_progress', 'completed'])
+            ->whereIn('status', ['pending', 'confirmed', 'assigned', 'in_progress', 'completed'])
             ->whereHas('booking', function($query) {
                 $query->whereIn('status', ['checked_out', 'completed']);
             })
@@ -51,7 +51,7 @@ class StaffAssignmentController extends Controller
 
         // Add housekeeping tasks to statistics (only for checked_out or completed bookings)
         $pendingHousekeeping = Task::where('task_type', 'housekeeping')
-            ->where('status', 'pending')
+            ->whereIn('status', ['pending', 'confirmed'])
             ->whereHas('booking', function($query) {
                 $query->whereIn('status', ['checked_out', 'completed']);
             })
@@ -451,7 +451,7 @@ class StaffAssignmentController extends Controller
     {
         $request->validate([
             'assigned_to' => 'nullable|exists:users,id',
-            'status' => 'nullable|in:pending,assigned,in_progress,completed',
+            'status' => 'nullable|in:pending,confirmed,assigned,in_progress,completed',
         ]);
 
         $updateData = [];
@@ -465,9 +465,13 @@ class StaffAssignmentController extends Controller
 
         if ($request->has('status')) {
             $updateData['status'] = $request->status;
-            // Add completed timestamp when task is marked as completed
+            
+            // Set completed timestamp when task is marked as completed
             if ($request->status === 'completed') {
                 $updateData['completed_at'] = now();
+            } else {
+                // Reset completed_at when status is changed from completed to any other status
+                $updateData['completed_at'] = null;
             }
         }
 

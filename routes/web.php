@@ -244,6 +244,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'user.status', 'role
         Route::get('/reservations/create', 'create')->name('reservations.create');
         Route::get('/reservations/create-from-room/{room}', 'createFromRoom')->name('reservations.createFromRoom');
         Route::post('/reservations/store', 'store')->name('reservations.store');
+        Route::post('/reservations/check-availability', 'checkAvailability')->name('reservations.checkAvailability');
         Route::get('/reservations/{booking}', 'show')->name('reservations.show');
         Route::get('/reservations/{booking}/edit', 'edit')->name('reservations.edit');
         Route::put('/reservations/{booking}', 'update')->name('reservations.update');
@@ -369,6 +370,7 @@ Route::prefix('manager')->name('manager.')->middleware(['auth', 'user.status', '
     Route::get('/bookings', [App\Http\Controllers\ManagerController::class, 'bookings'])->name('bookings.index');
     Route::get('/bookings/create', [App\Http\Controllers\ManagerController::class, 'createBooking'])->name('bookings.create');
     Route::post('/bookings', [App\Http\Controllers\ManagerController::class, 'storeBooking'])->name('bookings.store');
+    Route::post('/bookings/check-availability', [App\Http\Controllers\ManagerController::class, 'checkAvailability'])->name('bookings.checkAvailability');
     Route::get('/bookings/{id}', [App\Http\Controllers\ManagerController::class, 'showBooking'])->name('bookings.show');
     
     // ADD THESE ROUTES FOR EDIT FUNCTIONALITY:

@@ -30,16 +30,31 @@
                                 {{ $booking->room->name }}
                             </h3>
                             <p class="text-gray-300">
-                                Check-in: {{ $booking->check_in->format('M d, Y \a\t g:i A') }}
+                                Check-in: {{ $booking->check_in->format('M d, Y') }} at {{ $booking->room->check_in_time ? \Carbon\Carbon::parse($booking->room->check_in_time)->format('g:i A') : '12:00 AM' }}
                             </p>
                             <p class="text-gray-300">
-                                Check-out: {{ $booking->check_out->format('M d, Y \a\t g:i A') }}
+                                Check-out: {{ $booking->check_out->format('M d, Y') }} at {{ $booking->room->check_out_time ? \Carbon\Carbon::parse($booking->room->check_out_time)->format('g:i A') : '12:00 AM' }}
                             </p>
                         </div>
                         <div class="text-right">
                             <p class="text-sm text-gray-400 mb-1">Total Amount</p>
                             <p class="text-2xl font-bold text-green-400">
-                                {{ $booking->formatted_total_price }}
+                                @php
+                                    // Compute a reliable fallback total for display
+                                    // Same-day bookings count as 1 night/day
+                                    $checkInVal = $booking->check_in ?? null;
+                                    $checkOutVal = $booking->check_out ?? null;
+                                    $checkIn = $checkInVal ? \Carbon\Carbon::parse($checkInVal)->startOfDay() : null;
+                                    $checkOut = $checkOutVal ? \Carbon\Carbon::parse($checkOutVal)->startOfDay() : null;
+                                    $nights = ($checkIn && $checkOut) ? $checkIn->diffInDays($checkOut) : 0;
+                                    // diffInDays returns float, use == not ===
+                                    if ($nights == 0) { $nights = 1; }
+                                    $roomPrice = optional($booking->room)->price ?? 0;
+                                    $fallbackTotal = $roomPrice * $nights;
+                                    $rawTotal = (float)($booking->total_price ?? 0);
+                                    $displayTotal = $rawTotal > 0 ? $rawTotal : $fallbackTotal;
+                                @endphp
+                                {{ '₱' . number_format($displayTotal, 2) }}
                             </p>
                             <p class="text-sm text-gray-400 mt-2">
                                 Status: <span class="capitalize px-2 py-1 rounded text-xs font-medium

@@ -393,9 +393,9 @@
                             </td>
                             <td class="px-6 py-4 booking-dates">
                                 <div class="text-white">{{ $booking->check_in->format('M d, Y') }}</div>
-                                <div class="text-sm text-gray-400">{{ $booking->check_in->format('l \a\t g:i A') }}</div>
+                                <div class="text-sm text-gray-400">{{ $booking->check_in->format('l') }} at {{ $booking->room->check_in_time ? \Carbon\Carbon::parse($booking->room->check_in_time)->format('g:i A') : '12:00 AM' }}</div>
                                 <div class="text-white mt-1">{{ $booking->check_out->format('M d, Y') }}</div>
-                                <div class="text-sm text-gray-400">{{ $booking->check_out->format('l \a\t g:i A') }}</div>
+                                <div class="text-sm text-gray-400">{{ $booking->check_out->format('l') }} at {{ $booking->room->check_out_time ? \Carbon\Carbon::parse($booking->room->check_out_time)->format('g:i A') : '12:00 AM' }}</div>
                             </td>
                             <td class="px-6 py-4">
                                 <div class="text-green-400 font-semibold">₱{{ number_format((float)$booking->total_price, 2) }}</div>
@@ -500,14 +500,20 @@
                         </td>
                         <td class="px-6 py-4 booking-dates">
                             <div class="text-white">{{ $booking->check_in->format('M d, Y') }}</div>
-                            <div class="text-sm text-gray-400">{{ $booking->check_in->format('l \a\t g:i A') }}</div>
+                            <div class="text-sm text-gray-400">{{ $booking->check_in->format('l') }} at {{ $booking->room->check_in_time ? \Carbon\Carbon::parse($booking->room->check_in_time)->format('g:i A') : '12:00 AM' }}</div>
                             <div class="text-white mt-1">{{ $booking->check_out->format('M d, Y') }}</div>
-                            <div class="text-sm text-gray-400">{{ $booking->check_out->format('l \a\t g:i A') }}</div>
+                            <div class="text-sm text-gray-400">{{ $booking->check_out->format('l') }} at {{ $booking->room->check_out_time ? \Carbon\Carbon::parse($booking->room->check_out_time)->format('g:i A') : '12:00 AM' }}</div>
                         </td>
                         <td class="px-6 py-4">
                             <div class="text-green-400 font-semibold booking-total">₱{{ number_format((float)$booking->total_price, 2) }}</div>
                             <div class="text-sm text-gray-400 booking-nights">
-                                {{ $booking->check_in->diffInDays($booking->check_out) }} night(s)
+                                @php
+                                    $checkIn = $booking->check_in->copy()->startOfDay();
+                                    $checkOut = $booking->check_out->copy()->startOfDay();
+                                    $daysDiff = $checkIn->diffInDays($checkOut);
+                                    $nights = $daysDiff === 0 ? 1 : $daysDiff;
+                                @endphp
+                                {{ $nights }} night(s)
                             </div>
                         </td>
                         <td class="px-6 py-4">
@@ -616,14 +622,20 @@
                             </td>
                             <td class="px-6 py-4 booking-dates">
                                 <div class="text-white">{{ $cottageBooking->check_in->format('M d, Y') }}</div>
-                                <div class="text-sm text-gray-400">{{ $cottageBooking->check_in->format('l \a\t g:i A') }}</div>
+                                <div class="text-sm text-gray-400">{{ $cottageBooking->check_in->format('l') }} at {{ $cottageBooking->room->check_in_time ? \Carbon\Carbon::parse($cottageBooking->room->check_in_time)->format('g:i A') : '12:00 AM' }}</div>
                                 <div class="text-white mt-1">{{ $cottageBooking->check_out->format('M d, Y') }}</div>
-                                <div class="text-sm text-gray-400">{{ $cottageBooking->check_out->format('l \a\t g:i A') }}</div>
+                                <div class="text-sm text-gray-400">{{ $cottageBooking->check_out->format('l') }} at {{ $cottageBooking->room->check_out_time ? \Carbon\Carbon::parse($cottageBooking->room->check_out_time)->format('g:i A') : '12:00 AM' }}</div>
                             </td>
                             <td class="px-6 py-4">
                                 <div class="text-green-400 font-semibold booking-total">₱{{ number_format((float)$cottageBooking->total_price, 2) }}</div>
                                 <div class="text-sm text-gray-400 booking-nights">
-                                    {{ $cottageBooking->check_in->diffInDays($cottageBooking->check_out) }} night(s)
+                                    @php
+                                        $checkIn = $cottageBooking->check_in->copy()->startOfDay();
+                                        $checkOut = $cottageBooking->check_out->copy()->startOfDay();
+                                        $daysDiff = $checkIn->diffInDays($checkOut);
+                                        $nights = $daysDiff === 0 ? 1 : $daysDiff;
+                                    @endphp
+                                    {{ $nights }} night(s)
                                 </div>
                             </td>
                             <td class="px-6 py-4">
@@ -726,14 +738,20 @@
                             </td>
                             <td class="px-6 py-4 booking-dates">
                                 <div class="text-white">{{ $eventBooking->check_in->format('M d, Y') }}</div>
-                                <div class="text-sm text-gray-400">{{ $eventBooking->check_in->format('l \a\t g:i A') }}</div>
+                                <div class="text-sm text-gray-400">{{ $eventBooking->check_in->format('l') }} at {{ $eventBooking->room->check_in_time ? \Carbon\Carbon::parse($eventBooking->room->check_in_time)->format('g:i A') : '12:00 AM' }}</div>
                                 <div class="text-white mt-1">{{ $eventBooking->check_out->format('M d, Y') }}</div>
-                                <div class="text-sm text-gray-400">{{ $eventBooking->check_out->format('l \a\t g:i A') }}</div>
+                                <div class="text-sm text-gray-400">{{ $eventBooking->check_out->format('l') }} at {{ $eventBooking->room->check_out_time ? \Carbon\Carbon::parse($eventBooking->room->check_out_time)->format('g:i A') : '12:00 AM' }}</div>
                             </td>
                             <td class="px-6 py-4">
                                 <div class="text-green-400 font-semibold booking-total">₱{{ number_format((float)$eventBooking->total_price, 2) }}</div>
                                 <div class="text-sm text-gray-400 booking-nights">
-                                    {{ $eventBooking->check_in->diffInDays($eventBooking->check_out) }} night(s)
+                                    @php
+                                        $checkIn = $eventBooking->check_in->copy()->startOfDay();
+                                        $checkOut = $eventBooking->check_out->copy()->startOfDay();
+                                        $daysDiff = $checkIn->diffInDays($checkOut);
+                                        $nights = $daysDiff === 0 ? 1 : $daysDiff;
+                                    @endphp
+                                    {{ $nights }} night(s)
                                 </div>
                             </td>
                             <td class="px-6 py-4">
@@ -837,7 +855,11 @@
                                     $allRooms = \App\Models\Room::all();
                                 @endphp
                                 @foreach($allRooms as $room)
-                                    <option value="{{ $room->id }}" data-price="{{ $room->price }}" data-capacity="{{ $room->capacity }}">
+                                    <option value="{{ $room->id }}" 
+                                            data-price="{{ $room->price }}" 
+                                            data-capacity="{{ $room->capacity }}"
+                                            data-check-in-time="{{ $room->check_in_time ?? '00:00:00' }}"
+                                            data-check-out-time="{{ $room->check_out_time ?? '00:00:00' }}">
                                         {{ $room->name }} - ₱{{ number_format($room->price, 2) }}/night (Max: {{ $room->capacity }} guests)
                                     </option>
                                 @endforeach
@@ -847,14 +869,22 @@
                         <!-- Booking Dates -->
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
-                                <label for="edit_check_in" class="block text-sm font-medium text-gray-300 mb-2">Check-in Date & Time</label>
-                                <input type="datetime-local" name="check_in" id="edit_check_in" required
+                                <label for="edit_check_in_date" class="block text-sm font-medium text-gray-300 mb-2">Check-in Date</label>
+                                <input type="date" name="check_in_date" id="edit_check_in_date" required
                                        class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <p id="edit_check_in_time_display" class="text-sm text-gray-400 mt-2">
+                                    <i class="fas fa-clock mr-1"></i>Check-in time: 12:00 AM
+                                </p>
+                                <input type="hidden" name="check_in" id="edit_check_in">
                             </div>
                             <div>
-                                <label for="edit_check_out" class="block text-sm font-medium text-gray-300 mb-2">Check-out Date & Time</label>
-                                <input type="datetime-local" name="check_out" id="edit_check_out" required
+                                <label for="edit_check_out_date" class="block text-sm font-medium text-gray-300 mb-2">Check-out Date</label>
+                                <input type="date" name="check_out_date" id="edit_check_out_date" required
                                        class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <p id="edit_check_out_time_display" class="text-sm text-gray-400 mt-2">
+                                    <i class="fas fa-clock mr-1"></i>Check-out time: 12:00 AM
+                                </p>
+                                <input type="hidden" name="check_out" id="edit_check_out">
                             </div>
                         </div>
 
@@ -1004,27 +1034,26 @@ function editBookingDetails(booking) {
     if (roomSelect && booking.room_id) {
         roomSelect.value = booking.room_id;
         console.log('Set room to:', booking.room_id, 'Current room:', booking.room?.name);
+        
+        // Update facility time displays
+        updateFacilityTimes(booking.room);
     }
     
     document.getElementById('edit_guests').value = booking.guests || 1;
     document.getElementById('edit_special_requests').value = booking.special_requests || '';
     
-    // Handle dates - convert to local timezone
+    // Handle dates - DATE ONLY (facility times are fixed)
     if (booking.check_in) {
         try {
-            // Handle both Date objects and string formats
             const checkIn = typeof booking.check_in === 'string' 
                 ? new Date(booking.check_in) 
                 : booking.check_in;
             
-            // Format for datetime-local input (YYYY-MM-DDTHH:MM)
             const year = checkIn.getFullYear();
             const month = String(checkIn.getMonth() + 1).padStart(2, '0');
             const day = String(checkIn.getDate()).padStart(2, '0');
-            const hours = String(checkIn.getHours()).padStart(2, '0');
-            const minutes = String(checkIn.getMinutes()).padStart(2, '0');
             
-            document.getElementById('edit_check_in').value = `${year}-${month}-${day}T${hours}:${minutes}`;
+            document.getElementById('edit_check_in_date').value = `${year}-${month}-${day}`;
         } catch (e) {
             console.error('Error parsing check-in date:', e);
         }
@@ -1039,10 +1068,8 @@ function editBookingDetails(booking) {
             const year = checkOut.getFullYear();
             const month = String(checkOut.getMonth() + 1).padStart(2, '0');
             const day = String(checkOut.getDate()).padStart(2, '0');
-            const hours = String(checkOut.getHours()).padStart(2, '0');
-            const minutes = String(checkOut.getMinutes()).padStart(2, '0');
             
-            document.getElementById('edit_check_out').value = `${year}-${month}-${day}T${hours}:${minutes}`;
+            document.getElementById('edit_check_out_date').value = `${year}-${month}-${day}`;
         } catch (e) {
             console.error('Error parsing check-out date:', e);
         }
@@ -1058,29 +1085,73 @@ function editBookingDetails(booking) {
     modal.classList.remove('hidden');
 }
 
+// Update facility time displays
+function updateFacilityTimes(room) {
+    const checkInTimeDisplay = document.getElementById('edit_check_in_time_display');
+    const checkOutTimeDisplay = document.getElementById('edit_check_out_time_display');
+    
+    if (room && room.check_in_time) {
+        const checkInTime = new Date('2000-01-01 ' + room.check_in_time);
+        const formattedCheckIn = checkInTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+        checkInTimeDisplay.innerHTML = `<i class="fas fa-clock mr-1"></i>Check-in time: ${formattedCheckIn}`;
+    } else {
+        checkInTimeDisplay.innerHTML = '<i class="fas fa-clock mr-1"></i>Check-in time: 12:00 AM';
+    }
+    
+    if (room && room.check_out_time) {
+        const checkOutTime = new Date('2000-01-01 ' + room.check_out_time);
+        const formattedCheckOut = checkOutTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+        checkOutTimeDisplay.innerHTML = `<i class="fas fa-clock mr-1"></i>Check-out time: ${formattedCheckOut}`;
+    } else {
+        checkOutTimeDisplay.innerHTML = '<i class="fas fa-clock mr-1"></i>Check-out time: 12:00 AM';
+    }
+}
+
 // Handle form submission with enhanced error handling
 document.getElementById('editBookingForm').addEventListener('submit', function(e) {
     e.preventDefault();
     
     const form = this;
+    
+    // Get date inputs
+    const checkInDateInput = document.getElementById('edit_check_in_date');
+    const checkOutDateInput = document.getElementById('edit_check_out_date');
+    const roomSelect = document.getElementById('edit_room_id');
+    
+    // Get selected room to retrieve facility times
+    const selectedOption = roomSelect.options[roomSelect.selectedIndex];
+    const roomId = roomSelect.value;
+    
+    if (!roomId) {
+        showNotification('Please select a room!', 'error');
+        return;
+    }
+    
+    // Get facility times from data attributes
+    const checkInTime = selectedOption.dataset.checkInTime || '00:00:00';
+    const checkOutTime = selectedOption.dataset.checkOutTime || '00:00:00';
+    
+    // Combine date with facility time
+    const checkInDateTime = checkInDateInput.value + ' ' + checkInTime;
+    const checkOutDateTime = checkOutDateInput.value + ' ' + checkOutTime;
+    
+    // Set hidden inputs with combined datetime
+    document.getElementById('edit_check_in').value = checkInDateTime;
+    document.getElementById('edit_check_out').value = checkOutDateTime;
+    
     const formData = new FormData(form);
     
     // Validate dates
-    const checkInInput = document.getElementById('edit_check_in');
-    const checkOutInput = document.getElementById('edit_check_out');
-    
-    if (checkInInput.value && checkOutInput.value) {
-        const checkIn = new Date(checkInInput.value);
-        const checkOut = new Date(checkOutInput.value);
+    if (checkInDateInput.value && checkOutDateInput.value) {
+        // Parse dates at start of day for proper comparison
+        const checkInDate = new Date(checkInDateInput.value);
+        checkInDate.setHours(0, 0, 0, 0);
+        const checkOutDate = new Date(checkOutDateInput.value);
+        checkOutDate.setHours(0, 0, 0, 0);
         
-        if (checkOut <= checkIn) {
-            showNotification('Check-out date must be after check-in date!', 'error');
-            return;
-        }
-        
-        const nights = Math.ceil((checkOut - checkIn) / (1000 * 60 * 60 * 24));
-        if (nights < 1) {
-            showNotification('Booking must be for at least 1 night!', 'error');
+        // Allow same day booking (1 night) or future dates
+        if (checkOutDate < checkInDate) {
+            showNotification('Check-out date cannot be before check-in date!', 'error');
             return;
         }
     }
@@ -1100,6 +1171,39 @@ document.getElementById('editBookingForm').addEventListener('submit', function(e
         return;
     }
     
+    // Check for booking conflicts (excluding current booking)
+    fetch(`{{ route('manager.bookings.checkAvailability') }}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content'),
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+            room_id: roomId,
+            check_in: checkInDateTime,
+            check_out: checkOutDateTime,
+            booking_id: currentBookingId
+        })
+    })
+    .then(response => response.json())
+    .then(availabilityData => {
+        if (!availabilityData.available) {
+            showNotification('This facility already has a booking for the selected dates. Please choose different dates.', 'error');
+            return;
+        }
+        
+        // Proceed with update if available
+        proceedWithManagerUpdate(form, formData, checkInDateTime, checkOutDateTime, roomId, selectedOption);
+    })
+    .catch(error => {
+        console.error('Error checking availability:', error);
+        // Proceed anyway if availability check fails
+        proceedWithManagerUpdate(form, formData, checkInDateTime, checkOutDateTime, roomId, selectedOption);
+    });
+});
+
+function proceedWithManagerUpdate(form, formData, checkInDateTime, checkOutDateTime, roomId, selectedOption) {
     // Show loading state
     const submitBtn = form.querySelector('button[type="submit"]');
     const originalText = submitBtn.textContent;
@@ -1116,22 +1220,28 @@ document.getElementById('editBookingForm').addEventListener('submit', function(e
         return;
     }
     
-    // Calculate total price and add to form data
+    // Get date inputs for calculation
+    const checkInDateInput = document.getElementById('edit_check_in_date');
+    const checkOutDateInput = document.getElementById('edit_check_out_date');
     const roomSelect = document.getElementById('edit_room_id');
     
-    if (roomSelect.value && checkInInput.value && checkOutInput.value) {
-        const selectedOption = roomSelect.options[roomSelect.selectedIndex];
+    // Calculate total price and add to form data
+    if (roomSelect.value && checkInDateInput.value && checkOutDateInput.value) {
         const roomPrice = parseFloat(selectedOption.dataset.price) || 0;
         
-        const checkIn = new Date(checkInInput.value);
-        const checkOut = new Date(checkOutInput.value);
-        const nights = Math.ceil((checkOut - checkIn) / (1000 * 60 * 60 * 24));
+        // Parse dates at start of day for accurate day counting
+        const checkIn = new Date(checkInDateTime);
+        checkIn.setHours(0, 0, 0, 0);
+        const checkOut = new Date(checkOutDateTime);
+        checkOut.setHours(0, 0, 0, 0);
         
-        if (nights > 0) {
-            const total = nights * roomPrice;
-            formData.append('total_price', total);
-            console.log(`Calculated: ${nights} nights × ₱${roomPrice} = ₱${total}`);
-        }
+        // Calculate nights: same day = 1 night, next day = 1 night, etc.
+        const daysDiff = Math.ceil((checkOut - checkIn) / (1000 * 60 * 60 * 24));
+        const nights = daysDiff === 0 ? 1 : daysDiff; // Same day counts as 1 night
+        
+        const total = nights * roomPrice;
+        formData.append('total_price', total);
+        console.log(`Calculated: ${nights} night${nights > 1 ? 's' : ''} × ₱${roomPrice} = ₱${total}`);
     }
     
     fetch(form.action, {
@@ -1191,7 +1301,7 @@ document.getElementById('editBookingForm').addEventListener('submit', function(e
         submitBtn.disabled = false;
         submitBtn.textContent = originalText;
     });
-});
+}
 
 // Show notification function
 function showNotification(message, type = 'success') {
@@ -1233,8 +1343,8 @@ function showNotification(message, type = 'success') {
 // Calculate total for edit form
 function calculateEditTotal() {
     const roomSelect = document.getElementById('edit_room_id');
-    const checkInInput = document.getElementById('edit_check_in');
-    const checkOutInput = document.getElementById('edit_check_out');
+    const checkInInput = document.getElementById('edit_check_in_date');
+    const checkOutInput = document.getElementById('edit_check_out_date');
     const totalDisplay = document.getElementById('edit_total_display');
     const nightsDisplay = document.getElementById('edit_nights_display');
     const rateDisplay = document.getElementById('edit_rate_display');
@@ -1243,16 +1353,20 @@ function calculateEditTotal() {
         const selectedOption = roomSelect.options[roomSelect.selectedIndex];
         const roomPrice = parseFloat(selectedOption.dataset.price) || 0;
         
+        // Parse dates at start of day for accurate day counting
         const checkIn = new Date(checkInInput.value);
+        checkIn.setHours(0, 0, 0, 0);
         const checkOut = new Date(checkOutInput.value);
-        const nights = Math.ceil((checkOut - checkIn) / (1000 * 60 * 60 * 24));
+        checkOut.setHours(0, 0, 0, 0);
         
-        if (nights > 0) {
-            const total = nights * roomPrice;
-            totalDisplay.textContent = `₱${total.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
-            nightsDisplay.textContent = `${nights} night${nights > 1 ? 's' : ''}`;
-            rateDisplay.textContent = `₱${roomPrice.toLocaleString('en-US', { minimumFractionDigits: 2 })}/night`;
-        }
+        // Calculate nights: same day = 1 night, next day = 1 night, etc.
+        const daysDiff = Math.ceil((checkOut - checkIn) / (1000 * 60 * 60 * 24));
+        const nights = daysDiff === 0 ? 1 : daysDiff; // Same day counts as 1 night
+        
+        const total = nights * roomPrice;
+        totalDisplay.textContent = `₱${total.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+        nightsDisplay.textContent = `${nights} night${nights > 1 ? 's' : ''}`;
+        rateDisplay.textContent = `₱${roomPrice.toLocaleString('en-US', { minimumFractionDigits: 2 })}/night`;
     }
 }
 
@@ -1346,8 +1460,13 @@ function updateBookingRow(bookingId, bookingData) {
     const nightsEl = row.querySelector('.booking-nights');
     if (nightsEl && bookingData.check_in && bookingData.check_out) {
         const checkIn = new Date(bookingData.check_in);
+        checkIn.setHours(0, 0, 0, 0);
         const checkOut = new Date(bookingData.check_out);
-        const nights = Math.ceil((checkOut - checkIn) / (1000 * 60 * 60 * 24));
+        checkOut.setHours(0, 0, 0, 0);
+        
+        // Calculate nights: same day = 1 night, next day = 1 night, etc.
+        const daysDiff = Math.ceil((checkOut - checkIn) / (1000 * 60 * 60 * 24));
+        const nights = daysDiff === 0 ? 1 : daysDiff; // Same day counts as 1 night
         nightsEl.textContent = `${nights} night${nights > 1 ? 's' : ''}`;
     }
     
@@ -1360,11 +1479,23 @@ function updateBookingRow(bookingId, bookingData) {
 
 // Add event listeners for real-time calculation and validation
 document.getElementById('edit_room_id').addEventListener('change', function() {
-    updateEditRoomCapacity();
-    calculateEditTotal();
+    const selectedOption = this.options[this.selectedIndex];
+    const roomId = this.value;
+    
+    if (roomId && selectedOption) {
+        // Get facility times from data attributes instead of fetching
+        const room = {
+            check_in_time: selectedOption.dataset.checkInTime || '00:00:00',
+            check_out_time: selectedOption.dataset.checkOutTime || '00:00:00'
+        };
+        
+        updateFacilityTimes(room);
+        updateEditRoomCapacity();
+        calculateEditTotal();
+    }
 });
-document.getElementById('edit_check_in').addEventListener('change', calculateEditTotal);
-document.getElementById('edit_check_out').addEventListener('change', calculateEditTotal);
+document.getElementById('edit_check_in_date').addEventListener('change', calculateEditTotal);
+document.getElementById('edit_check_out_date').addEventListener('change', calculateEditTotal);
 document.getElementById('edit_guests').addEventListener('input', validateEditGuests);
 
 function closeEditModal() {

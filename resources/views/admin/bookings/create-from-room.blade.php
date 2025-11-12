@@ -49,24 +49,24 @@
             <!-- Guest Selection or Creation -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="md:col-span-2">
-                    <div x-data="{ guestType: 'existing' }">
+                    <div>
                         <label class="block text-sm font-medium text-gray-300 mb-3">Guest Information *</label>
                         
                         <!-- Guest Type Selection -->
                         <div class="flex space-x-4 mb-4">
                             <label class="flex items-center">
-                                <input type="radio" x-model="guestType" value="existing" class="text-green-600 bg-gray-700 border-gray-600 focus:ring-green-500">
+                                <input type="radio" name="guest_type" value="existing" checked onchange="toggleAdminGuestFields('existing')" class="text-green-600 bg-gray-700 border-gray-600 focus:ring-green-500">
                                 <span class="ml-2 text-gray-300">Select Existing Guest</span>
                             </label>
                             <label class="flex items-center">
-                                <input type="radio" x-model="guestType" value="new" class="text-green-600 bg-gray-700 border-gray-600 focus:ring-green-500">
+                                <input type="radio" name="guest_type" value="new" onchange="toggleAdminGuestFields('new')" class="text-green-600 bg-gray-700 border-gray-600 focus:ring-green-500">
                                 <span class="ml-2 text-gray-300">Create New Guest</span>
                             </label>
                         </div>
 
                         <!-- Existing Guest Selection -->
-                        <div x-show="guestType === 'existing'" class="space-y-4">
-                            <select name="user_id" :required="guestType === 'existing'"
+                        <div id="admin_existing_guest_section" style="display: block;" class="space-y-4">
+                            <select name="user_id" id="admin_user_id"
                                     class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
                                 <option value="">Choose a guest...</option>
                                 @foreach($users as $user)
@@ -78,17 +78,17 @@
                         </div>
 
                         <!-- New Guest Creation -->
-                        <div x-show="guestType === 'new'" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div id="admin_new_guest_section" style="display: none;" class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-sm text-gray-400 mb-1">Guest Name *</label>
-                                <input type="text" name="guest_name" :required="guestType === 'new'"
+                                <input type="text" name="guest_name" id="admin_guest_name"
                                        value="{{ old('guest_name') }}"
                                        placeholder="Enter guest full name"
                                        class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
                             </div>
                             <div>
                                 <label class="block text-sm text-gray-400 mb-1">Guest Email *</label>
-                                <input type="email" name="guest_email" :required="guestType === 'new'"
+                                <input type="email" name="guest_email" id="admin_guest_email"
                                        value="{{ old('guest_email') }}"
                                        placeholder="Enter guest email address"
                                        class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
@@ -123,8 +123,8 @@
                 <div>
                     <label class="block text-sm font-medium text-gray-300 mb-2">Check-out Date *</label>
                     <input type="date" name="check_out" required id="check_out"
-                           value="{{ old('check_out', date('Y-m-d', strtotime('+1 day'))) }}"
-                           min="{{ date('Y-m-d', strtotime('+1 day')) }}"
+                           value="{{ old('check_out', date('Y-m-d')) }}"
+                           min="{{ date('Y-m-d') }}"
                            class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
                     @error('check_out')
                         <p class="text-red-400 text-sm mt-1">{{ $message }}</p>
@@ -197,12 +197,43 @@ document.addEventListener('DOMContentLoaded', function() {
     const breakdownPreview = document.getElementById('breakdown_preview');
     const pricePerNight = {{ $room->price }};
 
+    // Guest type toggle function
+    function toggleAdminGuestFields(type) {
+        const existingSection = document.getElementById('admin_existing_guest_section');
+        const newSection = document.getElementById('admin_new_guest_section');
+        const userIdField = document.getElementById('admin_user_id');
+        const guestNameField = document.getElementById('admin_guest_name');
+        const guestEmailField = document.getElementById('admin_guest_email');
+
+        if (type === 'existing') {
+            existingSection.style.display = 'block';
+            newSection.style.display = 'none';
+            // Clear new guest fields
+            if (guestNameField) guestNameField.value = '';
+            if (guestEmailField) guestEmailField.value = '';
+        } else {
+            existingSection.style.display = 'none';
+            newSection.style.display = 'grid';
+            // Clear existing guest field
+            if (userIdField) userIdField.value = '';
+        }
+    }
+
+    // Make function globally accessible
+    window.toggleAdminGuestFields = toggleAdminGuestFields;
+
     function updateTotalPreview() {
         const checkInDate = new Date(checkInInput.value);
         const checkOutDate = new Date(checkOutInput.value);
 
-        if (checkInInput.value && checkOutInput.value && checkOutDate > checkInDate) {
-            const nights = Math.ceil((checkOutDate - checkInDate) / (1000 * 60 * 60 * 24));
+        if (checkInInput.value && checkOutInput.value && checkOutDate >= checkInDate) {
+            let nights = Math.ceil((checkOutDate - checkInDate) / (1000 * 60 * 60 * 24));
+            
+            // Same-day booking counts as 1 night
+            if (nights === 0) {
+                nights = 1;
+            }
+            
             const total = pricePerNight * nights;
             
             totalPreview.textContent = `₱${total.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -216,12 +247,12 @@ document.addEventListener('DOMContentLoaded', function() {
     // Update check-out minimum date when check-in changes
     checkInInput.addEventListener('change', function() {
         const checkInDate = new Date(this.value);
-        const nextDay = new Date(checkInDate);
-        nextDay.setDate(nextDay.getDate() + 1);
-        checkOutInput.min = nextDay.toISOString().split('T')[0];
+        // Allow same-day booking - min checkout is same as check-in
+        checkOutInput.min = this.value;
         
-        if (checkOutInput.value && new Date(checkOutInput.value) <= checkInDate) {
-            checkOutInput.value = nextDay.toISOString().split('T')[0];
+        // If checkout is before check-in, set it to check-in date (same-day booking)
+        if (checkOutInput.value && new Date(checkOutInput.value) < checkInDate) {
+            checkOutInput.value = this.value;
         }
         
         updateTotalPreview();

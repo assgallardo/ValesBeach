@@ -116,12 +116,31 @@
                             </span>
                             @endif
                         </div>
-                        <div class="text-purple-200 text-sm whitespace-pre-line">{{ $task->description }}</div>
+                        <div class="text-purple-200 text-sm whitespace-pre-line">
+                            @php
+                                // Replace the check-out time in description with facility time
+                                $description = $task->description;
+                                if ($task->booking && $task->booking->room && $task->booking->check_out) {
+                                    $facilityTime = $task->booking->room->check_out_time 
+                                        ? \Carbon\Carbon::parse($task->booking->room->check_out_time)->format('g:i A')
+                                        : '12:00 AM';
+                                    $checkOutDate = $task->booking->check_out->format('M d, Y');
+                                    
+                                    // Replace any time pattern after the check-out date with facility time
+                                    $description = preg_replace(
+                                        '/Check-out:\s*' . preg_quote($checkOutDate, '/') . '\s*\d{1,2}:\d{2}\s*[AP]M/',
+                                        'Check-out: ' . $checkOutDate . ' ' . $facilityTime,
+                                        $description
+                                    );
+                                }
+                            @endphp
+                            {{ $description }}
+                        </div>
                     </div>
                 </div>
 
                 <!-- Task Details Grid -->
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
+                <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mt-4">
                     <!-- Facility Info -->
                     <div class="space-y-1">
                         <label class="text-xs text-gray-400 uppercase tracking-wide">Facility</label>
@@ -148,12 +167,6 @@
                     <!-- Assignment -->
                     <div class="space-y-1">
                         <label class="text-xs text-gray-400 uppercase tracking-wide">Assign To</label>
-                        @if($task->status === 'completed')
-                        <p class="text-green-100 font-medium">
-                            <i class="fas fa-user-check mr-1"></i>{{ $task->assignedTo->name ?? 'N/A' }}
-                        </p>
-                        <p class="text-xs text-green-400">Task completed</p>
-                        @else
                         <select onchange="updateHousekeepingAssignment({{ $task->id }}, this.value)" 
                                 class="w-full bg-gray-700 text-purple-100 rounded px-3 py-2 text-sm">
                             <option value="">Unassigned</option>
@@ -163,28 +176,49 @@
                             </option>
                             @endforeach
                         </select>
-                        @endif
                     </div>
 
-                    <!-- Due Date (Check-out) -->
+                    <!-- Status -->
                     <div class="space-y-1">
-                        <label class="text-xs text-gray-400 uppercase tracking-wide">Due By</label>
-                        <p class="text-purple-100 font-medium">
-                            <i class="fas fa-clock mr-1"></i>
-                            @if($task->booking && $task->booking->check_out)
-                                {{ \Carbon\Carbon::parse($task->booking->check_out)->format('M d, Y g:i A') }}
-                            @elseif($task->due_date)
-                                {{ $task->due_date->format('M d, Y g:i A') }}
-                            @else
-                                N/A
-                            @endif
+                        <label class="text-xs text-gray-400 uppercase tracking-wide">Status</label>
+                        <select onchange="updateHousekeepingStatus({{ $task->id }}, this.value)" 
+                                class="w-full rounded px-3 py-2 text-sm font-medium
+                                {{ $task->status === 'pending' ? 'bg-yellow-600 text-yellow-100' : '' }}
+                                {{ $task->status === 'confirmed' ? 'bg-blue-500 text-blue-100' : '' }}
+                                {{ $task->status === 'assigned' ? 'bg-blue-600 text-blue-100' : '' }}
+                                {{ $task->status === 'in_progress' ? 'bg-indigo-600 text-indigo-100' : '' }}
+                                {{ $task->status === 'completed' ? 'bg-green-600 text-green-100' : '' }}">
+                            <option value="pending" {{ $task->status === 'pending' ? 'selected' : '' }}>Pending</option>
+                            <option value="confirmed" {{ $task->status === 'confirmed' ? 'selected' : '' }}>Confirmed</option>
+                            <option value="assigned" {{ $task->status === 'assigned' ? 'selected' : '' }}>Assigned</option>
+                            <option value="in_progress" {{ $task->status === 'in_progress' ? 'selected' : '' }}>In Progress</option>
+                            <option value="completed" {{ $task->status === 'completed' ? 'selected' : '' }}>Completed</option>
+                        </select>
+                    </div>
+
+                    <!-- Facility Check-out Time -->
+                    <div class="space-y-1">
+                        @if($task->booking && $task->booking->room && $task->booking->room->check_out_time)
+                        <p class="text-yellow-400 font-medium">
+                            <i class="fas fa-clock mr-1"></i>Facility Check-out: {{ \Carbon\Carbon::parse($task->booking->room->check_out_time)->format('g:i A') }}
                         </p>
+                        @elseif($task->booking && $task->booking->check_out)
+                        <p class="text-gray-400 text-sm">
+                            <i class="fas fa-calendar-alt mr-1"></i>{{ \Carbon\Carbon::parse($task->booking->check_out)->format('M d, Y') }}
+                        </p>
+                        @elseif($task->due_date)
+                        <p class="text-gray-400 text-sm">
+                            <i class="fas fa-calendar-alt mr-1"></i>{{ $task->due_date->format('M d, Y') }}
+                        </p>
+                        @else
+                        <p class="text-gray-400">N/A</p>
+                        @endif
                         @if($task->booking && $task->booking->check_out && \Carbon\Carbon::parse($task->booking->check_out)->isPast() && $task->status !== 'completed')
-                        <p class="text-red-400 text-xs">
+                        <p class="text-red-400 text-xs mt-1">
                             <i class="fas fa-exclamation-triangle mr-1"></i>Overdue
                         </p>
                         @elseif($task->due_date && $task->due_date->isPast() && $task->status !== 'completed')
-                        <p class="text-red-400 text-xs">
+                        <p class="text-red-400 text-xs mt-1">
                             <i class="fas fa-exclamation-triangle mr-1"></i>Overdue
                         </p>
                         @endif
@@ -645,6 +679,69 @@ function updateHousekeepingAssignment(taskId, staffId) {
         showNotification('Assignment update failed', 'error');
     });
 }
+
+// Housekeeping task status update
+function updateHousekeepingStatus(taskId, status) {
+    const selectElement = event?.target;
+    
+    fetch(`/manager/staff-assignment/housekeeping/${taskId}`, {
+        method: 'PATCH',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        },
+        body: JSON.stringify({ status: status })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Housekeeping status updated', 'success');
+            
+            // Update the dropdown styling immediately
+            if (selectElement) {
+                selectElement.className = 'w-full rounded px-3 py-2 text-sm font-medium ' + 
+                    (status === 'completed' ? 'bg-green-600 text-green-100' : 
+                     (status === 'in_progress' ? 'bg-indigo-600 text-indigo-100' : 
+                     (status === 'assigned' ? 'bg-blue-600 text-blue-100' : 
+                     (status === 'confirmed' ? 'bg-blue-500 text-blue-100' :
+                     'bg-yellow-600 text-yellow-100'))));
+                
+                // Get the task card element
+                const taskCard = selectElement.closest('.bg-gray-800.border-l-4');
+                if (taskCard) {
+                    // Update border color and opacity based on status
+                    taskCard.classList.remove('border-purple-600', 'border-green-600', 'opacity-75');
+                    if (status === 'completed') {
+                        taskCard.classList.add('border-green-600', 'opacity-75');
+                        
+                        // Move to completed section if currently viewing active tasks
+                        if (!showingCompleted) {
+                            setTimeout(() => {
+                                taskCard.style.display = 'none';
+                            }, 500);
+                        }
+                    } else {
+                        taskCard.classList.add('border-purple-600');
+                        
+                        // Move to active section if currently viewing completed tasks
+                        if (showingCompleted) {
+                            setTimeout(() => {
+                                taskCard.style.display = 'none';
+                            }, 500);
+                        }
+                    }
+                }
+            }
+        } else {
+            showNotification('Status update failed', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Status update failed', 'error');
+    });
+}
+
 
 // SIMPLIFIED CANCEL REQUEST
 function cancelRequest(requestId) {

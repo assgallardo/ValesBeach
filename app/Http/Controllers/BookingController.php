@@ -31,28 +31,57 @@ class BookingController extends Controller
      */
     public function store(Request $request, Room $room)
     {
+        // Check if user is authenticated
+        if (!auth()->check()) {
+            return redirect()->route('login')
+                ->with('error', 'Please login to book a room.');
+        }
+
         $validated = $request->validate([
             'check_in' => 'required|date|after_or_equal:today',
-            'check_out' => 'required|date|after:check_in',
+            'check_out' => 'required|date|after_or_equal:check_in',
             'guests' => 'nullable|integer|min:1|max:' . $room->capacity
         ]);
 
         $checkIn = Carbon::parse($validated['check_in']);
         $checkOut = Carbon::parse($validated['check_out']);
-        $nights = $checkIn->diffInDays($checkOut);
-        $totalPrice = $room->price * $nights;
+        
+        // Calculate nights - same day booking counts as 1 night (1 day stay)
+        $checkInDay = $checkIn->copy()->startOfDay();
+        $checkOutDay = $checkOut->copy()->startOfDay();
+        $nights = $checkInDay->diffInDays($checkOutDay);
+        
+        // If check-in and check-out are on the same day, count as 1 night
+        // Note: diffInDays returns a float, so use == instead of ===
+        if ($nights == 0) {
+            $nights = 1;
+        }
+        
+        // Calculate total price: room price × nights
+        $roomPrice = (float) $room->price;
+        $totalPrice = $roomPrice * $nights;
+
+        // Debug logging
+        \Log::info('Booking Creation Debug', [
+            'room_id' => $room->id,
+            'room_name' => $room->name,
+            'room_price' => $roomPrice,
+            'check_in' => $checkIn->toDateTimeString(),
+            'check_out' => $checkOut->toDateTimeString(),
+            'nights' => $nights,
+            'total_price' => $totalPrice
+        ]);
 
         // Check if room is available for these dates
         $isAvailable = !$room->bookings()
             ->where(function($query) use ($checkIn, $checkOut) {
-                $query->whereBetween('check_in', [$checkIn, $checkOut])
-                      ->orWhereBetween('check_out', [$checkIn, $checkOut])
-                      ->orWhere(function($q) use ($checkIn, $checkOut) {
-                          $q->where('check_in', '<=', $checkIn)
-                            ->where('check_out', '>=', $checkOut);
-                      });
+                $query->where(function($q) use ($checkIn, $checkOut) {
+                    // Check if new booking overlaps with existing bookings
+                    $q->where('check_in', '<', $checkOut)
+                      ->where('check_out', '>', $checkIn);
+                });
             })
-            ->where('status', '!=', 'cancelled')
+            ->whereIn('status', ['pending', 'confirmed', 'checked_in'])
             ->exists();
 
         if (!$isAvailable) {
@@ -71,7 +100,7 @@ class BookingController extends Controller
 
         return redirect()
             ->route('guest.bookings')
-            ->with('success', 'Room booked!');
+            ->with('success', 'Room booked successfully! Your booking is pending confirmation.');
     }
 
     /**

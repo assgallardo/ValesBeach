@@ -703,12 +703,48 @@ class BookingController extends Controller
     /**
      * Update the specified booking in storage.
      */
+    /**
+     * Check room availability for booking dates
+     */
+    public function checkAvailability(Request $request)
+    {
+        $request->validate([
+            'room_id' => 'required|exists:rooms,id',
+            'check_in' => 'required|date',
+            'check_out' => 'required|date|after_or_equal:check_in',
+            'booking_id' => 'nullable|exists:bookings,id',
+        ]);
+
+        // Check for conflicting bookings (exclude current booking if provided)
+        $query = Booking::where('room_id', $request->room_id)
+            ->where('status', '!=', 'cancelled');
+        
+        if ($request->has('booking_id')) {
+            $query->where('id', '!=', $request->booking_id);
+        }
+        
+        $existingBooking = $query->where(function ($q) use ($request) {
+                $q->whereBetween('check_in', [$request->check_in, $request->check_out])
+                  ->orWhereBetween('check_out', [$request->check_in, $request->check_out])
+                  ->orWhere(function ($subQuery) use ($request) {
+                      $subQuery->where('check_in', '<=', $request->check_in)
+                                ->where('check_out', '>=', $request->check_out);
+                  });
+            })
+            ->first();
+
+        return response()->json([
+            'available' => !$existingBooking,
+            'message' => $existingBooking ? 'This facility already has a booking for the selected dates.' : 'Facility is available.'
+        ]);
+    }
+
     public function update(Request $request, Booking $booking)
     {
         $request->validate([
             'room_id' => 'required|exists:rooms,id',
             'check_in' => 'required|date',
-            'check_out' => 'required|date|after:check_in',
+            'check_out' => 'required|date|after_or_equal:check_in',
             'guests' => 'required|integer|min:1',
             'special_requests' => 'nullable|string|max:1000',
         ]);
@@ -750,9 +786,13 @@ class BookingController extends Controller
         }
 
         // Calculate total price
-        $checkIn = Carbon::parse($request->check_in);
-        $checkOut = Carbon::parse($request->check_out);
-        $nights = $checkIn->diffInDays($checkOut);
+        $checkIn = Carbon::parse($request->check_in)->startOfDay();
+        $checkOut = Carbon::parse($request->check_out)->startOfDay();
+        
+        // Calculate nights: same day = 1 night, otherwise count days difference
+        $daysDiff = $checkIn->diffInDays($checkOut);
+        $nights = $daysDiff === 0 ? 1 : $daysDiff; // Same day counts as 1 night
+        
         $totalPrice = $room->price * $nights;
 
         // Update the booking
@@ -855,9 +895,16 @@ class BookingController extends Controller
                 return $existingTask;
             }
             
+            // Format check-out datetime with facility time
+            $checkOutDate = $booking->check_out->format('M d, Y');
+            $checkOutTime = $booking->room->check_out_time 
+                ? \Carbon\Carbon::parse($booking->room->check_out_time)->format('g:i A')
+                : '12:00 AM';
+            $checkOutDisplay = "{$checkOutDate} {$checkOutTime}";
+            
             $task = \App\Models\Task::create([
                 'title' => 'Housekeeping Required',
-                'description' => "Room cleanup required after guest check-out.\n\nFacility: {$booking->room->name}\nCategory: {$booking->room->category}\nGuest: {$booking->user->name}\nCheck-out: " . $booking->check_out->format('M d, Y g:i A'),
+                'description' => "Room cleanup required after guest check-out.\n\nFacility: {$booking->room->name}\nCategory: {$booking->room->category}\nGuest: {$booking->user->name}\nCheck-out: {$checkOutDisplay}",
                 'booking_id' => $booking->id,
                 'task_type' => 'housekeeping',
                 'assigned_by' => auth()->id(),
@@ -988,7 +1035,7 @@ class BookingController extends Controller
                 'guest_email' => 'required|email|unique:users,email',
                 'room_id' => 'required|exists:rooms,id',
                 'check_in' => 'required|date|after_or_equal:today',
-                'check_out' => 'required|date|after:check_in',
+                'check_out' => 'required|date|after_or_equal:check_in',
                 'guests' => 'required|integer|min:1',
                 'status' => 'required|in:pending,confirmed,checked_in,checked_out,cancelled,completed'
             ]);
@@ -1008,7 +1055,7 @@ class BookingController extends Controller
                 'user_id' => 'required|exists:users,id',
                 'room_id' => 'required|exists:rooms,id',
                 'check_in' => 'required|date|after_or_equal:today',
-                'check_out' => 'required|date|after:check_in',
+                'check_out' => 'required|date|after_or_equal:check_in',
                 'guests' => 'required|integer|min:1',
                 'status' => 'required|in:pending,confirmed,checked_in,checked_out,cancelled,completed'
             ]);
@@ -1040,9 +1087,16 @@ class BookingController extends Controller
         }
 
         // Calculate total price
-        $checkIn = Carbon::parse($request->check_in);
-        $checkOut = Carbon::parse($request->check_out);
+        $checkIn = Carbon::parse($request->check_in)->startOfDay();
+        $checkOut = Carbon::parse($request->check_out)->startOfDay();
         $nights = $checkIn->diffInDays($checkOut);
+        
+        // Same-day booking counts as 1 night
+        // Note: diffInDays returns float, use == not ===
+        if ($nights == 0) {
+            $nights = 1;
+        }
+        
         $totalPrice = $room->price * $nights;
 
         // Create the booking

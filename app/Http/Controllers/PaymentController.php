@@ -89,14 +89,17 @@ class PaymentController extends Controller
         try {
             $paymentAmount = $request->payment_amount;
             
-            // Create payment record - default status is pending (admin must confirm)
+            // Auto-complete cash payments, others remain pending for verification
+            $paymentStatus = ($request->payment_method === 'cash') ? 'completed' : 'pending';
+            
+            // Create payment record
             $payment = Payment::create([
                 'user_id' => auth()->id(),
                 'booking_id' => $booking->id,
                 'payment_reference' => $this->generatePaymentReference(),
                 'amount' => $paymentAmount,
                 'payment_method' => $request->payment_method,
-                'status' => 'pending', // Default status is pending, admin/manager must update status
+                'status' => $paymentStatus, // Auto-complete cash, others pending
                 'payment_date' => now(),
                 'notes' => $request->notes,
                 'transaction_id' => $request->transaction_id ?? null,

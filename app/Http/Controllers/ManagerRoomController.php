@@ -86,6 +86,8 @@ class ManagerRoomController extends Controller
                 'beds' => 'required|integer|min:1',
                 'price' => 'required|numeric|min:0',
                 'amenities' => 'nullable|array',
+                'check_in_time' => 'nullable|date_format:H:i',
+                'check_out_time' => 'nullable|date_format:H:i',
                 'is_available' => 'nullable',
                 'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
             ]);
@@ -103,6 +105,8 @@ class ManagerRoomController extends Controller
                 'beds' => $validated['beds'],
                 'price' => $validated['price'],
                 'amenities' => $request->amenities ? json_encode($request->amenities) : null,
+                'check_in_time' => $validated['check_in_time'] ?? null,
+                'check_out_time' => $validated['check_out_time'] ?? null,
                 'is_available' => $isAvailable,
             ];
 
@@ -188,6 +192,8 @@ class ManagerRoomController extends Controller
             'capacity' => 'required|integer|min:1',
             'beds' => 'required|integer|min:1',
             'price' => 'required|numeric|min:0',
+            'check_in_time' => 'nullable|date_format:H:i',
+            'check_out_time' => 'nullable|date_format:H:i',
             'is_available' => 'boolean',
             'amenities' => 'nullable|array',
             'amenities.*' => 'string',

@@ -23,8 +23,6 @@ class Booking extends Model
         'check_out',
         'guests',
         'total_price',
-        'amount_paid',
-        'remaining_balance',
         'payment_status',
         'status',
         'special_requests',
@@ -39,9 +37,7 @@ class Booking extends Model
     protected $casts = [
         'check_in' => 'datetime',
         'check_out' => 'datetime',
-        'total_price' => 'decimal:2',
-        'amount_paid' => 'decimal:2',
-        'remaining_balance' => 'decimal:2'
+        'total_price' => 'decimal:2'
     ];
 
     /**
@@ -157,10 +153,45 @@ class Booking extends Model
      */
     public function getTotalPriceAttribute()
     {
-        return $this->attributes['total_price'] ?? 
+        $price = $this->attributes['total_price'] ?? 
                $this->attributes['total_amount'] ?? 
                $this->attributes['price'] ?? 
                $this->attributes['amount'] ?? 0;
+        
+        // Convert to float for comparison
+        $price = (float) $price;
+        
+        // Recalculate if price is 0 for same-day bookings
+        if ($price == 0 && isset($this->attributes['room_id'])) {
+            // Load room relationship if not already loaded
+            if (!$this->relationLoaded('room')) {
+                $this->load('room');
+            }
+            
+            // Get check-in and check-out dates from attributes
+            $checkInValue = $this->attributes['check_in'] ?? null;
+            $checkOutValue = $this->attributes['check_out'] ?? null;
+            
+            if ($this->room && $checkInValue && $checkOutValue) {
+                try {
+                    $checkIn = \Carbon\Carbon::parse($checkInValue)->startOfDay();
+                    $checkOut = \Carbon\Carbon::parse($checkOutValue)->startOfDay();
+                    $nights = $checkIn->diffInDays($checkOut);
+                    
+                    // Same-day booking counts as 1 night
+                    // Note: diffInDays returns float, use == not ===
+                    if ($nights == 0) {
+                        $nights = 1;
+                    }
+                    
+                    $price = ($this->room->price ?? 0) * $nights;
+                } catch (\Exception $e) {
+                    // If date parsing fails, keep price as is
+                }
+            }
+        }
+        
+        return $price;
     }
 
     /**
@@ -179,7 +210,50 @@ class Booking extends Model
      */
     public function getFormattedTotalPriceAttribute()
     {
-        return '₱' . number_format((float) $this->total_price, 2);
+        $price = (float) ($this->attributes['total_price'] ?? 0);
+        
+        // Recalculate if price is 0 for same-day bookings
+        if ($price == 0 && isset($this->attributes['room_id'])) {
+            // Load room relationship if not already loaded
+            if (!$this->relationLoaded('room')) {
+                $this->load('room');
+            }
+            
+            if ($this->room) {
+                try {
+                    // Try to get dates - they might be already cast to Carbon or still strings
+                    $checkIn = isset($this->attributes['check_in']) 
+                        ? (\Carbon\Carbon::parse($this->attributes['check_in'])->startOfDay())
+                        : null;
+                    $checkOut = isset($this->attributes['check_out']) 
+                        ? (\Carbon\Carbon::parse($this->attributes['check_out'])->startOfDay())
+                        : null;
+                    
+                    if ($checkIn && $checkOut) {
+                        $nights = $checkIn->diffInDays($checkOut);
+                        
+                        // Same-day booking counts as 1 night
+                        // Note: diffInDays returns float, use == not ===
+                        if ($nights == 0) {
+                            $nights = 1;
+                        }
+                        
+                        $price = ($this->room->price ?? 0) * $nights;
+                    }
+                } catch (\Exception $e) {
+                    // If date parsing fails, keep price as 0
+                    \Log::error('Failed to calculate booking price', [
+                        'booking_id' => $this->id ?? 'unknown',
+                        'check_in' => $this->attributes['check_in'] ?? 'not set',
+                        'check_out' => $this->attributes['check_out'] ?? 'not set',
+                        'room_price' => $this->room->price ?? 'no room',
+                        'error' => $e->getMessage()
+                    ]);
+                }
+            }
+        }
+        
+        return '₱' . number_format($price, 2);
     }
 
     /**
@@ -253,12 +327,11 @@ class Booking extends Model
     }
 
     /**
-     * Update payment tracking after payment
+     * Update payment status after payment
      */
     public function updatePaymentTracking()
     {
         $totalPaid = $this->payments()->where('status', 'completed')->sum('amount');
-        $remainingBalance = max(0, $this->total_price - $totalPaid);
         
         // Determine payment status
         $paymentStatus = 'unpaid';
@@ -273,14 +346,13 @@ class Booking extends Model
             'booking_id' => $this->id,
             'total_price' => $this->total_price,
             'total_paid_calculated' => $totalPaid,
-            'remaining_balance_calculated' => $remainingBalance,
+            'remaining_balance_calculated' => max(0, $this->total_price - $totalPaid),
             'payment_status' => $paymentStatus,
             'payment_count' => $this->payments()->where('status', 'completed')->count()
         ]);
 
+        // Only update payment_status (amount_paid and remaining_balance are now calculated dynamically)
         $this->update([
-            'amount_paid' => $totalPaid,
-            'remaining_balance' => $remainingBalance,
             'payment_status' => $paymentStatus
         ]);
     }
@@ -291,7 +363,7 @@ class Booking extends Model
     public function getMinimumPaymentAttribute()
     {
         return $this->remaining_balance > 0 
-            ? max(($this->total_price * 0.5) - $this->amount_paid, 0)
+            ? max(($this->total_price * 0.5) - $this->total_paid, 0)
             : 0;
     }
 
@@ -308,7 +380,7 @@ class Booking extends Model
      */
     public function canMakePartialPayment()
     {
-        return $this->remaining_balance > 0 && $this->amount_paid < $this->total_price;
+        return $this->remaining_balance > 0 && $this->total_paid < $this->total_price;
     }
 
     /**

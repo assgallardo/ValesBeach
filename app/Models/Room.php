@@ -11,21 +11,24 @@ class Room extends Model
     use HasFactory;
 
     protected $fillable = [
-       'name',
+         'name',
         'type',
-        'category',
         'description',
         'capacity',
         'beds',
         'price',
+        'status',
         'is_available',
-        'amenities'
+        'amenities',
+        'check_in_time',
+        'check_out_time',
+        'category'
     ];
 
     protected $casts = [
-        'amenities' => 'array',
         'price' => 'decimal:2',
-        'is_available' => 'boolean'
+        'is_available' => 'boolean',
+        'amenities' => 'array'
     ];
 
     // Define default values
@@ -42,14 +45,6 @@ class Room extends Model
     public function bookings(): HasMany
     {
         return $this->hasMany(Booking::class);
-    }
-
-    /**
-     * Get the housekeeping requests for the room.
-     */
-    public function housekeepingRequests(): HasMany
-    {
-        return $this->hasMany(\App\Models\HousekeepingRequest::class);
     }
 
     /**

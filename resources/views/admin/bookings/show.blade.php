@@ -68,16 +68,34 @@
                 <div>
                     <label class="text-sm text-green-200">Check-in Date</label>
                     <p class="text-green-50 text-lg">{{ $booking->check_in->format('F d, Y') }}</p>
-                    <p class="text-gray-400 text-sm">{{ $booking->check_in->format('l \a\t g:i A') }}</p>
+                    <p class="text-gray-400 text-sm">{{ $booking->check_in->format('l') }}</p>
+                    @if($booking->room->check_in_time)
+                    <p class="text-green-400 text-sm mt-1">
+                        <i class="fas fa-clock mr-1"></i>Check-in time: {{ \Carbon\Carbon::parse($booking->room->check_in_time)->format('g:i A') }}
+                    </p>
+                    @endif
                 </div>
                 <div>
                     <label class="text-sm text-green-200">Check-out Date</label>
                     <p class="text-green-50 text-lg">{{ $booking->check_out->format('F d, Y') }}</p>
-                    <p class="text-gray-400 text-sm">{{ $booking->check_out->format('l \a\t g:i A') }}</p>
+                    <p class="text-gray-400 text-sm">{{ $booking->check_out->format('l') }}</p>
+                    @if($booking->room->check_out_time)
+                    <p class="text-yellow-400 text-sm mt-1">
+                        <i class="fas fa-clock mr-1"></i>Check-out time: {{ \Carbon\Carbon::parse($booking->room->check_out_time)->format('g:i A') }}
+                    </p>
+                    @endif
                 </div>
                 <div>
                     <label class="text-sm text-green-200">Number of Nights</label>
-                    <p class="text-green-50">{{ $booking->check_in->diffInDays($booking->check_out) }}</p>
+                    <p class="text-green-50">
+                        @php
+                            $checkIn = $booking->check_in->copy()->startOfDay();
+                            $checkOut = $booking->check_out->copy()->startOfDay();
+                            $daysDiff = $checkIn->diffInDays($checkOut);
+                            $nights = $daysDiff === 0 ? 1 : $daysDiff;
+                        @endphp
+                        {{ $nights }}
+                    </p>
                 </div>
                 <div>
                     <label class="text-sm text-green-200">Number of Guests</label>
@@ -94,7 +112,13 @@
                     <label class="text-sm text-green-200">Total Amount</label>
                     <p class="text-green-400 text-2xl font-bold">{{ $booking->formatted_total_price }}</p>
                     <p class="text-gray-400 text-sm">
-                        ₱{{ number_format($booking->room->price, 2) }} × {{ $booking->check_in->diffInDays($booking->check_out) }} night(s)
+                        @php
+                            $checkIn = $booking->check_in->copy()->startOfDay();
+                            $checkOut = $booking->check_out->copy()->startOfDay();
+                            $daysDiff = $checkIn->diffInDays($checkOut);
+                            $nights = $daysDiff === 0 ? 1 : $daysDiff;
+                        @endphp
+                        ₱{{ number_format($booking->room->price, 2) }} × {{ $nights }} night(s)
                     </p>
                 </div>
                 <div>
