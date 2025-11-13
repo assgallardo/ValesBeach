@@ -44,6 +44,15 @@
                         <h4 class="text-lg font-semibold text-white mb-2">Type</h4>
                         <p class="text-gray-300">{{ $room->type }}</p>
                     </div>
+
+                    @if($room->key_number)
+                    <div>
+                        <h4 class="text-lg font-semibold text-white mb-2">Key Number</h4>
+                        <p class="text-gray-300">
+                            <span class="px-3 py-1 bg-gray-700 rounded-lg font-mono">{{ $room->key_number }}</span>
+                        </p>
+                    </div>
+                    @endif
                     
                     <div>
                         <h4 class="text-lg font-semibold text-white mb-2">Capacity</h4>

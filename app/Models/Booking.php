@@ -26,7 +26,13 @@ class Booking extends Model
         'payment_status',
         'status',
         'special_requests',
-        'booking_reference'
+        'booking_reference',
+        'early_checkin',
+        'early_checkin_time',
+        'early_checkin_fee',
+        'late_checkout',
+        'late_checkout_time',
+        'late_checkout_fee'
     ];
 
     /**
@@ -37,7 +43,11 @@ class Booking extends Model
     protected $casts = [
         'check_in' => 'datetime',
         'check_out' => 'datetime',
-        'total_price' => 'decimal:2'
+        'total_price' => 'decimal:2',
+        'early_checkin' => 'boolean',
+        'late_checkout' => 'boolean',
+        'early_checkin_fee' => 'decimal:2',
+        'late_checkout_fee' => 'decimal:2'
     ];
 
     /**
@@ -407,5 +417,39 @@ class Booking extends Model
             'unpaid' => 'Unpaid',
             default => 'Unknown'
         };
+    }
+
+    /**
+     * Get total with early check-in and late checkout fees
+     */
+    public function getGrandTotalAttribute()
+    {
+        $total = (float) $this->total_price;
+        
+        if ($this->early_checkin) {
+            $total += (float) $this->early_checkin_fee;
+        }
+        
+        if ($this->late_checkout) {
+            $total += (float) $this->late_checkout_fee;
+        }
+        
+        return $total;
+    }
+
+    /**
+     * Get formatted grand total
+     */
+    public function getFormattedGrandTotalAttribute()
+    {
+        return '₱' . number_format($this->grand_total, 2);
+    }
+
+    /**
+     * Check if booking has early check-in or late checkout
+     */
+    public function hasSpecialTiming()
+    {
+        return $this->early_checkin || $this->late_checkout;
     }
 }

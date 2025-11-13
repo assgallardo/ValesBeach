@@ -38,6 +38,19 @@
                        required>
             </div>
 
+            <!-- Key Number -->
+            <div class="mb-6">
+                <label for="key_number" class="block text-gray-300 mb-2">Key Number (Optional)</label>
+                <input type="text" 
+                       name="key_number" 
+                       id="key_number" 
+                       value="{{ old('key_number', $room->key_number) }}"
+                       placeholder="e.g., 001, 002, A-101"
+                       class="w-full bg-gray-700 text-white rounded-lg px-4 py-2"
+                       maxlength="20">
+                <p class="text-gray-400 text-sm mt-1">Assign a key number for room identification (e.g., Key 001, Key 002)</p>
+            </div>
+
             <div x-data="{ selectedCategory: '{{ old('category', $room->category ?? 'Rooms') }}' }">
                 <!-- Category (Main Type) -->
                 <div class="mb-6">

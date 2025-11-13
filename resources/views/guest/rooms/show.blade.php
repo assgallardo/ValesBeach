@@ -197,6 +197,36 @@
                                                required>
                                     </div>
 
+                                    <!-- Early Check-in Option -->
+                                    <div class="border border-green-700 rounded-lg p-4 bg-green-800 bg-opacity-30">
+                                        <label class="flex items-center cursor-pointer">
+                                            <input type="checkbox" 
+                                                   name="early_checkin" 
+                                                   value="1"
+                                                   class="w-5 h-5 text-green-600 bg-green-700 border-green-600 rounded focus:ring-green-500">
+                                            <span class="ml-3 text-white font-medium">Request Early Check-in</span>
+                                        </label>
+                                        <p class="text-gray-400 text-sm mt-2 ml-8">
+                                            Check-in before {{ !empty($room->check_in_time) ? \Carbon\Carbon::createFromFormat('H:i:s', $room->check_in_time)->format('g:i A') : '2:00 PM' }} 
+                                            (Additional fee: ₱500)
+                                        </p>
+                                    </div>
+
+                                    <!-- Late Check-out Option -->
+                                    <div class="border border-green-700 rounded-lg p-4 bg-green-800 bg-opacity-30">
+                                        <label class="flex items-center cursor-pointer">
+                                            <input type="checkbox" 
+                                                   name="late_checkout" 
+                                                   value="1"
+                                                   class="w-5 h-5 text-green-600 bg-green-700 border-green-600 rounded focus:ring-green-500">
+                                            <span class="ml-3 text-white font-medium">Request Late Check-out</span>
+                                        </label>
+                                        <p class="text-gray-400 text-sm mt-2 ml-8">
+                                            Check-out after {{ !empty($room->check_out_time) ? \Carbon\Carbon::createFromFormat('H:i:s', $room->check_out_time)->format('g:i A') : '12:00 PM' }} 
+                                            (Additional fee: ₱500)
+                                        </p>
+                                    </div>
+
                                     <!-- Price Calculation -->
                                     <div x-show="nights > 0" 
                                          x-transition:enter="transition ease-out duration-300"

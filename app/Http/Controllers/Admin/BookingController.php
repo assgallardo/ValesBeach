@@ -1099,6 +1099,18 @@ class BookingController extends Controller
         
         $totalPrice = $room->price * $nights;
 
+        // Handle early check-in and late checkout fees
+        $earlyCheckinFee = 0;
+        $lateCheckoutFee = 0;
+        
+        if ($request->has('early_checkin') && $request->early_checkin) {
+            $earlyCheckinFee = 500; // Default fee
+        }
+        
+        if ($request->has('late_checkout') && $request->late_checkout) {
+            $lateCheckoutFee = 500; // Default fee
+        }
+
         // Create the booking
         Booking::create([
             'user_id' => $userId,
@@ -1108,6 +1120,12 @@ class BookingController extends Controller
             'guests' => $request->guests,
             'total_price' => $totalPrice,
             'status' => $request->status,
+            'early_checkin' => $request->has('early_checkin') ? true : false,
+            'early_checkin_time' => $request->early_checkin_time,
+            'early_checkin_fee' => $earlyCheckinFee,
+            'late_checkout' => $request->has('late_checkout') ? true : false,
+            'late_checkout_time' => $request->late_checkout_time,
+            'late_checkout_fee' => $lateCheckoutFee,
         ]);
 
         $successMessage = $isNewGuest 

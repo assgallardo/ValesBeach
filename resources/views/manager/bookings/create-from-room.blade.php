@@ -142,6 +142,39 @@
                 </div>
             </div>
 
+            <!-- Early Check-in and Late Checkout Options -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="border border-gray-600 rounded-lg p-4 bg-gray-700 bg-opacity-50">
+                    <label class="flex items-center cursor-pointer">
+                        <input type="checkbox" name="early_checkin" value="1" {{ old('early_checkin') ? 'checked' : '' }}
+                               class="w-5 h-5 text-green-600 bg-gray-600 border-gray-500 rounded focus:ring-green-500">
+                        <span class="ml-3 text-white font-medium">Early Check-in</span>
+                    </label>
+                    <p class="text-gray-400 text-sm mt-2 ml-8">
+                        Check-in before standard time (Fee: ₱500)
+                    </p>
+                    <div class="ml-8 mt-2">
+                        <input type="time" name="early_checkin_time" value="{{ old('early_checkin_time') }}"
+                               class="px-3 py-2 bg-gray-600 border border-gray-500 rounded text-white text-sm">
+                    </div>
+                </div>
+
+                <div class="border border-gray-600 rounded-lg p-4 bg-gray-700 bg-opacity-50">
+                    <label class="flex items-center cursor-pointer">
+                        <input type="checkbox" name="late_checkout" value="1" {{ old('late_checkout') ? 'checked' : '' }}
+                               class="w-5 h-5 text-green-600 bg-gray-600 border-gray-500 rounded focus:ring-green-500">
+                        <span class="ml-3 text-white font-medium">Late Check-out</span>
+                    </label>
+                    <p class="text-gray-400 text-sm mt-2 ml-8">
+                        Check-out after standard time (Fee: ₱500)
+                    </p>
+                    <div class="ml-8 mt-2">
+                        <input type="time" name="late_checkout_time" value="{{ old('late_checkout_time') }}"
+                               class="px-3 py-2 bg-gray-600 border border-gray-500 rounded text-white text-sm">
+                    </div>
+                </div>
+            </div>
+
             <!-- Status and Price Preview -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>

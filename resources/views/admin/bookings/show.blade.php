@@ -101,6 +101,46 @@
                     <label class="text-sm text-green-200">Number of Guests</label>
                     <p class="text-green-50">{{ $booking->guests }}</p>
                 </div>
+
+                @if($booking->early_checkin || $booking->late_checkout)
+                <div class="border-t border-gray-700 pt-4 mt-4">
+                    <label class="text-sm text-green-200 mb-2 block">Special Timing Requests</label>
+                    
+                    @if($booking->early_checkin)
+                    <div class="bg-green-800 bg-opacity-30 border border-green-700 rounded-lg p-3 mb-2">
+                        <div class="flex items-center">
+                            <svg class="w-5 h-5 text-green-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/>
+                            </svg>
+                            <div class="flex-1">
+                                <p class="text-white font-medium">Early Check-in</p>
+                                @if($booking->early_checkin_time)
+                                <p class="text-green-300 text-sm">Time: {{ \Carbon\Carbon::parse($booking->early_checkin_time)->format('g:i A') }}</p>
+                                @endif
+                            </div>
+                            <span class="text-green-400 font-semibold">+₱{{ number_format($booking->early_checkin_fee, 2) }}</span>
+                        </div>
+                    </div>
+                    @endif
+
+                    @if($booking->late_checkout)
+                    <div class="bg-yellow-800 bg-opacity-30 border border-yellow-700 rounded-lg p-3">
+                        <div class="flex items-center">
+                            <svg class="w-5 h-5 text-yellow-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/>
+                            </svg>
+                            <div class="flex-1">
+                                <p class="text-white font-medium">Late Check-out</p>
+                                @if($booking->late_checkout_time)
+                                <p class="text-yellow-300 text-sm">Time: {{ \Carbon\Carbon::parse($booking->late_checkout_time)->format('g:i A') }}</p>
+                                @endif
+                            </div>
+                            <span class="text-yellow-400 font-semibold">+₱{{ number_format($booking->late_checkout_fee, 2) }}</span>
+                        </div>
+                    </div>
+                    @endif
+                </div>
+                @endif
             </div>
         </div>
 
@@ -109,8 +149,8 @@
             <h2 class="text-xl font-semibold text-green-50 mb-4">Payment Information</h2>
             <div class="space-y-4">
                 <div>
-                    <label class="text-sm text-green-200">Total Amount</label>
-                    <p class="text-green-400 text-2xl font-bold">{{ $booking->formatted_total_price }}</p>
+                    <label class="text-sm text-green-200">Room Charges</label>
+                    <p class="text-white text-lg">{{ $booking->formatted_total_price }}</p>
                     <p class="text-gray-400 text-sm">
                         @php
                             $checkIn = $booking->check_in->copy()->startOfDay();
@@ -121,6 +161,38 @@
                         ₱{{ number_format($booking->room->price, 2) }} × {{ $nights }} night(s)
                     </p>
                 </div>
+
+                @if($booking->early_checkin || $booking->late_checkout)
+                <div class="border-t border-gray-700 pt-3">
+                    <label class="text-sm text-green-200 mb-2 block">Additional Fees</label>
+                    
+                    @if($booking->early_checkin)
+                    <div class="flex justify-between text-sm mb-1">
+                        <span class="text-gray-300">Early Check-in Fee</span>
+                        <span class="text-white">₱{{ number_format($booking->early_checkin_fee, 2) }}</span>
+                    </div>
+                    @endif
+                    
+                    @if($booking->late_checkout)
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-300">Late Check-out Fee</span>
+                        <span class="text-white">₱{{ number_format($booking->late_checkout_fee, 2) }}</span>
+                    </div>
+                    @endif
+                </div>
+
+                <div class="border-t border-gray-700 pt-3">
+                    <div class="flex justify-between items-center">
+                        <label class="text-sm text-green-200">Grand Total</label>
+                        <p class="text-green-400 text-2xl font-bold">{{ $booking->formatted_grand_total }}</p>
+                    </div>
+                </div>
+                @else
+                <div>
+                    <label class="text-sm text-green-200">Grand Total</label>
+                    <p class="text-green-400 text-2xl font-bold">{{ $booking->formatted_total_price }}</p>
+                </div>
+                @endif
                 <div>
                     <label class="text-sm text-green-200">Status</label>
                     <span class="inline-block px-3 py-1 rounded-full text-sm mt-1

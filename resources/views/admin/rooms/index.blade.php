@@ -88,6 +88,7 @@
                 <thead class="bg-gray-700 text-white">
                     <tr>
                         <th class="px-6 py-4">Room Name</th>
+                        <th class="px-6 py-4">Key #</th>
                         <th class="px-6 py-4">Type</th>
                         <th class="px-6 py-4">Price</th>
                         <th class="px-6 py-4">Capacity</th>
@@ -103,6 +104,13 @@
                                    class="text-blue-400 hover:text-blue-300 hover:underline">
                                     {{ $room->name }}
                                 </a>
+                            </td>
+                            <td class="px-6 py-4">
+                                @if($room->key_number)
+                                    <span class="px-2 py-1 bg-gray-700 rounded font-mono text-sm">{{ $room->key_number }}</span>
+                                @else
+                                    <span class="text-gray-500">-</span>
+                                @endif
                             </td>
                             <td class="px-6 py-4">{{ $room->category ?? 'Rooms' }}</td>
                             <td class="px-6 py-4">₱{{ number_format($room->price, 2) }}</td>
