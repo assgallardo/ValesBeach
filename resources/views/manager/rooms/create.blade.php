@@ -107,10 +107,9 @@
                         <input type="number" 
                                name="beds" 
                                id="beds" 
-                               value="{{ old('beds', 1) }}"
-                               min="1"
-                               class="w-full bg-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
-                               required>
+                               value="{{ old('beds', 0) }}"
+                               min="0"
+                               class="w-full bg-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500">
                     </div>
                 </div>
 

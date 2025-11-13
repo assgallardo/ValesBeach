@@ -75,10 +75,15 @@
                     <span class="text-gray-400">
                         <i class="fas fa-info-circle mr-1"></i>Payment Status:
                     </span>
-                    <span class="inline-flex items-center px-4 py-2 rounded-lg text-sm font-semibold
-                        {{ $payment->status === 'completed' ? 'bg-green-500 text-white' : ($payment->status === 'pending' ? 'bg-yellow-500 text-black' : 'bg-gray-500 text-white') }}">
-                        <i class="fas fa-{{ $payment->status === 'completed' ? 'check-circle' : ($payment->status === 'pending' ? 'clock' : 'info-circle') }} mr-1"></i>
-                        {{ ucfirst($payment->status) }}
+                    @php
+                        $isPartialPayment = $payment->booking && $payment->booking->remaining_balance > 0;
+                        $statusBadge = $isPartialPayment ? 'bg-yellow-500 text-black' : ($payment->status === 'completed' ? 'bg-green-500 text-white' : ($payment->status === 'pending' ? 'bg-yellow-500 text-black' : 'bg-gray-500 text-white'));
+                        $statusIcon = $isPartialPayment ? 'exclamation-triangle' : ($payment->status === 'completed' ? 'check-circle' : ($payment->status === 'pending' ? 'clock' : 'info-circle'));
+                        $statusText = $isPartialPayment ? 'Partial' : ucfirst($payment->status);
+                    @endphp
+                    <span class="inline-flex items-center px-4 py-2 rounded-lg text-sm font-semibold {{ $statusBadge }}">
+                        <i class="fas fa-{{ $statusIcon }} mr-1"></i>
+                        {{ $statusText }}
                     </span>
                 </div>
                 <div class="flex justify-between items-center">
@@ -173,11 +178,7 @@
                                     <i class="fas fa-equals mr-1"></i>Total Paid:
                                 </span>
                                 <p class="text-blue-200 text-xs">
-                                    @if($previousPaid > 0)
-                                        ₱{{ number_format($previousPaid, 2) }} + ₱{{ number_format($payment->amount, 2) }}
-                                    @else
-                                        All payments
-                                    @endif
+                                    All payments
                                 </p>
                             </div>
                             <span class="text-blue-400 font-bold text-xl">₱{{ number_format($payment->booking->amount_paid, 2) }}</span>

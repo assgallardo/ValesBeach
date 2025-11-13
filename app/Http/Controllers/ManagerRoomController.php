@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Room;
+use App\Models\RoomImage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Storage;
 
 class ManagerRoomController extends Controller
 {
@@ -80,10 +82,11 @@ class ManagerRoomController extends Controller
         try {
             $validated = $request->validate([
                 'name' => 'required|string|max:255',
+                'category' => 'required|string|max:50',
                 'type' => 'required|string|max:100',
                 'description' => 'required|string',
                 'capacity' => 'required|integer|min:1',
-                'beds' => 'required|integer|min:1',
+                'beds' => 'nullable|integer|min:0',
                 'price' => 'required|numeric|min:0',
                 'amenities' => 'nullable|array',
                 'check_in_time' => 'nullable|date_format:H:i',
@@ -99,10 +102,11 @@ class ManagerRoomController extends Controller
 
             $roomData = [
                 'name' => $validated['name'],
+                'category' => $validated['category'],
                 'type' => $validated['type'],
                 'description' => $validated['description'],
                 'capacity' => $validated['capacity'],
-                'beds' => $validated['beds'],
+                'beds' => $validated['beds'] ?? 0,
                 'price' => $validated['price'],
                 'amenities' => $request->amenities ? json_encode($request->amenities) : null,
                 'check_in_time' => $validated['check_in_time'] ?? null,
@@ -141,21 +145,16 @@ class ManagerRoomController extends Controller
     private function handleImageUploads(Request $request, Room $room)
     {
         try {
-            $imagesPath = public_path('images/rooms');
-            if (!file_exists($imagesPath)) {
-                mkdir($imagesPath, 0755, true);
-            }
-
-            foreach ($request->file('images') as $image) {
-                $imageName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
-                $image->move($imagesPath, $imageName);
+            foreach ($request->file('images') as $index => $image) {
+                // Store image in storage/app/public/rooms directory
+                $path = $image->store('rooms', 'public');
                 
-                // Only create image record if RoomImage model exists
-                if (class_exists('App\Models\RoomImage')) {
-                    $room->images()->create([
-                        'image_path' => 'images/rooms/' . $imageName
-                    ]);
-                }
+                // Create image record
+                $room->images()->create([
+                    'image_path' => $path,
+                    'is_featured' => $index === 0, // First image is featured
+                    'display_order' => $index
+                ]);
             }
         } catch (\Exception $e) {
             \Log::error('Image upload failed: ' . $e->getMessage());
@@ -185,19 +184,19 @@ class ManagerRoomController extends Controller
     public function update(Request $request, Room $room)
     {
         $validated = $request->validate([
-            'number' => 'required|string|max:10|unique:rooms,number,' . $room->id,
             'name' => 'required|string|max:255',
+            'category' => 'required|string|max:50',
             'type' => 'required|string|max:50',
             'description' => 'required|string',
             'capacity' => 'required|integer|min:1',
-            'beds' => 'required|integer|min:1',
+            'beds' => 'nullable|integer|min:0',
             'price' => 'required|numeric|min:0',
             'check_in_time' => 'nullable|date_format:H:i',
             'check_out_time' => 'nullable|date_format:H:i',
             'is_available' => 'boolean',
             'amenities' => 'nullable|array',
             'amenities.*' => 'string',
-            'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048'
+            'room_images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
         ]);
 
         try {
@@ -206,17 +205,18 @@ class ManagerRoomController extends Controller
             
             $room->update($validated);
 
-            if ($request->hasFile('images')) {
-                foreach ($request->file('images') as $image) {
-                    $imageName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
-                    $imagesPath = public_path('images/rooms');
-                    $image->move($imagesPath, $imageName);
+            if ($request->hasFile('room_images')) {
+                $currentImageCount = $room->images()->count();
+                foreach ($request->file('room_images') as $index => $image) {
+                    // Store image in storage/app/public/rooms directory
+                    $path = $image->store('rooms', 'public');
                     
-                    if (class_exists('App\Models\RoomImage')) {
-                        $room->images()->create([
-                            'image_path' => 'images/rooms/' . $imageName
-                        ]);
-                    }
+                    // Create image record
+                    $room->images()->create([
+                        'image_path' => $path,
+                        'is_featured' => ($currentImageCount === 0 && $index === 0), // First image is featured if no images exist
+                        'display_order' => $currentImageCount + $index
+                    ]);
                 }
             }
 
@@ -300,37 +300,31 @@ class ManagerRoomController extends Controller
     /**
      * Delete room image.
      */
-    public function deleteImage(Request $request, Room $room)
+    public function deleteImage(Request $request, Room $room, $imageId)
     {
         try {
-            $imageId = $request->input('image_id');
+            $image = $room->images()->find($imageId);
             
-            if (class_exists('App\Models\RoomImage')) {
-                $image = $room->images()->find($imageId);
-                
-                if ($image) {
-                    // Delete physical file
-                    $imagePath = public_path($image->image_path);
-                    if (file_exists($imagePath)) {
-                        unlink($imagePath);
-                    }
-                    
-                    // Delete database record
-                    $image->delete();
-                    
-                    return response()->json([
-                        'success' => true,
-                        'message' => 'Image deleted successfully'
-                    ]);
-                }
+            if (!$image) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Image not found'
+                ], 404);
             }
             
+            // Delete physical file from storage
+            Storage::disk('public')->delete($image->image_path);
+            
+            // Delete database record
+            $image->delete();
+            
             return response()->json([
-                'success' => false,
-                'message' => 'Image not found'
-            ], 404);
+                'success' => true,
+                'message' => 'Image deleted successfully'
+            ]);
             
         } catch (\Exception $e) {
+            \Log::error('Image deletion failed: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Error deleting image',

@@ -108,9 +108,8 @@
                                name="beds" 
                                id="beds" 
                                value="{{ old('beds', $room->beds) }}"
-                               min="1"
-                               class="w-full bg-gray-700 text-white rounded-lg px-4 py-2"
-                               required>
+                               min="0"
+                               class="w-full bg-gray-700 text-white rounded-lg px-4 py-2">
                     </div>
                 </div>
 

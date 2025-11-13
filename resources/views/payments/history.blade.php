@@ -196,8 +196,12 @@
                                     <div class="flex items-center justify-between bg-gray-800/50 rounded p-2">
                                         <div class="flex items-center gap-3 flex-1">
                                             <span class="text-lg font-bold text-blue-400">₱{{ number_format($payment->amount, 2) }}</span>
+                                            @php
+                                                $isPartial = $payment->status === 'completed' && $booking->remaining_balance > 0;
+                                            @endphp
                                             <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold
-                                                @if($payment->status === 'completed') bg-green-500 text-white
+                                                @if($isPartial) bg-yellow-500 text-gray-900
+                                                @elseif($payment->status === 'completed') bg-green-500 text-white
                                                 @elseif($payment->status === 'confirmed') bg-blue-500 text-white
                                                 @elseif($payment->status === 'pending') bg-yellow-500 text-gray-900
                                                 @elseif($payment->status === 'overdue') bg-orange-500 text-white
@@ -207,7 +211,7 @@
                                                 @elseif($payment->status === 'cancelled') bg-gray-600 text-white
                                                 @else bg-gray-500 text-white
                                                 @endif">
-                                                {{ ucfirst($payment->status) }}
+                                                {{ $isPartial ? 'Partial' : ucfirst($payment->status) }}
                                             </span>
                                             <span class="text-xs text-gray-400">{{ $payment->payment_reference }}</span>
                                             <span class="text-xs text-gray-500">{{ $payment->created_at->format('M d, Y') }}</span>
