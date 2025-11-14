@@ -408,12 +408,14 @@
                         <tr class="hover:bg-gray-700/50">
                             <td class="px-6 py-4">
                                 <span class="px-3 py-1 rounded-full text-xs font-medium
-                                    {{ $status->status === 'completed' ? 'bg-green-600/20 text-green-400' : '' }}
-                                    {{ $status->status === 'pending' ? 'bg-yellow-600/20 text-yellow-400' : '' }}
-                                    {{ $status->status === 'cancelled' ? 'bg-red-600/20 text-red-400' : '' }}
-                                    {{ $status->status === 'confirmed' ? 'bg-blue-600/20 text-blue-400' : '' }}
+                                    {{ $status->status === 'pending' ? 'bg-yellow-100 text-yellow-800' : '' }}
+                                    {{ $status->status === 'confirmed' ? 'bg-green-100 text-green-800' : '' }}
+                                    {{ $status->status === 'checked_in' ? 'bg-blue-100 text-blue-800' : '' }}
+                                    {{ $status->status === 'checked_out' ? 'bg-gray-100 text-gray-800' : '' }}
+                                    {{ $status->status === 'cancelled' ? 'bg-red-100 text-red-800' : '' }}
+                                    {{ $status->status === 'completed' ? 'bg-purple-100 text-purple-800' : '' }}
                                 ">
-                                    {{ ucfirst($status->status) }}
+                                    {{ ucfirst(str_replace('_', ' ', $status->status)) }}
                                 </span>
                             </td>
                             <td class="px-6 py-4 text-gray-300">{{ number_format($status->count) }}</td>

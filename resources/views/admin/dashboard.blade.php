@@ -86,7 +86,8 @@
                         <p class="text-green-100 text-sm lg:text-base mb-8 flex-grow">
                             Manage user accounts, permissions, and access controls.
                         </p>
-                        <a href="{{ route('admin.users') }}" class="inline-block w-full py-3 bg-green-50 text-black font-medium text-lg rounded-lg hover:bg-white transition-colors duration-200 text-center">
+                        <a href="{{ route('admin.users') }}" 
+                           class="w-full py-3 bg-green-50 text-black font-medium text-lg rounded-lg hover:bg-white transition-colors duration-200 text-center">
                             Manage Users
                         </a>
                     </div>
@@ -110,18 +111,19 @@
                     </div>
                 </div>
 
-                <!-- Settings & Configuration (Admin & Manager Only) -->
+                <!-- Payment Management -->
                 <div class="bg-green-800 rounded-lg p-6 lg:p-8 hover:bg-green-700 transition-all duration-300 transform hover:scale-105 shadow-lg">
                     <div class="text-center h-full flex flex-col">
                         <h3 class="text-2xl lg:text-3xl font-bold text-white mb-6 leading-tight">
-                            Settings & Configuration
+                            Payment Management
                         </h3>
                         <p class="text-green-100 text-sm lg:text-base mb-8 flex-grow">
-                            Configure system settings and resort preferences.
+                            Monitor guest payments, refunds, and billing status.
                         </p>
-                        <button class="w-full py-3 bg-green-50 text-black font-medium text-lg rounded-lg hover:bg-white transition-colors duration-200">
-                            Manage Settings
-                        </button>
+                        <a href="{{ route('admin.payments.index') }}" 
+                           class="w-full py-3 bg-green-50 text-black font-medium text-lg rounded-lg hover:bg-white transition-colors duration-200 text-center">
+                            Manage Payments
+                        </a>
                     </div>
                 </div>
                 @endif

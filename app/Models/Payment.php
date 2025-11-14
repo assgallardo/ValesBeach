@@ -301,10 +301,24 @@ class Payment extends Model
         } elseif ($this->booking && $this->booking->room) {
             // Calculate booking amount
             $amount = 0;
-            $checkIn = \Carbon\Carbon::parse($this->booking->check_in_date);
-            $checkOut = \Carbon\Carbon::parse($this->booking->check_out_date);
-            $nights = $checkIn->diffInDays($checkOut);
-            $amount += $this->booking->room->price * $nights;
+            
+            // Use the booking's date accessors which handle different column names
+            $checkIn = $this->booking->check_in_date ?? $this->booking->check_in;
+            $checkOut = $this->booking->check_out_date ?? $this->booking->check_out;
+            
+            if ($checkIn && $checkOut) {
+                $checkIn = \Carbon\Carbon::parse($checkIn)->startOfDay();
+                $checkOut = \Carbon\Carbon::parse($checkOut)->startOfDay();
+                $nights = $checkIn->diffInDays($checkOut);
+                
+                // Same-day bookings count as 1 night/day
+                if ($nights == 0) {
+                    $nights = 1;
+                }
+                
+                $amount += $this->booking->room->price * $nights;
+            }
+            
             $amount += $this->booking->additional_fees ?? 0;
             $amount -= $this->booking->discount_amount ?? 0;
             return max(0, $amount);

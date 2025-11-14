@@ -105,12 +105,24 @@
                                     </div>
                                 @elseif($payment->booking && $payment->booking->room)
                                     @php
-                                        $checkIn = \Carbon\Carbon::parse($payment->booking->check_in_date);
-                                        $checkOut = \Carbon\Carbon::parse($payment->booking->check_out_date);
-                                        $nights = $checkIn->diffInDays($checkOut);
+                                        $checkIn = $payment->booking->check_in_date ?? $payment->booking->check_in;
+                                        $checkOut = $payment->booking->check_out_date ?? $payment->booking->check_out;
+                                        
+                                        if ($checkIn && $checkOut) {
+                                            $checkIn = \Carbon\Carbon::parse($checkIn)->startOfDay();
+                                            $checkOut = \Carbon\Carbon::parse($checkOut)->startOfDay();
+                                            $nights = $checkIn->diffInDays($checkOut);
+                                            
+                                            // Same-day bookings count as 1 night/day
+                                            if ($nights === 0) {
+                                                $nights = 1;
+                                            }
+                                        } else {
+                                            $nights = 1;
+                                        }
                                     @endphp
                                     <div class="text-sm text-gray-400 mt-1">
-                                        Room: {{ $payment->booking->room->name }} ({{ $nights }} nights)
+                                        Room: {{ $payment->booking->room->name }} ({{ $nights }} night{{ $nights > 1 ? 's' : '' }})
                                     </div>
                                 @endif
                             </div>
@@ -293,6 +305,91 @@
                                     <label class="block text-sm font-medium text-gray-400 mb-2">Special Requests</label>
                                     <div class="bg-gray-900 p-3 rounded border border-gray-600">
                                         <div class="text-gray-300">{{ $payment->serviceRequest->special_requests }}</div>
+                                    </div>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+                @endif
+
+                <!-- Related Food Order -->
+                @if($payment->foodOrder)
+                    <div class="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
+                        <div class="bg-gray-750 px-6 py-4 border-b border-gray-700">
+                            <h3 class="text-lg font-semibold text-green-100">Related Food Order</h3>
+                        </div>
+                        <div class="p-6">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-400 mb-2">Order ID</label>
+                                    <div class="text-green-400 font-medium">#{{ $payment->foodOrder->id }}</div>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-400 mb-2">Status</label>
+                                    <span class="px-3 py-1 rounded-full text-sm font-medium
+                                        {{ $payment->foodOrder->status === 'pending' ? 'bg-yellow-600 text-yellow-100' : '' }}
+                                        {{ $payment->foodOrder->status === 'preparing' ? 'bg-blue-600 text-blue-100' : '' }}
+                                        {{ $payment->foodOrder->status === 'ready' ? 'bg-green-600 text-green-100' : '' }}
+                                        {{ $payment->foodOrder->status === 'delivered' ? 'bg-purple-600 text-purple-100' : '' }}
+                                        {{ $payment->foodOrder->status === 'cancelled' ? 'bg-red-600 text-red-100' : '' }}
+                                    ">
+                                        {{ ucfirst($payment->foodOrder->status) }}
+                                    </span>
+                                </div>
+                                
+                                @if($payment->foodOrder->orderItems && $payment->foodOrder->orderItems->count() > 0)
+                                    <div class="md:col-span-2">
+                                        <label class="block text-sm font-medium text-gray-400 mb-2">Order Items</label>
+                                        <div class="bg-gray-900 rounded border border-gray-600">
+                                            <table class="w-full">
+                                                <thead class="bg-gray-800">
+                                                    <tr>
+                                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-400">Item</th>
+                                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-400">Quantity</th>
+                                                        <th class="px-4 py-2 text-right text-xs font-medium text-gray-400">Price</th>
+                                                        <th class="px-4 py-2 text-right text-xs font-medium text-gray-400">Subtotal</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody class="divide-y divide-gray-700">
+                                                    @foreach($payment->foodOrder->orderItems as $item)
+                                                        <tr>
+                                                            <td class="px-4 py-3 text-gray-300">{{ $item->menuItem->name ?? 'N/A' }}</td>
+                                                            <td class="px-4 py-3 text-gray-300">{{ $item->quantity }}</td>
+                                                            <td class="px-4 py-3 text-right text-gray-300">₱{{ number_format($item->unit_price, 2) }}</td>
+                                                            <td class="px-4 py-3 text-right text-green-400 font-semibold">₱{{ number_format($item->total_price, 2) }}</td>
+                                                        </tr>
+                                                    @endforeach
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                @endif
+                                
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-400 mb-2">Order Total</label>
+                                    <div class="text-xl font-semibold text-green-400">₱{{ number_format($payment->foodOrder->total_amount ?? $payment->amount, 2) }}</div>
+                                </div>
+                                
+                                @if($payment->foodOrder->delivery_address)
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-400 mb-2">Delivery Address</label>
+                                        <div class="text-gray-300">{{ $payment->foodOrder->delivery_address }}</div>
+                                    </div>
+                                @endif
+                                
+                                @if($payment->foodOrder->created_at)
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-400 mb-2">Order Date</label>
+                                        <div class="text-gray-300">{{ $payment->foodOrder->created_at->format('M d, Y h:i A') }}</div>
+                                    </div>
+                                @endif
+                            </div>
+                            
+                            @if($payment->foodOrder->special_instructions)
+                                <div class="mt-6">
+                                    <label class="block text-sm font-medium text-gray-400 mb-2">Special Instructions</label>
+                                    <div class="bg-gray-900 p-3 rounded border border-gray-600">
+                                        <div class="text-gray-300">{{ $payment->foodOrder->special_instructions }}</div>
                                     </div>
                                 </div>
                             @endif

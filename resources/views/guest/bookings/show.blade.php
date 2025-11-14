@@ -56,6 +56,50 @@
                     </div>
                 </div>
 
+                <!-- Early Check-in / Late Check-out Requests -->
+                @if($booking->early_checkin || $booking->late_checkout)
+                <div class="border-t border-gray-700 pt-4 mt-4">
+                    <h3 class="text-sm font-medium text-gray-400 mb-3">Special Timing Requests</h3>
+                    <div class="space-y-2">
+                        @if($booking->early_checkin)
+                        <div class="bg-green-800 bg-opacity-30 border border-green-700 rounded-lg p-3">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <svg class="w-5 h-5 text-green-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/>
+                                    </svg>
+                                    <div>
+                                        <p class="text-white font-medium">Early Check-in Requested</p>
+                                        @if($booking->room->check_in_time)
+                                        <p class="text-green-300 text-sm">Before {{ \Carbon\Carbon::parse($booking->room->check_in_time)->format('g:i A') }}</p>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        @endif
+
+                        @if($booking->late_checkout)
+                        <div class="bg-yellow-800 bg-opacity-30 border border-yellow-700 rounded-lg p-3">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <svg class="w-5 h-5 text-yellow-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/>
+                                    </svg>
+                                    <div>
+                                        <p class="text-white font-medium">Late Check-out Requested</p>
+                                        @if($booking->room->check_out_time)
+                                        <p class="text-yellow-300 text-sm">After {{ \Carbon\Carbon::parse($booking->room->check_out_time)->format('g:i A') }}</p>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        @endif
+                    </div>
+                </div>
+                @endif
+
                 <!-- Guests -->
                 <div>
                     <h3 class="text-sm font-medium text-gray-400 mb-1">Number of Guests</h3>

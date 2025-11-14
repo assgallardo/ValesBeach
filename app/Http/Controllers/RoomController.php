@@ -65,6 +65,7 @@ class RoomController extends Controller
         
         $validated = $request->validate([
             'name' => 'required|string|max:255',
+            'key_number' => 'nullable|string|max:20',
             'type' => 'required|string|max:255',
             'category' => 'required|in:Rooms,Cottages,Event and Dining',
             'description' => 'required|string',
@@ -82,6 +83,7 @@ class RoomController extends Controller
             // Create room
             $room = Room::create([
                 'name' => $validated['name'],
+                'key_number' => $validated['key_number'] ?? null,
                 'type' => $validated['type'],
                 'category' => $validated['category'],
                 'description' => $validated['description'],
@@ -134,6 +136,7 @@ class RoomController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
+            'key_number' => 'nullable|string|max:20',
             'type' => 'required|string|max:255',
             'category' => 'required|in:Rooms,Cottages,Event and Dining',
             'description' => 'required|string',

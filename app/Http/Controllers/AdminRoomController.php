@@ -80,11 +80,15 @@ class AdminRoomController extends Controller
         try {
             $validated = $request->validate([
                 'name' => 'required|string|max:255',
+                'key_number' => 'nullable|string|max:20',
+                'category' => 'nullable|string|max:50',
                 'type' => 'required|string|max:100',
                 'description' => 'required|string',
                 'capacity' => 'required|integer|min:1',
-                'beds' => 'required|integer|min:1',
+                'beds' => 'nullable|integer|min:0',
                 'price' => 'required|numeric|min:0',
+                'check_in_time' => 'nullable|date_format:H:i',
+                'check_out_time' => 'nullable|date_format:H:i',
                 'amenities' => 'nullable|array',
                 'is_available' => 'nullable',
                 'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
@@ -98,11 +102,15 @@ class AdminRoomController extends Controller
 
             $roomData = [
                 'name' => $validated['name'],
+                'key_number' => $validated['key_number'] ?? null,
+                'category' => $validated['category'] ?? 'Rooms',
                 'type' => $validated['type'],
                 'description' => $validated['description'],
                 'capacity' => $validated['capacity'],
-                'beds' => $validated['beds'],
+                'beds' => $validated['beds'] ?? 0,
                 'price' => $validated['price'],
+                'check_in_time' => $validated['check_in_time'] ?? null,
+                'check_out_time' => $validated['check_out_time'] ?? null,
                 'amenities' => $request->amenities ? json_encode($request->amenities) : null,
                 'is_available' => $isAvailable,
                 // 'status' => $status  // COMMENTED OUT TEMPORARILY
@@ -174,20 +182,35 @@ class AdminRoomController extends Controller
      */
     public function update(Request $request, Room $room)
     {
+        \Log::info('=== ROOM UPDATE DEBUG ===');
+        \Log::info('Room ID: ' . $room->id);
+        \Log::info('All request data:', $request->all());
+        
         $validated = $request->validate([
-            'number' => 'required|string|max:10|unique:rooms,number,' . $room->id,
             'name' => 'required|string|max:255',
+            'key_number' => 'nullable|string|max:20',
+            'category' => 'nullable|string|max:50',
             'type' => 'required|string|max:50',
             'description' => 'required|string',
             'capacity' => 'required|integer|min:1',
+            'beds' => 'nullable|integer|min:0',
             'price' => 'required|numeric|min:0',
-            'is_available' => 'boolean',
+            'check_in_time' => 'nullable|date_format:H:i',
+            'check_out_time' => 'nullable|date_format:H:i',
+            'is_available' => 'nullable',
             'amenities' => 'nullable|array',
             'amenities.*' => 'string',
             'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048'
         ]);
 
+        \Log::info('Validation passed. Validated data:', $validated);
+
         try {
+            // Handle checkbox
+            $validated['is_available'] = $request->has('is_available');
+            
+            \Log::info('Data to update:', $validated);
+            
             $room->update($validated);
 
             if ($request->hasFile('images')) {
@@ -197,6 +220,8 @@ class AdminRoomController extends Controller
                 }
             }
 
+            \Log::info('Room updated successfully');
+
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json([
                     'message' => 'Room updated successfully',
@@ -204,9 +229,12 @@ class AdminRoomController extends Controller
                 ]);
             }
 
-            return redirect()->route('admin.rooms')
-                ->with('success', 'Room updated.');
+            return redirect()->route('admin.rooms.index')
+                ->with('success', 'Room updated successfully.');
         } catch (\Exception $e) {
+            \Log::error('Room update failed: ' . $e->getMessage());
+            \Log::error('Stack trace: ' . $e->getTraceAsString());
+            
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json([
                     'message' => 'Error updating room',
@@ -214,7 +242,7 @@ class AdminRoomController extends Controller
                 ], 500);
             }
 
-            return back()->withErrors(['error' => 'Could not update room.'])
+            return back()->withErrors(['error' => 'Could not update room. Error: ' . $e->getMessage()])
                 ->withInput();
         }
     }

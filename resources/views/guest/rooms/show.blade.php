@@ -207,8 +207,7 @@
                                             <span class="ml-3 text-white font-medium">Request Early Check-in</span>
                                         </label>
                                         <p class="text-gray-400 text-sm mt-2 ml-8">
-                                            Check-in before {{ !empty($room->check_in_time) ? \Carbon\Carbon::createFromFormat('H:i:s', $room->check_in_time)->format('g:i A') : '2:00 PM' }} 
-                                            (Additional fee: ₱500)
+                                            Disclaimer: early check-in depends on room availability upon arrival
                                         </p>
                                     </div>
 
@@ -222,8 +221,7 @@
                                             <span class="ml-3 text-white font-medium">Request Late Check-out</span>
                                         </label>
                                         <p class="text-gray-400 text-sm mt-2 ml-8">
-                                            Check-out after {{ !empty($room->check_out_time) ? \Carbon\Carbon::createFromFormat('H:i:s', $room->check_out_time)->format('g:i A') : '12:00 PM' }} 
-                                            (Additional fee: ₱500)
+                                            request late check out
                                         </p>
                                     </div>
 
