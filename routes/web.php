@@ -157,6 +157,8 @@ Route::middleware(['auth', 'user.status'])->group(function () {
     // Specific routes must come before parameterized routes
     Route::post('/payments/bulk-update-method', [PaymentController::class, 'bulkUpdatePaymentMethod'])->name('payments.bulkUpdateMethod');
     Route::get('/payments/history', [PaymentController::class, 'history'])->name('payments.history');
+    Route::get('/payments/completed', [PaymentController::class, 'completed'])->name('payments.completed');
+    Route::get('/payments/completed/details', [PaymentController::class, 'completedDetails'])->name('payments.completed.details');
     Route::get('/payments/{payment}/confirmation', [PaymentController::class, 'confirmation'])->name('payments.confirmation');
     Route::get('/payments/{payment}/edit', [PaymentController::class, 'edit'])->name('payments.edit');
     Route::patch('/payments/{payment}', [PaymentController::class, 'update'])->name('payments.update');
@@ -176,7 +178,11 @@ Route::middleware(['auth', 'user.status'])->group(function () {
 Route::prefix('admin')->name('admin.')->middleware(['auth', 'user.status', 'role:admin,manager,staff'])->group(function () {
     // Payment management
     Route::get('/payments', [PaymentController::class, 'index'])->name('payments.index');
+    Route::get('/payments/completed', [PaymentController::class, 'adminCompleted'])->name('payments.completed');
     Route::get('/payments/customer/{user}', [PaymentController::class, 'showCustomerPayments'])->name('payments.customer');
+    Route::post('/payments/customer/{user}/complete', [PaymentController::class, 'completeAllCustomerPayments'])->name('payments.customer.complete');
+    Route::post('/payments/customer/{user}/revert', [PaymentController::class, 'revertAllCustomerPayments'])->name('payments.customer.revert');
+    Route::get('/payments/completed/customer/{user}', [PaymentController::class, 'showCompletedCustomerPayments'])->name('payments.completed.customer');
     Route::get('/payments/customer/{user}/invoice', [PaymentController::class, 'generateCustomerInvoice'])->name('payments.customer.invoice');
     Route::post('/payments/customer/{user}/invoice', [PaymentController::class, 'saveCustomerInvoice'])->name('payments.customer.invoice.save');
     Route::get('/invoices/{invoice}/edit', [PaymentController::class, 'editCustomerInvoice'])->name('invoices.edit');
@@ -333,7 +339,13 @@ Route::prefix('manager')->name('manager.')->middleware(['auth', 'user.status', '
     
     // Payment tracking routes - use the Manager namespace
     Route::get('/payments', [ManagerPaymentController::class, 'index'])->name('payments.index');
+    Route::get('/payments/completed', [ManagerPaymentController::class, 'completed'])->name('payments.completed');
     Route::get('/payments/customer/{user}', [ManagerPaymentController::class, 'showCustomerPayments'])->name('payments.customer');
+    Route::post('/payments/customer/{user}/complete', [ManagerPaymentController::class, 'completeAllCustomerPayments'])->name('payments.customer.complete');
+    Route::post('/payments/customer/{user}/revert', [ManagerPaymentController::class, 'revertAllCustomerPayments'])->name('payments.customer.revert');
+    Route::get('/payments/customer/{user}/invoice', [PaymentController::class, 'generateCustomerInvoice'])->name('payments.customer.invoice');
+    Route::post('/payments/customer/{user}/invoice', [PaymentController::class, 'saveCustomerInvoice'])->name('payments.customer.invoice.save');
+    Route::get('/payments/completed/customer/{user}', [ManagerPaymentController::class, 'showCompletedCustomerPayments'])->name('payments.completed.customer');
     Route::get('/payments/{payment}', [ManagerPaymentController::class, 'show'])->name('payments.show');
     Route::patch('/payments/{payment}/status', [ManagerPaymentController::class, 'updateStatus'])->name('payments.status');
     Route::get('/payments-analytics', [ManagerPaymentController::class, 'analytics'])->name('payments.analytics');

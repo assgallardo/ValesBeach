@@ -254,21 +254,28 @@
                     <span class="text-green-100 font-semibold text-lg">Booking Status:</span>
                     @php
                         $status = $payment->booking->status;
-                        $statusColors = [
-                            'completed' => 'bg-green-600 text-white',
-                            'confirmed' => 'bg-yellow-500 text-black',
-                            'pending' => 'bg-gray-500 text-white',
-                            'cancelled' => 'bg-red-600 text-white'
-                        ];
-                        $statusLabels = [
-                            'completed' => 'Completed - Fully Paid',
-                            'confirmed' => 'Confirmed - Partial Payment',
-                            'pending' => 'Pending',
-                            'cancelled' => 'Cancelled'
-                        ];
+                        $remainingBalance = $payment->booking->remaining_balance;
+                        
+                        // Determine status color based on both status and remaining balance
+                        if ($status === 'completed' || ($status === 'confirmed' && $remainingBalance == 0)) {
+                            $statusColor = 'bg-green-600 text-white';
+                            $statusLabel = 'Confirmed - Fully Paid';
+                        } elseif ($status === 'confirmed' && $remainingBalance > 0) {
+                            $statusColor = 'bg-yellow-500 text-black';
+                            $statusLabel = 'Confirmed - Partial Payment';
+                        } elseif ($status === 'pending') {
+                            $statusColor = 'bg-gray-500 text-white';
+                            $statusLabel = 'Pending';
+                        } elseif ($status === 'cancelled') {
+                            $statusColor = 'bg-red-600 text-white';
+                            $statusLabel = 'Cancelled';
+                        } else {
+                            $statusColor = 'bg-gray-500 text-white';
+                            $statusLabel = ucfirst($status);
+                        }
                     @endphp
-                    <span class="inline-block px-4 py-2 rounded-lg font-bold text-lg {{ $statusColors[$status] ?? 'bg-gray-500 text-white' }}">
-                        {{ $statusLabels[$status] ?? ucfirst($status) }}
+                    <span class="inline-block px-4 py-2 rounded-lg font-bold text-lg {{ $statusColor }}">
+                        {{ $statusLabel }}
                     </span>
                 </div>
             </div>

@@ -212,6 +212,14 @@ class ManagerRoomController extends Controller
             // Handle checkbox
             $validated['is_available'] = $request->has('is_available');
             
+            // Handle amenities - convert to JSON
+            // If amenities is not in the request, set it to empty array
+            if (!$request->has('amenities') || empty($validated['amenities'])) {
+                $validated['amenities'] = json_encode([]);
+            } else {
+                $validated['amenities'] = json_encode($validated['amenities']);
+            }
+            
             \Log::info('Data to update:', $validated);
             
             $room->update($validated);

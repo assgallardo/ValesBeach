@@ -149,8 +149,11 @@ class RoomController extends Controller
             'room_images.*' => 'image|mimes:jpeg,png,jpg|max:2048'
         ]);
 
-        // Handle amenities array
-        if (isset($validated['amenities'])) {
+        // Handle amenities array - convert to JSON
+        // If amenities is not in the request, set it to empty array
+        if (!$request->has('amenities') || empty($validated['amenities'])) {
+            $validated['amenities'] = json_encode([]);
+        } else {
             $validated['amenities'] = json_encode($validated['amenities']);
         }
 

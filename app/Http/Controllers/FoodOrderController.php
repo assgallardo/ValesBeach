@@ -276,10 +276,27 @@ class FoodOrderController extends Controller
                 ]);
             }
 
+            // Determine payment transaction ID
+            // If user has any NON-COMPLETED payments, use the same transaction
+            // If all payments are completed OR no payments exist, create new transaction
+            $activePayment = \App\Models\Payment::where('user_id', Auth::id())
+                ->whereIn('status', ['pending', 'confirmed', 'processing', 'overdue', 'failed', 'cancelled', 'refunded'])
+                ->first();
+            
+            if ($activePayment) {
+                // Use existing active transaction
+                $paymentTransactionId = $activePayment->payment_transaction_id;
+            } else {
+                // Create new transaction (all previous are completed or this is first payment)
+                $paymentTransactionId = 'TXN-' . strtoupper(\Illuminate\Support\Str::random(12));
+            }
+            
             // Create payment record
             Payment::create([
                 'food_order_id' => $foodOrder->id,
                 'user_id' => Auth::id(),
+                'payment_reference' => 'PAY-' . strtoupper(uniqid()),
+                'payment_transaction_id' => $paymentTransactionId,
                 'amount' => $totalAmount,
                 'payment_method' => 'cash', // Default to cash, will be updated when payment is processed
                 'status' => 'pending',

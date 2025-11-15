@@ -84,18 +84,37 @@
                             </div>
                         </div>
 
-                        @if($foodOrder->delivery_address)
-                            <div class="mt-6 pt-6 border-t border-gray-700">
-                                <p class="text-xs font-medium text-gray-400 uppercase mb-2">Delivery Address</p>
-                                <p class="text-green-50">{{ $foodOrder->delivery_address }}</p>
+                        <!-- Delivery Information -->
+                        <div class="mt-6 pt-6 border-t border-gray-700">
+                            <h3 class="text-sm font-medium text-gray-300 uppercase mb-4 flex items-center">
+                                <i class="fas fa-shipping-fast text-green-400 mr-2"></i>
+                                Delivery Information
+                            </h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <p class="text-xs font-medium text-gray-400 uppercase mb-1">Delivery Type</p>
+                                    <p class="text-green-50 capitalize">{{ str_replace('_', ' ', $foodOrder->delivery_type ?? 'N/A') }}</p>
+                                </div>
+                                @if($foodOrder->delivery_location)
+                                <div>
+                                    <p class="text-xs font-medium text-gray-400 uppercase mb-1">Location</p>
+                                    <p class="text-green-50">{{ $foodOrder->delivery_location }}</p>
+                                </div>
+                                @endif
+                                @if($foodOrder->requested_delivery_time)
+                                <div class="md:col-span-2">
+                                    <p class="text-xs font-medium text-gray-400 uppercase mb-1">Requested Delivery Time</p>
+                                    <p class="text-green-50">{{ \Carbon\Carbon::parse($foodOrder->requested_delivery_time)->format('M j, Y - g:i A') }}</p>
+                                </div>
+                                @endif
                             </div>
-                        @endif
+                        </div>
 
-                        @if($foodOrder->notes)
+                        @if($foodOrder->special_instructions)
                             <div class="mt-6 pt-6 border-t border-gray-700">
-                                <p class="text-xs font-medium text-gray-400 uppercase mb-2">Customer Notes</p>
-                                <div class="bg-blue-900 border-l-4 border-blue-500 p-4 rounded">
-                                    <p class="text-blue-100">{{ $foodOrder->notes }}</p>
+                                <p class="text-xs font-medium text-gray-400 uppercase mb-2">Special Instructions</p>
+                                <div class="bg-yellow-900/30 border-l-4 border-yellow-500 p-4 rounded">
+                                    <p class="text-yellow-100">{{ $foodOrder->special_instructions }}</p>
                                 </div>
                             </div>
                         @endif

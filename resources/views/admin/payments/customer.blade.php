@@ -13,11 +13,23 @@
                     </a>
                     <h1 class="text-3xl font-bold text-green-50">Customer Payment Details</h1>
                 </div>
-                <a href="{{ route('admin.payments.customer.invoice', $customer->id) }}" 
-                   class="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
-                    <i class="fas fa-file-invoice-dollar mr-2"></i>
-                    Generate Invoice
-                </a>
+                <div class="flex items-center gap-3">
+                    <form method="POST" action="{{ route('admin.payments.customer.complete', $customer->id) }}" 
+                          onsubmit="return confirm('Are you sure you want to mark all payments in this transaction for {{ $customer->name }} as completed? This will move them to the Completed Transactions view.')">
+                        @csrf
+                        <input type="hidden" name="transaction_id" value="{{ request('transaction_id') }}">
+                        <button type="submit"
+                                class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+                            <i class="fas fa-check-circle mr-2"></i>
+                            Complete Payments
+                        </button>
+                    </form>
+                    <a href="{{ route('admin.payments.customer.invoice', ['user' => $customer->id, 'transaction_id' => request('transaction_id')]) }}" 
+                       class="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
+                        <i class="fas fa-file-invoice-dollar mr-2"></i>
+                        Generate Invoice
+                    </a>
+                </div>
             </div>
             <p class="text-gray-400">View all payment transactions for this customer</p>
         </div>

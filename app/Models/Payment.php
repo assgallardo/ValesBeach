@@ -19,6 +19,7 @@ class Payment extends Model
         'food_order_id',
         'user_id',
         'payment_reference',
+        'payment_transaction_id',
         'amount',
         'payment_method',
         'status',

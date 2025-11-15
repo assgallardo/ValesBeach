@@ -89,17 +89,34 @@ class PaymentController extends Controller
         try {
             $paymentAmount = $request->payment_amount;
             
-            // Auto-complete cash payments, others remain pending for verification
-            $paymentStatus = ($request->payment_method === 'cash') ? 'completed' : 'pending';
+            // All payments start as 'confirmed' (verified but not completed)
+            // Cash payments are 'confirmed', online/digital payments are 'pending' until verified
+            $paymentStatus = ($request->payment_method === 'cash') ? 'confirmed' : 'pending';
+            
+            // Determine payment transaction ID
+            // If user has any NON-COMPLETED payments, use the same transaction
+            // If all payments are completed OR no payments exist, create new transaction
+            $activePayment = Payment::where('user_id', auth()->id())
+                ->whereIn('status', ['pending', 'confirmed', 'processing', 'overdue', 'failed', 'cancelled', 'refunded'])
+                ->first();
+            
+            if ($activePayment) {
+                // Use existing active transaction
+                $paymentTransactionId = $activePayment->payment_transaction_id;
+            } else {
+                // Create new transaction (all previous are completed or this is first payment)
+                $paymentTransactionId = 'TXN-' . strtoupper(\Illuminate\Support\Str::random(12));
+            }
             
             // Create payment record
             $payment = Payment::create([
                 'user_id' => auth()->id(),
                 'booking_id' => $booking->id,
                 'payment_reference' => $this->generatePaymentReference(),
+                'payment_transaction_id' => $paymentTransactionId,
                 'amount' => $paymentAmount,
                 'payment_method' => $request->payment_method,
-                'status' => $paymentStatus, // Auto-complete cash, others pending
+                'status' => $paymentStatus, // confirmed for cash, pending for digital
                 'payment_date' => now(),
                 'notes' => $request->notes,
                 'transaction_id' => $request->transaction_id ?? null,
@@ -285,38 +302,61 @@ class PaymentController extends Controller
      */
     public function history()
     {
-        // Get all bookings with their payments for this user
-        // Show ALL bookings so guests can see what needs to be paid
-        $bookings = \App\Models\Booking::where('user_id', auth()->id())
-            ->with(['room', 'invoice', 'payments' => function($query) {
-                $query->orderBy('created_at', 'desc');
-            }])
-            ->where('status', '!=', 'cancelled') // Exclude cancelled bookings
-            ->orderBy('created_at', 'desc')
-            ->get();
+        // Get all active (non-completed) payment transactions for this user
+        $activeTransactionIds = Payment::where('user_id', auth()->id())
+            ->whereIn('status', ['pending', 'confirmed', 'processing', 'overdue', 'failed', 'cancelled', 'refunded'])
+            ->pluck('payment_transaction_id')
+            ->unique();
+        
+        if ($activeTransactionIds->isEmpty()) {
+            // No active transactions
+            $bookings = collect();
+            $servicePayments = collect();
+            $foodOrderPayments = collect();
+            $extraChargePayments = collect();
+        } else {
+            // Get all bookings with their NON-COMPLETED payments in active transactions
+            $bookings = \App\Models\Booking::where('user_id', auth()->id())
+                ->with(['room', 'invoice', 'payments' => function($query) use ($activeTransactionIds) {
+                    $query->whereIn('payment_transaction_id', $activeTransactionIds)
+                          ->whereIn('status', ['pending', 'confirmed', 'processing', 'overdue', 'failed', 'cancelled', 'refunded'])
+                          ->orderBy('created_at', 'desc');
+                }])
+                ->where('status', '!=', 'cancelled')
+                ->whereHas('payments', function($query) use ($activeTransactionIds) {
+                    $query->whereIn('payment_transaction_id', $activeTransactionIds)
+                          ->whereIn('status', ['pending', 'confirmed', 'processing', 'overdue', 'failed', 'cancelled', 'refunded']);
+                })
+                ->orderBy('created_at', 'desc')
+                ->get();
 
-        // Get service payments (not related to bookings)
-        $servicePayments = auth()->user()->payments()
-            ->whereNotNull('service_request_id')
-            ->with('serviceRequest.service')
-            ->orderBy('created_at', 'desc')
-            ->get();
+            // Get service payments in active transactions
+            $servicePayments = auth()->user()->payments()
+                ->whereNotNull('service_request_id')
+                ->whereIn('payment_transaction_id', $activeTransactionIds)
+                ->whereIn('status', ['pending', 'confirmed', 'processing', 'overdue', 'failed', 'cancelled', 'refunded'])
+                ->with('serviceRequest.service')
+                ->orderBy('created_at', 'desc')
+                ->get();
 
-        // Get food order payments
-        $foodOrderPayments = auth()->user()->payments()
-            ->whereNotNull('food_order_id')
-            ->with('foodOrder.orderItems.menuItem')
-            ->orderBy('created_at', 'desc')
-            ->get();
+            // Get food order payments in active transactions
+            $foodOrderPayments = auth()->user()->payments()
+                ->whereNotNull('food_order_id')
+                ->whereIn('payment_transaction_id', $activeTransactionIds)
+                ->whereIn('status', ['pending', 'confirmed', 'processing', 'overdue', 'failed', 'cancelled', 'refunded'])
+                ->with('foodOrder.orderItems.menuItem')
+                ->orderBy('created_at', 'desc')
+                ->get();
 
-        // Get extra charge payments (payments without booking_id, service_request_id, or food_order_id)
-        // These are typically extra charges added via invoice generation
-        $extraChargePayments = auth()->user()->payments()
-            ->whereNull('booking_id')
-            ->whereNull('service_request_id')
-            ->whereNull('food_order_id')
-            ->orderBy('created_at', 'desc')
-            ->get();
+            // Get extra charge payments in active transactions
+            $extraChargePayments = auth()->user()->payments()
+                ->whereNull('booking_id')
+                ->whereNull('service_request_id')
+                ->whereNull('food_order_id')
+                ->whereIn('payment_transaction_id', $activeTransactionIds)
+                ->orderBy('created_at', 'desc')
+                ->get();
+        }
 
         // Get the general payment method (most common one used by the user)
         $allPayments = auth()->user()->payments;
@@ -326,6 +366,201 @@ class PaymentController extends Controller
             : null;
 
         return view('payments.history', compact('bookings', 'servicePayments', 'foodOrderPayments', 'extraChargePayments', 'generalPaymentMethod'));
+    }
+
+    /**
+     * Display completed transactions for guest
+     */
+    public function completed()
+    {
+        $user = auth()->user();
+        
+        // Get all COMPLETED payment transactions for this user
+        // A transaction is complete when ALL payments in it are completed
+        $completedTransactionIds = DB::table('payments')
+            ->select('payment_transaction_id')
+            ->where('user_id', $user->id)
+            ->whereNotNull('payment_transaction_id')
+            ->groupBy('payment_transaction_id')
+            ->havingRaw('COUNT(*) = SUM(CASE WHEN status = ? THEN 1 ELSE 0 END)', ['completed'])
+            ->pluck('payment_transaction_id');
+        
+        if ($completedTransactionIds->isEmpty()) {
+            return view('payments.completed', [
+                'user' => $user,
+                'completedPayments' => collect(),
+                'bookingPayments' => collect(),
+                'servicePayments' => collect(),
+                'foodOrderPayments' => collect(),
+                'extraChargePayments' => collect(),
+                'totalAmount' => 0,
+                'totalTransactions' => 0,
+                'paymentTransactions' => collect()
+            ]);
+        }
+        
+        // Get all COMPLETED payments in completed transactions
+        $completedPayments = $user->payments()
+            ->whereIn('payment_transaction_id', $completedTransactionIds)
+            ->where('status', 'completed')
+            ->with(['booking.room', 'serviceRequest.service', 'foodOrder.orderItems.menuItem'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+        
+        // Group by payment_transaction_id
+        $paymentTransactions = $completedPayments->groupBy('payment_transaction_id')->map(function($payments, $transactionId) use ($user) {
+            $bookingPayments = $payments->where('booking_id', '!=', null);
+            $servicePayments = $payments->where('service_request_id', '!=', null);
+            $foodOrderPayments = $payments->where('food_order_id', '!=', null);
+            $extraChargePayments = $payments->filter(function($payment) {
+                return is_null($payment->booking_id) && 
+                       is_null($payment->service_request_id) && 
+                       is_null($payment->food_order_id);
+            });
+            
+            return (object)[
+                'payment_transaction_id' => $transactionId,
+                'user' => $user,
+                'payments' => $payments,
+                'totalAmount' => $payments->sum('amount'),
+                'totalTransactions' => $payments->count(),
+                'latestDate' => $payments->max('created_at'),
+                'bookings_count' => $bookingPayments->count(),
+                'services_count' => $servicePayments->count(),
+                'food_orders_count' => $foodOrderPayments->count(),
+                'extra_charges_count' => $extraChargePayments->count()
+            ];
+        })->sortByDesc('latestDate')->values();
+        
+        // Group by type for overall summary
+        $bookingPayments = $completedPayments->where('booking_id', '!=', null);
+        $servicePayments = $completedPayments->where('service_request_id', '!=', null);
+        $foodOrderPayments = $completedPayments->where('food_order_id', '!=', null);
+        $extraChargePayments = $completedPayments->filter(function($payment) {
+            return is_null($payment->booking_id) && 
+                   is_null($payment->service_request_id) && 
+                   is_null($payment->food_order_id);
+        });
+        
+        // Calculate totals
+        $totalAmount = $completedPayments->sum('amount');
+        $totalTransactions = $completedPayments->count();
+        
+        return view('payments.completed', compact(
+            'user',
+            'completedPayments',
+            'bookingPayments',
+            'servicePayments',
+            'foodOrderPayments',
+            'extraChargePayments',
+            'totalAmount',
+            'totalTransactions',
+            'paymentTransactions'
+        ));
+    }
+
+    /**
+     * Display completed transaction details for guest
+     */
+    public function completedDetails(Request $request)
+    {
+        $user = auth()->user();
+        $transactionId = $request->get('transaction_id');
+        
+        if (!$transactionId) {
+            return redirect()->route('payments.completed')->with('error', 'No transaction specified.');
+        }
+        
+        // Get all COMPLETED payments for this specific transaction
+        $completedPayments = $user->payments()
+            ->where('payment_transaction_id', $transactionId)
+            ->where('status', 'completed')
+            ->with(['booking.room', 'serviceRequest.service', 'foodOrder.orderItems.menuItem'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+        
+        if ($completedPayments->isEmpty()) {
+            return redirect()->route('payments.completed')->with('error', 'Transaction not found.');
+        }
+        
+        // Group by type
+        $bookingPayments = $completedPayments->where('booking_id', '!=', null);
+        $servicePayments = $completedPayments->where('service_request_id', '!=', null);
+        $foodOrderPayments = $completedPayments->where('food_order_id', '!=', null);
+        $extraChargePayments = $completedPayments->filter(function($payment) {
+            return is_null($payment->booking_id) && 
+                   is_null($payment->service_request_id) && 
+                   is_null($payment->food_order_id);
+        });
+        
+        // Calculate totals
+        $totalAmount = $completedPayments->sum('amount');
+        $totalTransactions = $completedPayments->count();
+        
+        return view('payments.completed-details', compact(
+            'user',
+            'completedPayments',
+            'bookingPayments',
+            'servicePayments',
+            'foodOrderPayments',
+            'extraChargePayments',
+            'totalAmount',
+            'totalTransactions',
+            'transactionId'
+        ));
+    }
+
+
+    /**
+     * Display completed transactions for admin
+     */
+    public function adminCompleted()
+    {
+        // Get all completed payment transactions (all payments in transaction are completed)
+        $completedTransactions = DB::table('payments')
+            ->select('payment_transaction_id', 'user_id')
+            ->whereNotNull('payment_transaction_id')
+            ->where('status', 'completed')
+            ->groupBy('payment_transaction_id', 'user_id')
+            // Only show transactions where ALL payments are completed
+            ->havingRaw('COUNT(*) = SUM(CASE WHEN status = ? THEN 1 ELSE 0 END)', ['completed'])
+            ->get();
+        
+        // Get detailed data for each completed transaction
+        $customers = collect();
+        foreach ($completedTransactions as $transaction) {
+            $user = User::find($transaction->user_id);
+            if (!$user) continue;
+            
+            // Get all completed payments in this transaction
+            $completedPayments = Payment::where('payment_transaction_id', $transaction->payment_transaction_id)
+                ->where('status', 'completed')
+                ->with(['booking.room', 'serviceRequest.service', 'foodOrder'])
+                ->orderBy('created_at', 'desc')
+                ->get();
+            
+            if ($completedPayments->isEmpty()) continue;
+            
+            // Create customer object with transaction data
+            $customer = $user;
+            $customer->payments = $completedPayments;
+            $customer->payment_transaction_id = $transaction->payment_transaction_id;
+            $customer->total_amount = $completedPayments->sum('amount');
+            $customer->payment_count = $completedPayments->count();
+            $customer->latest_payment_date = $completedPayments->max('created_at');
+            
+            // Count payment types
+            $customer->bookings_count = $completedPayments->where('booking_id', '!=', null)->count();
+            $customer->services_count = $completedPayments->where('service_request_id', '!=', null)->count();
+            $customer->food_orders_count = $completedPayments->where('food_order_id', '!=', null)->count();
+            
+            $customers->push($customer);
+        }
+        
+        // Sort by latest payment date
+        $customers = $customers->sortByDesc('latest_payment_date');
+
+        return view('admin.payments.completed', compact('customers'));
     }
 
     /**
@@ -819,45 +1054,85 @@ class PaymentController extends Controller
         $dateTo = $request->get('date_to');
         $search = $request->get('search');
 
-        // Build query for customer payments (grouped by user)
-        $query = \App\Models\User::whereHas('payments')
-            ->with(['payments' => function($q) use ($status, $paymentMethod, $paymentType, $dateFrom, $dateTo) {
-                // Apply filters to payments
-        if ($status) {
-                    $q->where('status', $status);
-        }
-        if ($paymentMethod) {
-                    $q->where('payment_method', $paymentMethod);
-        }
-        if ($paymentType) {
-            if ($paymentType === 'booking') {
-                        $q->whereNotNull('booking_id');
-            } elseif ($paymentType === 'service') {
-                        $q->whereNotNull('service_request_id');
-            } elseif ($paymentType === 'food_order') {
-                        $q->whereNotNull('food_order_id');
+        // Build query for payment transactions (grouped by payment_transaction_id)
+        // Get all active payment transactions (not all completed)
+        $query = DB::table('payments')
+            ->select('payment_transaction_id', 'user_id')
+            ->whereNotNull('payment_transaction_id')
+            ->groupBy('payment_transaction_id', 'user_id')
+            // Only show transactions that have at least one non-completed payment
+            ->havingRaw('SUM(CASE WHEN status IN (?, ?, ?, ?, ?, ?, ?) THEN 1 ELSE 0 END) > 0', [
+                'pending', 'confirmed', 'processing', 'overdue', 'failed', 'cancelled', 'refunded'
+            ]);
+
+        $paymentTransactions = $query->get();
+        
+        // Get detailed data for each transaction
+        $customers = collect();
+        foreach ($paymentTransactions as $transaction) {
+            $user = User::find($transaction->user_id);
+            if (!$user) continue;
+            
+            // Get all payments in this transaction
+            $transactionPayments = Payment::where('payment_transaction_id', $transaction->payment_transaction_id)
+                ->with(['booking.room', 'serviceRequest.service', 'foodOrder'])
+                ->orderBy('created_at', 'desc')
+                ->get();
+            
+            // Apply filters
+            if ($status) {
+                $transactionPayments = $transactionPayments->where('status', $status);
             }
+            if ($paymentMethod) {
+                $transactionPayments = $transactionPayments->where('payment_method', $paymentMethod);
+            }
+            if ($paymentType) {
+                if ($paymentType === 'booking') {
+                    $transactionPayments = $transactionPayments->filter(fn($p) => $p->booking_id !== null);
+                } elseif ($paymentType === 'service') {
+                    $transactionPayments = $transactionPayments->filter(fn($p) => $p->service_request_id !== null);
+                } elseif ($paymentType === 'food_order') {
+                    $transactionPayments = $transactionPayments->filter(fn($p) => $p->food_order_id !== null);
+                }
+            }
+            if ($dateFrom) {
+                $transactionPayments = $transactionPayments->filter(fn($p) => $p->created_at->gte($dateFrom));
+            }
+            if ($dateTo) {
+                $transactionPayments = $transactionPayments->filter(fn($p) => $p->created_at->lte($dateTo));
+            }
+            
+            // Apply search filter
+            if ($search) {
+                if (!str_contains(strtolower($user->name), strtolower($search)) && 
+                    !str_contains(strtolower($user->email), strtolower($search))) {
+                    continue;
+                }
+            }
+            
+            // Skip if no payments after filtering
+            if ($transactionPayments->isEmpty()) {
+                continue;
+            }
+            
+            // Create customer object with transaction data
+            $customer = $user;
+            $customer->payments = $transactionPayments;
+            $customer->payment_transaction_id = $transaction->payment_transaction_id;
+            
+            $customers->push($customer);
         }
-        if ($dateFrom) {
-                    $q->whereDate('created_at', '>=', $dateFrom);
-        }
-        if ($dateTo) {
-                    $q->whereDate('created_at', '<=', $dateTo);
-        }
-
-                $q->with(['booking.room', 'serviceRequest.service', 'foodOrder'])
-                  ->orderBy('created_at', 'desc');
-            }]);
-
-        // Apply search
-        if ($search) {
-            $query->where(function($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                               ->orWhere('email', 'like', "%{$search}%");
-            });
-        }
-
-        $customers = $query->orderBy('created_at', 'desc')->paginate(20);
+        
+        // Paginate manually
+        $page = $request->get('page', 1);
+        $perPage = 20;
+        $customers = new \Illuminate\Pagination\LengthAwarePaginator(
+            $customers->forPage($page, $perPage),
+            $customers->count(),
+            $perPage,
+            $page,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
 
         // Calculate comprehensive statistics
         $stats = [
@@ -902,9 +1177,17 @@ class PaymentController extends Controller
             abort(403, 'Unauthorized access.');
         }
 
+        // Get transaction ID from request
+        $transactionId = request()->get('transaction_id');
+        
+        if (!$transactionId) {
+            return redirect()->back()->with('error', 'No payment transaction specified.');
+        }
+
         $customer = \App\Models\User::with([
-            'payments' => function($q) {
+            'payments' => function($q) use ($transactionId) {
                 $q->with(['booking.room', 'serviceRequest.service', 'foodOrder.orderItems.menuItem'])
+                  ->where('payment_transaction_id', $transactionId)
                   ->orderBy('created_at', 'desc');
             },
             'bookings' => function($q) {
@@ -928,6 +1211,102 @@ class PaymentController extends Controller
     }
 
     /**
+     * Complete all payments for a specific customer payment transaction
+     */
+    public function completeAllCustomerPayments($userId)
+    {
+        $user = Auth::user();
+        if (!in_array($user->role, ['admin', 'manager'])) {
+            abort(403, 'Unauthorized access.');
+        }
+
+        $customer = User::findOrFail($userId);
+        
+        // Get request parameter for transaction ID
+        $transactionId = request()->get('transaction_id');
+        
+        if (!$transactionId) {
+            return redirect()->back()->with('error', 'No payment transaction specified.');
+        }
+        
+        // Update all payments in this specific transaction to completed status
+        $updatedCount = Payment::where('payment_transaction_id', $transactionId)
+            ->where('user_id', $customer->id)
+            ->whereIn('status', ['pending', 'confirmed', 'processing'])
+            ->update(['status' => 'completed', 'payment_date' => now()]);
+
+        return redirect()->route('admin.payments.completed')
+            ->with('success', "Payment transaction completed for {$customer->name}. {$updatedCount} payment(s) updated.");
+    }
+
+    /**
+     * Revert all completed payments in a transaction back to confirmed status
+     */
+    public function revertAllCustomerPayments($userId)
+    {
+        $user = Auth::user();
+        if (!in_array($user->role, ['admin', 'manager'])) {
+            abort(403, 'Unauthorized access.');
+        }
+
+        $customer = User::findOrFail($userId);
+        
+        // Get request parameter for transaction ID
+        $transactionId = request()->get('transaction_id');
+        
+        if (!$transactionId) {
+            return redirect()->back()->with('error', 'No payment transaction specified.');
+        }
+        
+        // Update all completed payments in this specific transaction back to confirmed
+        $updatedCount = Payment::where('payment_transaction_id', $transactionId)
+            ->where('user_id', $customer->id)
+            ->where('status', 'completed')
+            ->update(['status' => 'confirmed']);
+
+        return redirect()->route('admin.payments.index')
+            ->with('success', "Payment transaction reverted for {$customer->name}. {$updatedCount} payment(s) updated to confirmed status.");
+    }
+
+    /**
+     * Show completed customer payment details (read-only)
+     */
+    public function showCompletedCustomerPayments($userId)
+    {
+        $user = Auth::user();
+        if (!in_array($user->role, ['admin', 'manager', 'staff'])) {
+            abort(403, 'Unauthorized access.');
+        }
+
+        // Get transaction ID from request
+        $transactionId = request()->get('transaction_id');
+        
+        if (!$transactionId) {
+            return redirect()->back()->with('error', 'No payment transaction specified.');
+        }
+
+        $customer = \App\Models\User::with([
+            'payments' => function($q) use ($transactionId) {
+                $q->with(['booking.room', 'serviceRequest.service', 'foodOrder.orderItems.menuItem'])
+                  ->where('payment_transaction_id', $transactionId)
+                  ->where('status', 'completed')
+                  ->orderBy('created_at', 'desc');
+            },
+            'bookings' => function($q) {
+                $q->with(['room', 'payments']);
+            },
+            'serviceRequests' => function($q) {
+                $q->with(['service', 'payment']);
+            },
+            'foodOrders' => function($q) {
+                $q->with(['orderItems.menuItem', 'payment']);
+            }
+        ])->findOrFail($userId);
+
+        return view('admin.payments.completed-customer', compact('customer'));
+    }
+
+    /**
      * Show invoice preview/edit form for customer
      */
     public function generateCustomerInvoice($userId)
@@ -937,21 +1316,45 @@ class PaymentController extends Controller
             abort(403, 'Unauthorized access.');
         }
 
-        $customer = \App\Models\User::with([
-            'bookings.room',
-            'bookings.payments',
-            'serviceRequests.service',
-            'serviceRequests.payment',
-            'foodOrders.orderItems.menuItem',
-            'foodOrders.payment'
-        ])->findOrFail($userId);
+        // Get transaction ID from request
+        $transactionId = request()->get('transaction_id');
+        
+        if (!$transactionId) {
+            return redirect()->back()->with('error', 'No payment transaction specified.');
+        }
+
+        $customer = \App\Models\User::findOrFail($userId);
+        
+        // Get all payment IDs in this transaction
+        $transactionPaymentIds = Payment::where('payment_transaction_id', $transactionId)
+            ->where('user_id', $customer->id)
+            ->pluck('id');
+        
+        // Load customer with only the items related to this transaction's payments
+        $customer->load([
+            'bookings' => function($q) use ($transactionPaymentIds) {
+                $q->whereHas('payments', function($pq) use ($transactionPaymentIds) {
+                    $pq->whereIn('id', $transactionPaymentIds);
+                })->with('room', 'payments');
+            },
+            'serviceRequests' => function($q) use ($transactionPaymentIds) {
+                $q->whereHas('payment', function($pq) use ($transactionPaymentIds) {
+                    $pq->whereIn('id', $transactionPaymentIds);
+                })->with('service', 'payment');
+            },
+            'foodOrders' => function($q) use ($transactionPaymentIds) {
+                $q->whereHas('payment', function($pq) use ($transactionPaymentIds) {
+                    $pq->whereIn('id', $transactionPaymentIds);
+                })->with('orderItems.menuItem', 'payment');
+            }
+        ]);
 
         // Build invoice data
         $items = [];
         $totalAmount = 0;
         $totalPaid = 0;
 
-        // Add bookings
+        // Add bookings (only from this transaction)
         foreach ($customer->bookings as $booking) {
             if ($booking->total_price > 0) {
                 // Sum net amounts for all payments (amount - refund_amount)
@@ -1020,8 +1423,9 @@ class PaymentController extends Controller
             }
         }
 
-        // Add extra charges (payments with payment_reference starting with 'EXT-')
+        // Add extra charges (payments with payment_reference starting with 'EXT-' in this transaction)
         $extraChargePayments = \App\Models\Payment::where('user_id', $customer->id)
+            ->where('payment_transaction_id', $transactionId)
             ->whereNull('booking_id')
             ->whereNull('service_request_id')
             ->whereNull('food_order_id')

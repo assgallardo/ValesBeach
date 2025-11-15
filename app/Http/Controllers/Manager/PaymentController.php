@@ -29,7 +29,11 @@ class PaymentController extends Controller
         $search = $request->get('search');
 
         // Build query for customer payments (grouped by user)
-        $query = \App\Models\User::whereHas('payments')
+        $query = \App\Models\User::whereHas('payments', function($q) {
+                // Exclude customers who have ALL payments marked as completed
+                // Only show customers with at least one non-completed payment
+                $q->whereIn('status', ['pending', 'confirmed', 'processing', 'overdue', 'failed', 'cancelled', 'refunded']);
+            })
             ->with(['payments' => function($q) use ($status, $paymentMethod, $paymentType, $dateFrom, $dateTo) {
                 // Apply filters to payments
                 if ($status) {
@@ -109,9 +113,17 @@ class PaymentController extends Controller
             abort(403, 'Unauthorized access.');
         }
 
+        // Get transaction ID from request
+        $transactionId = request()->get('transaction_id');
+        
+        if (!$transactionId) {
+            return redirect()->back()->with('error', 'No payment transaction specified.');
+        }
+
         $customer = \App\Models\User::with([
-            'payments' => function($q) {
+            'payments' => function($q) use ($transactionId) {
                 $q->with(['booking.room', 'serviceRequest.service', 'foodOrder.orderItems.menuItem'])
+                  ->where('payment_transaction_id', $transactionId)
                   ->orderBy('created_at', 'desc');
             },
             'bookings' => function($q) {
@@ -126,6 +138,97 @@ class PaymentController extends Controller
         ])->findOrFail($userId);
 
         return view('manager.payments.customer', compact('customer'));
+    }
+
+    /**
+     * Complete all payments for a specific customer payment transaction
+     */
+    public function completeAllCustomerPayments($userId)
+    {
+        if (!in_array(Auth::user()->role, ['admin', 'manager'])) {
+            abort(403, 'Unauthorized access.');
+        }
+
+        $customer = \App\Models\User::findOrFail($userId);
+        
+        // Get request parameter for transaction ID
+        $transactionId = request()->get('transaction_id');
+        
+        if (!$transactionId) {
+            return redirect()->back()->with('error', 'No payment transaction specified.');
+        }
+        
+        // Update all payments in this specific transaction to completed status
+        $updatedCount = \App\Models\Payment::where('payment_transaction_id', $transactionId)
+            ->where('user_id', $customer->id)
+            ->whereIn('status', ['pending', 'confirmed', 'processing'])
+            ->update(['status' => 'completed', 'payment_date' => now()]);
+
+        return redirect()->route('manager.payments.completed')->with('success', "Payment transaction completed for {$customer->name}. {$updatedCount} payment(s) updated.");
+    }
+
+    /**
+     * Revert all completed payments in a transaction back to confirmed status
+     */
+    public function revertAllCustomerPayments($userId)
+    {
+        if (!in_array(Auth::user()->role, ['admin', 'manager'])) {
+            abort(403, 'Unauthorized access.');
+        }
+
+        $customer = \App\Models\User::findOrFail($userId);
+        
+        // Get request parameter for transaction ID
+        $transactionId = request()->get('transaction_id');
+        
+        if (!$transactionId) {
+            return redirect()->back()->with('error', 'No payment transaction specified.');
+        }
+        
+        // Update all completed payments in this specific transaction back to confirmed
+        $updatedCount = \App\Models\Payment::where('payment_transaction_id', $transactionId)
+            ->where('user_id', $customer->id)
+            ->where('status', 'completed')
+            ->update(['status' => 'confirmed']);
+
+        return redirect()->route('manager.payments.index')->with('success', "Payment transaction reverted for {$customer->name}. {$updatedCount} payment(s) updated to confirmed status.");
+    }
+
+    /**
+     * Show completed customer payment details (read-only)
+     */
+    public function showCompletedCustomerPayments($userId)
+    {
+        if (!in_array(Auth::user()->role, ['admin', 'manager', 'staff'])) {
+            abort(403, 'Unauthorized access.');
+        }
+
+        // Get transaction ID from request
+        $transactionId = request()->get('transaction_id');
+        
+        if (!$transactionId) {
+            return redirect()->back()->with('error', 'No payment transaction specified.');
+        }
+
+        $customer = \App\Models\User::with([
+            'payments' => function($q) use ($transactionId) {
+                $q->with(['booking.room', 'serviceRequest.service', 'foodOrder.orderItems.menuItem'])
+                  ->where('payment_transaction_id', $transactionId)
+                  ->where('status', 'completed')
+                  ->orderBy('created_at', 'desc');
+            },
+            'bookings' => function($q) {
+                $q->with(['room', 'payments']);
+            },
+            'serviceRequests' => function($q) {
+                $q->with(['service', 'payment']);
+            },
+            'foodOrders' => function($q) {
+                $q->with(['orderItems.menuItem', 'payment']);
+            }
+        ])->findOrFail($userId);
+
+        return view('manager.payments.completed-customer', compact('customer'));
     }
 
     /**
@@ -420,5 +523,40 @@ class PaymentController extends Controller
         };
 
         return response()->stream($callback, 200, $headers);
+    }
+
+    /**
+     * Display completed transactions for manager
+     */
+    public function completed()
+    {
+        // Get customers who have at least one completed payment
+        $customers = \App\Models\User::whereHas('payments', function($query) {
+            $query->where('status', 'completed');
+        })
+        ->with(['payments' => function($query) {
+            $query->where('status', 'completed');
+        }])
+        ->withCount(['payments as completed_payments_count' => function($query) {
+            $query->where('status', 'completed');
+        }])
+        ->get()
+        ->map(function($customer) {
+            $completedPayments = $customer->payments;
+            
+            $customer->total_amount = $completedPayments->sum('amount');
+            $customer->payment_count = $completedPayments->count();
+            $customer->latest_payment_date = $completedPayments->max('created_at');
+            
+            // Count payment types
+            $customer->bookings_count = $completedPayments->where('booking_id', '!=', null)->count();
+            $customer->services_count = $completedPayments->where('service_request_id', '!=', null)->count();
+            $customer->food_orders_count = $completedPayments->where('food_order_id', '!=', null)->count();
+            
+            return $customer;
+        })
+        ->sortByDesc('latest_payment_date');
+
+        return view('manager.payments.completed', compact('customers'));
     }
 }

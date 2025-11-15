@@ -16,51 +16,51 @@
                     <h1 class="text-3xl font-bold text-white mb-2">💳 Payment History</h1>
                     <p class="text-gray-400">View all your payments organized by category</p>
                 </div>
-            <div class="flex gap-3">
+            <div class="flex gap-2">
                 @if($bookings->isNotEmpty() || $servicePayments->isNotEmpty() || $foodOrderPayments->isNotEmpty())
                 <!-- Payment Method Selector -->
                 <div class="relative inline-block">
                     <button type="button"
                             id="paymentMethodBtn"
                             onclick="togglePaymentMethodMenu()"
-                            class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">
-                        <i class="fas fa-credit-card mr-2"></i>
+                            class="inline-flex items-center px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm">
+                        <i class="fas fa-credit-card mr-1.5 text-xs"></i>
                         <span id="paymentMethodText">Select Payment Method</span>
-                        <i class="fas fa-chevron-down ml-2 text-sm"></i>
+                        <i class="fas fa-chevron-down ml-1.5 text-xs"></i>
                     </button>
                     
                     <!-- Dropdown Menu -->
                     <div id="paymentMethodMenu" 
-                         class="absolute right-0 mt-2 w-56 bg-gray-800 rounded-lg shadow-xl border border-gray-700 hidden z-50">
-                        <div class="py-2">
+                         class="absolute right-0 mt-1 w-44 bg-gray-800 rounded-lg shadow-xl border border-gray-700 hidden z-50">
+                        <div class="py-1">
                             <a href="#" onclick="selectPaymentMethod('cash', 'Cash', event)" 
-                               class="block px-4 py-2 text-white hover:bg-gray-700 transition-colors flex items-center">
-                                <i class="fas fa-money-bill-wave mr-2 w-5"></i>
+                               class="block px-3 py-1.5 text-sm text-white hover:bg-gray-700 transition-colors flex items-center">
+                                <i class="fas fa-money-bill-wave mr-2 w-4 text-xs"></i>
                                 <span>Cash</span>
                             </a>
                             <a href="#" onclick="selectPaymentMethod('card', 'Card', event)" 
-                               class="block px-4 py-2 text-white hover:bg-gray-700 transition-colors flex items-center">
-                                <i class="fas fa-credit-card mr-2 w-5"></i>
+                               class="block px-3 py-1.5 text-sm text-white hover:bg-gray-700 transition-colors flex items-center">
+                                <i class="fas fa-credit-card mr-2 w-4 text-xs"></i>
                                 <span>Card</span>
                             </a>
                             <a href="#" onclick="selectPaymentMethod('gcash', 'GCash', event)" 
-                               class="block px-4 py-2 text-white hover:bg-gray-700 transition-colors flex items-center">
-                                <i class="fas fa-mobile-alt mr-2 w-5"></i>
+                               class="block px-3 py-1.5 text-sm text-white hover:bg-gray-700 transition-colors flex items-center">
+                                <i class="fas fa-mobile-alt mr-2 w-4 text-xs"></i>
                                 <span>GCash</span>
                             </a>
                             <a href="#" onclick="selectPaymentMethod('bank_transfer', 'Bank Transfer', event)" 
-                               class="block px-4 py-2 text-white hover:bg-gray-700 transition-colors flex items-center">
-                                <i class="fas fa-university mr-2 w-5"></i>
+                               class="block px-3 py-1.5 text-sm text-white hover:bg-gray-700 transition-colors flex items-center">
+                                <i class="fas fa-university mr-2 w-4 text-xs"></i>
                                 <span>Bank Transfer</span>
                             </a>
                             <a href="#" onclick="selectPaymentMethod('paymaya', 'PayMaya', event)" 
-                               class="block px-4 py-2 text-white hover:bg-gray-700 transition-colors flex items-center">
-                                <i class="fas fa-wallet mr-2 w-5"></i>
+                               class="block px-3 py-1.5 text-sm text-white hover:bg-gray-700 transition-colors flex items-center">
+                                <i class="fas fa-wallet mr-2 w-4 text-xs"></i>
                                 <span>PayMaya</span>
                             </a>
                             <a href="#" onclick="selectPaymentMethod('online', 'Online', event)" 
-                               class="block px-4 py-2 text-white hover:bg-gray-700 transition-colors flex items-center">
-                                <i class="fas fa-globe mr-2 w-5"></i>
+                               class="block px-3 py-1.5 text-sm text-white hover:bg-gray-700 transition-colors flex items-center">
+                                <i class="fas fa-globe mr-2 w-4 text-xs"></i>
                                 <span>Online</span>
                             </a>
                         </div>
@@ -78,14 +78,19 @@
                         <input type="hidden" name="food_orders[]" value="{{ $payment->id }}">
                     @endforeach
                     <button type="submit"
-                            class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium">
-                        <i class="fas fa-file-invoice mr-2"></i>Generate Invoice
+                            class="inline-flex items-center px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm">
+                        <i class="fas fa-file-invoice mr-1.5 text-xs"></i>Generate Invoice
                     </button>
                 </form>
                 @endif
+                <!-- Completed button - always visible -->
+                <a href="{{ route('payments.completed') }}"
+                   class="inline-flex items-center px-3 py-1.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm">
+                    <i class="fas fa-check-circle mr-1.5 text-xs"></i>Completed
+                </a>
                 <a href="{{ route('guest.dashboard') }}"
-                   class="inline-flex items-center px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors">
-                    <i class="fas fa-arrow-left mr-2"></i>Back
+                   class="inline-flex items-center px-3 py-1.5 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors text-sm">
+                    <i class="fas fa-arrow-left mr-1.5 text-xs"></i>Back
                 </a>
             </div>
             </div>

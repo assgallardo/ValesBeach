@@ -12,6 +12,11 @@
                 <p class="text-gray-400 mt-2">Manage all guest payments for bookings and services</p>
             </div>
             <div class="flex space-x-3 mt-4 sm:mt-0">
+                <a href="{{ route('admin.payments.completed') }}" 
+                   class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors">
+                    <i class="fas fa-check-circle mr-2"></i>
+                    Completed
+                </a>
                 <button type="button" 
                         onclick="openGenerateInvoiceModal()" 
                         class="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-colors">
@@ -330,7 +335,7 @@
 
                                 <!-- Actions -->
                                 <td class="px-4 py-3">
-                                    <a href="{{ route('admin.payments.customer', $customer->id) }}" 
+                                    <a href="{{ route('admin.payments.customer', ['user' => $customer->id, 'transaction_id' => $customer->payment_transaction_id]) }}" 
                                        class="inline-flex items-center px-3 py-1.5 text-xs bg-green-600 text-white rounded hover:bg-green-700 transition-colors" 
                                        title="View All Payments">
                                         <i class="fas fa-eye mr-1"></i> View Details

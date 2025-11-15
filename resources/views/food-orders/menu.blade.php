@@ -298,6 +298,7 @@
                     <input type="hidden" name="item_name" value="{{ $item->name }}">
                     <input type="hidden" name="item_description" value="{{ $item->description ?? '' }}">
                     <input type="hidden" name="item_price" value="{{ $item->price }}">
+                    <input type="hidden" name="item_image" value="{{ $item->image ?? '' }}">
                     <input type="hidden" name="item_calories" value="{{ $item->calories ?? '' }}">
                     <input type="hidden" name="item_prep_time" value="{{ $item->preparation_time ?? '' }}">
                     <input type="hidden" name="item_ingredients" value="{{ is_array($item->ingredients) ? implode(', ', $item->ingredients) : '' }}">
@@ -383,6 +384,7 @@ function showCategory(categoryId, categoryName) {
             const name = itemData.querySelector('[name="item_name"]').value;
             const description = itemData.querySelector('[name="item_description"]').value;
             const price = parseFloat(itemData.querySelector('[name="item_price"]').value);
+            const image = itemData.querySelector('[name="item_image"]').value;
             const calories = itemData.querySelector('[name="item_calories"]').value;
             const prepTime = itemData.querySelector('[name="item_prep_time"]').value;
             const ingredients = itemData.querySelector('[name="item_ingredients"]').value;
@@ -410,47 +412,55 @@ function showCategory(categoryId, categoryName) {
             }
             
             const card = document.createElement('div');
-            card.className = 'bg-gray-800 rounded-lg shadow-xl p-6 hover:shadow-2xl transition-all duration-300';
+            card.className = 'bg-gray-800 rounded-lg shadow-xl overflow-hidden hover:shadow-2xl transition-all duration-300';
             card.innerHTML = `
-                <div class="flex justify-between items-start mb-3">
-                    <div class="flex-1">
-                        <h3 class="font-bold text-xl text-white mb-2">${name}</h3>
-                        ${description ? `<p class="text-gray-400 text-sm mb-3">${description}</p>` : ''}
+                ${image ? `
+                    <div class="relative h-48 overflow-hidden">
+                        <img src="/storage/${image}" alt="${name}" class="w-full h-full object-cover">
+                        <div class="absolute inset-0 bg-gradient-to-t from-gray-900 via-transparent to-transparent"></div>
+                    </div>
+                ` : ''}
+                <div class="p-6">
+                    <div class="flex justify-between items-start mb-3">
+                        <div class="flex-1">
+                            <h3 class="font-bold text-xl text-white mb-2">${name}</h3>
+                            ${description ? `<p class="text-gray-400 text-sm mb-3">${description}</p>` : ''}
                         
                         <!-- Dietary and Info Badges -->
                         <div class="flex flex-wrap gap-2 mb-3">
                             ${badgesHTML}
                         </div>
                         
-                        ${ingredients ? `<p class="text-xs text-gray-500 mb-2"><strong class="text-gray-400">Ingredients:</strong> ${ingredients}</p>` : ''}
-                        ${allergens ? `<p class="text-xs text-red-400 mb-2"><strong>Allergens:</strong> ${allergens}</p>` : ''}
+                            ${ingredients ? `<p class="text-xs text-gray-500 mb-2"><strong class="text-gray-400">Ingredients:</strong> ${ingredients}</p>` : ''}
+                            ${allergens ? `<p class="text-xs text-red-400 mb-2"><strong>Allergens:</strong> ${allergens}</p>` : ''}
+                        </div>
+
+                        <div class="ml-4 text-right">
+                            <span class="text-2xl font-bold text-green-400">₱${price.toFixed(2)}</span>
+                        </div>
                     </div>
 
-                    <div class="ml-4 text-right">
-                        <span class="text-2xl font-bold text-green-400">₱${price.toFixed(2)}</span>
-                    </div>
-                </div>
-
-                <!-- Add to Cart Form -->
-                <form class="add-to-cart-form" data-item-id="${itemId}">
-                    <input type="hidden" name="_token" value="${document.querySelector('meta[name="csrf-token"]').getAttribute('content')}">
-                    <input type="hidden" name="menu_item_id" value="${itemId}">
-                    <div class="flex items-center justify-between mb-2">
-                        <div class="flex items-center space-x-2">
-                            <label class="text-sm font-medium text-gray-300">Qty:</label>
-                            <select name="quantity" class="bg-gray-700 border border-gray-600 text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-transparent">
-                                ${[...Array(10)].map((_, i) => `<option value="${i + 1}">${i + 1}</option>`).join('')}
-                            </select>
+                    <!-- Add to Cart Form -->
+                    <form class="add-to-cart-form" data-item-id="${itemId}">
+                        <input type="hidden" name="_token" value="${document.querySelector('meta[name="csrf-token"]').getAttribute('content')}">
+                        <input type="hidden" name="menu_item_id" value="${itemId}">
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="flex items-center space-x-2">
+                                <label class="text-sm font-medium text-gray-300">Qty:</label>
+                                <select name="quantity" class="bg-gray-700 border border-gray-600 text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                                    ${[...Array(10)].map((_, i) => `<option value="${i + 1}">${i + 1}</option>`).join('')}
+                                </select>
+                            </div>
+                            
+                            <button type="submit" class="bg-green-600 hover:bg-green-700 text-white py-2 px-6 rounded-lg font-semibold shadow-lg transition-all duration-200">
+                                Add to Cart
+                            </button>
                         </div>
                         
-                        <button type="submit" class="bg-green-600 hover:bg-green-700 text-white py-2 px-6 rounded-lg font-semibold shadow-lg transition-all duration-200">
-                            Add to Cart
-                        </button>
-                    </div>
-                    
-                    <textarea name="special_instructions" placeholder="Special instructions (optional)" 
-                            class="w-full bg-gray-700 border border-gray-600 text-white placeholder-gray-500 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent" rows="1"></textarea>
-                </form>
+                        <textarea name="special_instructions" placeholder="Special instructions (optional)" 
+                                class="w-full bg-gray-700 border border-gray-600 text-white placeholder-gray-500 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent" rows="1"></textarea>
+                    </form>
+                </div>
             `;
             
             container.appendChild(card);

@@ -279,7 +279,7 @@ class Booking extends Model
      */
     public function getRemainingBalanceAttribute()
     {
-        $paid = $this->payments()->where('status', 'completed')->sum('amount');
+        $paid = $this->payments()->whereIn('status', ['confirmed', 'completed'])->sum('amount');
         return max(0, $this->total_price - $paid);
     }
 
@@ -296,7 +296,7 @@ class Booking extends Model
      */
     public function getTotalPaidAttribute()
     {
-        return $this->payments()->where('status', 'completed')->sum('amount');
+        return $this->payments()->whereIn('status', ['confirmed', 'completed'])->sum('amount');
     }
 
     /**

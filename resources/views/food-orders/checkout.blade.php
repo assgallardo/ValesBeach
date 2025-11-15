@@ -287,8 +287,8 @@ function toggleDeliveryLocation() {
 
     if (deliveryType === 'room_service') {
         locationSection.style.display = 'block';
-        locationLabel.textContent = 'Room Number (Optional)';
-        locationInput.placeholder = 'Enter room number';
+        locationLabel.innerHTML = 'Facility Name and Number <span class="text-gray-400 text-xs font-normal ml-2">(e.g., Room 101, Bahay Kubo 3)</span>';
+        locationInput.placeholder = 'Enter facility name and number';
         locationInput.required = false;
     } else if (deliveryType === 'pickup') {
         locationSection.style.display = 'block';

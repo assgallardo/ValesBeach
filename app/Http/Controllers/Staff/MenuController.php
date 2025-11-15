@@ -116,14 +116,16 @@ class MenuController extends Controller
             'allergens' => 'nullable|string',
             'preparation_time' => 'nullable|integer|min:0',
             'calories' => 'nullable|integer|min:0',
-            'is_vegetarian' => 'boolean',
-            'is_vegan' => 'boolean',
-            'is_gluten_free' => 'boolean',
-            'is_dairy_free' => 'boolean',
-            'is_spicy' => 'boolean',
-            'is_available' => 'boolean',
-            'is_featured' => 'boolean',
         ]);
+
+        // Handle checkboxes - set to false if not in request
+        $validated['is_vegetarian'] = $request->has('is_vegetarian');
+        $validated['is_vegan'] = $request->has('is_vegan');
+        $validated['is_gluten_free'] = $request->has('is_gluten_free');
+        $validated['is_dairy_free'] = $request->has('is_dairy_free');
+        $validated['is_spicy'] = $request->has('is_spicy');
+        $validated['is_available'] = $request->has('is_available');
+        $validated['is_featured'] = $request->has('is_featured');
 
         // Handle image upload
         if ($request->hasFile('image')) {
