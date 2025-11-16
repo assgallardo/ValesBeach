@@ -17,6 +17,36 @@
         </a>
     </div>
 
+    <!-- Tabs -->
+    <div class="mb-6">
+        <div class="flex space-x-2 bg-gray-800 p-2 rounded-lg shadow-xl">
+            <a href="{{ route('staff.orders.index', array_merge(request()->except('tab'), ['tab' => 'active'])) }}"
+               class="flex-1 px-6 py-3 text-center font-semibold rounded-lg transition-all duration-200 {{ ($tab ?? 'active') === 'active' ? 'bg-gradient-to-r from-yellow-600 to-yellow-700 text-white shadow-lg' : 'text-gray-400 hover:text-white hover:bg-gray-700' }}">
+                <div class="flex items-center justify-center space-x-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    <span>Active Orders</span>
+                    @if(isset($activeCount) && $activeCount > 0)
+                    <span class="px-2 py-0.5 text-xs font-bold rounded-full {{ ($tab ?? 'active') === 'active' ? 'bg-white text-yellow-600' : 'bg-yellow-600 text-white' }}">{{ $activeCount }}</span>
+                    @endif
+                </div>
+            </a>
+            <a href="{{ route('staff.orders.index', array_merge(request()->except('tab'), ['tab' => 'completed'])) }}"
+               class="flex-1 px-6 py-3 text-center font-semibold rounded-lg transition-all duration-200 {{ ($tab ?? 'active') === 'completed' ? 'bg-gradient-to-r from-green-600 to-green-700 text-white shadow-lg' : 'text-gray-400 hover:text-white hover:bg-gray-700' }}">
+                <div class="flex items-center justify-center space-x-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    <span>Completed Orders</span>
+                    @if(isset($completedCount) && $completedCount > 0)
+                    <span class="px-2 py-0.5 text-xs font-bold rounded-full {{ ($tab ?? 'active') === 'completed' ? 'bg-white text-green-600' : 'bg-green-600 text-white' }}">{{ $completedCount }}</span>
+                    @endif
+                </div>
+            </a>
+        </div>
+    </div>
+
     <!-- Statistics Cards -->
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <div class="bg-gradient-to-br from-blue-600 to-blue-800 rounded-lg shadow-xl p-6 transform hover:scale-105 transition-transform duration-200">
@@ -95,6 +125,7 @@
     <!-- Filters -->
     <div class="bg-gray-800 rounded-lg shadow-xl p-6 mb-6">
         <form method="GET" action="{{ route('staff.orders.index') }}" class="grid grid-cols-1 md:grid-cols-5 gap-4">
+            <input type="hidden" name="tab" value="{{ $tab ?? 'active' }}">
             <div>
                 <label for="search" class="block text-sm font-medium text-gray-300 mb-2">Search</label>
                 <input type="text" 
@@ -110,11 +141,13 @@
                         name="status"
                         class="w-full px-4 py-2 bg-gray-700 border border-gray-600 text-white rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
                     <option value="">All Statuses</option>
+                    @if(($tab ?? 'active') === 'active')
                     <option value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}>Pending</option>
                     <option value="preparing" {{ request('status') === 'preparing' ? 'selected' : '' }}>Preparing</option>
                     <option value="ready" {{ request('status') === 'ready' ? 'selected' : '' }}>Ready</option>
+                    @else
                     <option value="completed" {{ request('status') === 'completed' ? 'selected' : '' }}>Completed</option>
-                    <option value="cancelled" {{ request('status') === 'cancelled' ? 'selected' : '' }}>Cancelled</option>
+                    @endif
                 </select>
             </div>
             <div>
@@ -138,7 +171,7 @@
                         class="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition-colors duration-200">
                     Filter
                 </button>
-                <a href="{{ route('staff.orders.index') }}" 
+                <a href="{{ route('staff.orders.index', ['tab' => $tab ?? 'active']) }}" 
                    class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-lg transition-colors duration-200">
                     Clear
                 </a>
@@ -297,27 +330,42 @@ function updateOrderStatus(orderId, newStatus, orderNumber) {
             // Show success notification
             showNotification('Order status updated successfully!', 'success');
             
-            // Update dropdown styling based on new status
-            statusSelect.className = 'px-4 py-2 rounded-lg text-sm font-bold text-white border-2 transition-all duration-200 cursor-pointer ';
-            switch(newStatus) {
-                case 'pending':
-                    statusSelect.className += 'bg-yellow-600 border-yellow-500 hover:bg-yellow-700';
-                    break;
-                case 'preparing':
-                    statusSelect.className += 'bg-blue-600 border-blue-500 hover:bg-blue-700';
-                    break;
-                case 'ready':
-                    statusSelect.className += 'bg-purple-600 border-purple-500 hover:bg-purple-700';
-                    break;
-                case 'completed':
-                    statusSelect.className += 'bg-green-600 border-green-500 hover:bg-green-700';
-                    break;
-                default:
-                    statusSelect.className += 'bg-gray-600 border-gray-500 hover:bg-gray-700';
+            // If status changed to completed, remove from active orders view
+            if (newStatus === 'completed' && '{{ $tab ?? "active" }}' === 'active') {
+                const row = statusSelect.closest('tr');
+                row.style.transition = 'opacity 0.3s ease-out';
+                row.style.opacity = '0';
+                setTimeout(() => {
+                    row.remove();
+                    // Reload if no more orders
+                    const tbody = document.querySelector('tbody');
+                    if (tbody && tbody.querySelectorAll('tr').length === 0) {
+                        location.reload();
+                    }
+                }, 300);
+            } else {
+                // Update dropdown styling based on new status
+                statusSelect.className = 'px-4 py-2 rounded-lg text-sm font-bold text-white border-2 transition-all duration-200 cursor-pointer ';
+                switch(newStatus) {
+                    case 'pending':
+                        statusSelect.className += 'bg-yellow-600 border-yellow-500 hover:bg-yellow-700';
+                        break;
+                    case 'preparing':
+                        statusSelect.className += 'bg-blue-600 border-blue-500 hover:bg-blue-700';
+                        break;
+                    case 'ready':
+                        statusSelect.className += 'bg-purple-600 border-purple-500 hover:bg-purple-700';
+                        break;
+                    case 'completed':
+                        statusSelect.className += 'bg-green-600 border-green-500 hover:bg-green-700';
+                        break;
+                    default:
+                        statusSelect.className += 'bg-gray-600 border-gray-500 hover:bg-gray-700';
+                }
+                
+                statusSelect.disabled = false;
+                statusSelect.style.opacity = '1';
             }
-            
-            statusSelect.disabled = false;
-            statusSelect.style.opacity = '1';
         } else {
             showNotification('Failed to update order status', 'error');
             location.reload();

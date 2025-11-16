@@ -343,15 +343,32 @@ class FoodOrderController extends Controller
     /**
      * Display user's order history
      */
-    public function orders()
+    public function orders(Request $request)
     {
-        $orders = Auth::user()->foodOrders()
+        $tab = $request->get('tab', 'active');
+        
+        $query = Auth::user()->foodOrders()
             ->where('status', '!=', 'cancelled')
-            ->with(['orderItems.menuItem'])
-            ->orderBy('created_at', 'desc')
-            ->paginate(10);
+            ->with(['orderItems.menuItem']);
+        
+        if ($tab === 'completed') {
+            // Show only completed orders
+            $query->where('status', 'completed');
+        } else {
+            // Show active orders (not completed)
+            $query->where('status', '!=', 'completed');
+        }
+        
+        $orders = $query->orderBy('created_at', 'desc')->paginate(10);
+        $activeCount = Auth::user()->foodOrders()
+            ->where('status', '!=', 'cancelled')
+            ->where('status', '!=', 'completed')
+            ->count();
+        $completedCount = Auth::user()->foodOrders()
+            ->where('status', 'completed')
+            ->count();
 
-        return view('food-orders.orders', compact('orders'));
+        return view('food-orders.orders', compact('orders', 'tab', 'activeCount', 'completedCount'));
     }
 
     /**

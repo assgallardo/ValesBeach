@@ -64,14 +64,14 @@
                         <p class="text-gray-300">{{ $room->beds }} {{ Str::plural('bed', $room->beds) }}</p>
                     </div>
 
-                    @if(!empty($room->check_in_time) || !empty($room->check_out_time))
+                    @if((!empty($room->check_in_time) && $room->check_in_time !== '00:00:00') || (!empty($room->check_out_time) && $room->check_out_time !== '00:00:00'))
                     <div>
                         <h4 class="text-lg font-semibold text-white mb-2">Check-in / Check-out Time</h4>
                         <p class="text-gray-300">
-                            @if(!empty($room->check_in_time))
+                            @if(!empty($room->check_in_time) && $room->check_in_time !== '00:00:00')
                                 Check-in: {{ \Carbon\Carbon::createFromFormat('H:i:s', $room->check_in_time)->format('g:i A') }}<br>
                             @endif
-                            @if(!empty($room->check_out_time))
+                            @if(!empty($room->check_out_time) && $room->check_out_time !== '00:00:00')
                                 Check-out: {{ \Carbon\Carbon::createFromFormat('H:i:s', $room->check_out_time)->format('g:i A') }}
                             @endif
                         </p>

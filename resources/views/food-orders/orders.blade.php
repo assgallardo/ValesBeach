@@ -22,6 +22,36 @@
             </a>
         </div>
 
+        <!-- Tabs -->
+        <div class="mb-6">
+            <div class="flex space-x-2 bg-gray-800 p-2 rounded-lg shadow-xl">
+                <a href="{{ route('guest.food-orders.orders', ['tab' => 'active']) }}"
+                   class="flex-1 px-6 py-3 text-center font-semibold rounded-lg transition-all duration-200 {{ $tab === 'active' ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg' : 'text-gray-400 hover:text-white hover:bg-gray-700' }}">
+                    <div class="flex items-center justify-center space-x-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <span>Active Orders</span>
+                        @if($activeCount > 0)
+                        <span class="px-2 py-0.5 text-xs font-bold rounded-full {{ $tab === 'active' ? 'bg-white text-blue-600' : 'bg-blue-600 text-white' }}">{{ $activeCount }}</span>
+                        @endif
+                    </div>
+                </a>
+                <a href="{{ route('guest.food-orders.orders', ['tab' => 'completed']) }}"
+                   class="flex-1 px-6 py-3 text-center font-semibold rounded-lg transition-all duration-200 {{ $tab === 'completed' ? 'bg-gradient-to-r from-green-600 to-green-700 text-white shadow-lg' : 'text-gray-400 hover:text-white hover:bg-gray-700' }}">
+                    <div class="flex items-center justify-center space-x-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <span>Completed Orders</span>
+                        @if($completedCount > 0)
+                        <span class="px-2 py-0.5 text-xs font-bold rounded-full {{ $tab === 'completed' ? 'bg-white text-green-600' : 'bg-green-600 text-white' }}">{{ $completedCount }}</span>
+                        @endif
+                    </div>
+                </a>
+            </div>
+        </div>
+
         @if($orders->count() > 0)
         <!-- Orders List -->
         <div class="space-y-6" id="orders-list">

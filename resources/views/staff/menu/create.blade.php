@@ -153,8 +153,11 @@
                                    id="preparation_time" 
                                    name="preparation_time" 
                                    value="{{ old('preparation_time', 15) }}"
+                                   min="0"
                                    class="w-full bg-gray-700 text-white rounded-lg px-4 py-2.5 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                                   placeholder="15">
+                                   placeholder="15"
+                                   oninput="validatePreparationTime(this)">
+                            <p id="preparation_time_error" class="mt-1 text-sm text-yellow-400 hidden">Must be at least 0</p>
                         </div>
 
                         <div>
@@ -309,6 +312,19 @@ function previewImage(input) {
             document.getElementById('imagePreview').classList.remove('hidden');
         }
         reader.readAsDataURL(input.files[0]);
+    }
+}
+
+function validatePreparationTime(input) {
+    const errorMsg = document.getElementById('preparation_time_error');
+    if (input.value < 0) {
+        input.value = 0;
+        errorMsg.classList.remove('hidden');
+        setTimeout(() => {
+            errorMsg.classList.add('hidden');
+        }, 3000);
+    } else {
+        errorMsg.classList.add('hidden');
     }
 }
 </script>

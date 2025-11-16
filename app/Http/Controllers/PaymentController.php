@@ -2157,6 +2157,59 @@ class PaymentController extends Controller
     }
 
     /**
+     * Delete a cancelled payment transaction
+     */
+    public function destroy(Payment $payment)
+    {
+        $user = Auth::user();
+        if (!in_array($user->role, ['admin', 'manager', 'staff'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized access.'
+            ], 403);
+        }
+
+        // Only allow deletion of cancelled payments
+        if ($payment->status !== 'cancelled') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Only cancelled payment transactions can be deleted.'
+            ], 400);
+        }
+
+        try {
+            $paymentId = $payment->id;
+            $paymentRef = $payment->payment_reference;
+            
+            // Delete the payment
+            $payment->delete();
+
+            \Log::info('Cancelled payment deleted', [
+                'payment_id' => $paymentId,
+                'payment_reference' => $paymentRef,
+                'deleted_by' => auth()->id()
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Cancelled payment transaction deleted successfully.',
+                'payment_id' => $paymentId
+            ], 200);
+
+        } catch (\Exception $e) {
+            \Log::error('Failed to delete cancelled payment: ' . $e->getMessage(), [
+                'payment_id' => $payment->id,
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to delete payment: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * Bulk update payment method for all user's payments (Guest accessible)
      */
     public function bulkUpdatePaymentMethod(Request $request)

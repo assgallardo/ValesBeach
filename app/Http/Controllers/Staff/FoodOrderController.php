@@ -13,7 +13,17 @@ class FoodOrderController extends Controller
      */
     public function index(Request $request)
     {
+        $tab = $request->get('tab', 'active');
+        
         $query = FoodOrder::with(['user', 'orderItems.menuItem']);
+
+        // Filter by tab (active or completed)
+        if ($tab === 'completed') {
+            $query->where('status', 'completed');
+        } else {
+            // Active orders exclude cancelled and completed
+            $query->whereNotIn('status', ['cancelled', 'completed']);
+        }
 
         // Filter by status
         if ($request->has('status') && $request->status != '') {
@@ -39,6 +49,10 @@ class FoodOrderController extends Controller
 
         $orders = $query->latest()->paginate(20);
 
+        // Get counts for tabs
+        $activeCount = FoodOrder::whereNotIn('status', ['cancelled', 'completed'])->count();
+        $completedCount = FoodOrder::where('status', 'completed')->count();
+
         // Get statistics
         $stats = [
             'total' => FoodOrder::count(),
@@ -53,7 +67,7 @@ class FoodOrderController extends Controller
                 ->sum('total_amount'),
         ];
 
-        return view('staff.orders.index', compact('orders', 'stats'));
+        return view('staff.orders.index', compact('orders', 'stats', 'tab', 'activeCount', 'completedCount'));
     }
 
     /**

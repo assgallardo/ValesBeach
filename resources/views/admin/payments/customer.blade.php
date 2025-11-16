@@ -51,11 +51,11 @@
                 </div>
                 <div class="text-right">
                     <div class="text-sm text-gray-400 mb-1">Total Payments</div>
-                    <div class="text-3xl font-bold text-green-400">
-                        ₱{{ number_format($customer->payments->sum('amount'), 2) }}
+                    <div class="text-3xl font-bold text-green-400" id="total-amount-display">
+                        ₱{{ number_format($customer->payments->whereNotIn('status', ['cancelled'])->sum('amount'), 2) }}
                     </div>
-                    <div class="text-sm text-gray-400 mt-1">
-                        {{ $customer->payments->count() }} transaction{{ $customer->payments->count() !== 1 ? 's' : '' }}
+                    <div class="text-sm text-gray-400 mt-1" id="transaction-count-display">
+                        {{ $customer->payments->whereNotIn('status', ['cancelled'])->count() }} transaction{{ $customer->payments->whereNotIn('status', ['cancelled'])->count() !== 1 ? 's' : '' }}
                     </div>
                 </div>
             </div>
@@ -74,11 +74,11 @@
                         <p class="text-sm text-gray-400">Room reservations</p>
                     </div>
                 </div>
-                <div class="text-2xl font-bold text-green-400">
-                    ₱{{ number_format($customer->payments->where('booking_id', '!=', null)->sum('amount'), 2) }}
+                <div class="text-2xl font-bold text-green-400" id="booking-amount-display">
+                    ₱{{ number_format($customer->payments->where('booking_id', '!=', null)->whereNotIn('status', ['cancelled'])->sum('amount'), 2) }}
                 </div>
                 <div class="text-sm text-gray-400 mt-1">
-                    {{ $customer->payments->where('booking_id', '!=', null)->count() }} payment{{ $customer->payments->where('booking_id', '!=', null)->count() !== 1 ? 's' : '' }}
+                    {{ $customer->payments->where('booking_id', '!=', null)->whereNotIn('status', ['cancelled'])->count() }} payment{{ $customer->payments->where('booking_id', '!=', null)->whereNotIn('status', ['cancelled'])->count() !== 1 ? 's' : '' }}
                 </div>
             </div>
 
@@ -93,11 +93,11 @@
                         <p class="text-sm text-gray-400">Additional services</p>
                     </div>
                 </div>
-                <div class="text-2xl font-bold text-green-400">
-                    ₱{{ number_format($customer->payments->where('service_request_id', '!=', null)->sum('amount'), 2) }}
+                <div class="text-2xl font-bold text-green-400" id="service-amount-display">
+                    ₱{{ number_format($customer->payments->where('service_request_id', '!=', null)->whereNotIn('status', ['cancelled'])->sum('amount'), 2) }}
                 </div>
                 <div class="text-sm text-gray-400 mt-1">
-                    {{ $customer->payments->where('service_request_id', '!=', null)->count() }} payment{{ $customer->payments->where('service_request_id', '!=', null)->count() !== 1 ? 's' : '' }}
+                    {{ $customer->payments->where('service_request_id', '!=', null)->whereNotIn('status', ['cancelled'])->count() }} payment{{ $customer->payments->where('service_request_id', '!=', null)->whereNotIn('status', ['cancelled'])->count() !== 1 ? 's' : '' }}
                 </div>
             </div>
 
@@ -112,11 +112,11 @@
                         <p class="text-sm text-gray-400">Restaurant orders</p>
                     </div>
                 </div>
-                <div class="text-2xl font-bold text-green-400">
-                    ₱{{ number_format($customer->payments->where('food_order_id', '!=', null)->sum('amount'), 2) }}
+                <div class="text-2xl font-bold text-green-400" id="food-amount-display">
+                    ₱{{ number_format($customer->payments->where('food_order_id', '!=', null)->whereNotIn('status', ['cancelled'])->sum('amount'), 2) }}
                 </div>
                 <div class="text-sm text-gray-400 mt-1">
-                    {{ $customer->payments->where('food_order_id', '!=', null)->count() }} order{{ $customer->payments->where('food_order_id', '!=', null)->count() !== 1 ? 's' : '' }}
+                    {{ $customer->payments->where('food_order_id', '!=', null)->whereNotIn('status', ['cancelled'])->count() }} order{{ $customer->payments->where('food_order_id', '!=', null)->whereNotIn('status', ['cancelled'])->count() !== 1 ? 's' : '' }}
                 </div>
             </div>
 
@@ -131,11 +131,11 @@
                         <p class="text-sm text-gray-400">Additional charges</p>
                     </div>
                 </div>
-                <div class="text-2xl font-bold text-green-400">
-                    ₱{{ number_format($customer->payments->whereNull('booking_id')->whereNull('service_request_id')->whereNull('food_order_id')->sum('amount'), 2) }}
+                <div class="text-2xl font-bold text-green-400" id="extra-amount-display">
+                    ₱{{ number_format($customer->payments->whereNull('booking_id')->whereNull('service_request_id')->whereNull('food_order_id')->whereNotIn('status', ['cancelled'])->sum('amount'), 2) }}
                 </div>
                 <div class="text-sm text-gray-400 mt-1">
-                    {{ $customer->payments->whereNull('booking_id')->whereNull('service_request_id')->whereNull('food_order_id')->count() }} charge{{ $customer->payments->whereNull('booking_id')->whereNull('service_request_id')->whereNull('food_order_id')->count() !== 1 ? 's' : '' }}
+                    {{ $customer->payments->whereNull('booking_id')->whereNull('service_request_id')->whereNull('food_order_id')->whereNotIn('status', ['cancelled'])->count() }} charge{{ $customer->payments->whereNull('booking_id')->whereNull('service_request_id')->whereNull('food_order_id')->whereNotIn('status', ['cancelled'])->count() !== 1 ? 's' : '' }}
                 </div>
             </div>
         </div>
@@ -335,6 +335,14 @@
                                                 <i class="fas fa-trash"></i>
                                             </button>
                                         @endif
+                                        
+                                        @if($payment->status === 'cancelled')
+                                            <button onclick="deleteCancelledPayment({{ $payment->id }}, '{{ $payment->payment_reference }}', this)" 
+                                                    class="inline-flex items-center px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700 transition-colors" 
+                                                    title="Delete Cancelled Transaction">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        @endif
                                     </div>
                                 </td>
                             </tr>
@@ -515,6 +523,70 @@ function deleteExtraCharge(paymentId, button) {
             }, 300);
         } else {
             throw new Error(data.message || 'Failed to delete extra charge');
+        }
+    })
+    .catch(error => {
+        console.error('Error details:', error);
+        alert('Error: ' + (error.message || 'An unexpected error occurred. Please try again.'));
+        button.disabled = false;
+        button.innerHTML = originalButton;
+    });
+}
+
+function deleteCancelledPayment(paymentId, paymentRef, button) {
+    if (!confirm(`Are you sure you want to delete this cancelled transaction (${paymentRef})? This action cannot be undone.`)) {
+        return;
+    }
+    
+    const row = button.closest('tr');
+    const originalButton = button.innerHTML;
+    button.disabled = true;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    
+    const url = `{{ route('admin.payments.destroy', ':id') }}`.replace(':id', paymentId);
+    const csrfToken = document.querySelector('meta[name="csrf-token"]');
+    
+    fetch(url, {
+        method: 'DELETE',
+        headers: {
+            'X-CSRF-TOKEN': csrfToken.content,
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => {
+        return response.text().then(text => {
+            try {
+                const data = JSON.parse(text);
+                
+                if (!response.ok) {
+                    const errorMsg = data.message || data.error || `Server error: ${response.status}`;
+                    throw new Error(errorMsg);
+                }
+                
+                return data;
+            } catch (parseError) {
+                if (!response.ok) {
+                    throw new Error(`Server error (${response.status}): ${text.substring(0, 100)}`);
+                }
+                throw new Error('Invalid JSON response from server');
+            }
+        });
+    })
+    .then(data => {
+        if (data.success) {
+            // Remove the row from the table with animation
+            row.style.transition = 'opacity 0.3s';
+            row.style.opacity = '0';
+            
+            setTimeout(() => {
+                row.remove();
+                
+                // Reload page to update summary cards and totals
+                location.reload();
+            }, 300);
+        } else {
+            throw new Error(data.message || 'Failed to delete cancelled payment');
         }
     })
     .catch(error => {

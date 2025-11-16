@@ -130,19 +130,35 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                     <div>
                         <label for="check_in_time" class="block text-gray-300 mb-2">Check-in Time (optional)</label>
-                        <input type="time"
-                               name="check_in_time"
-                               id="check_in_time"
-                               value="{{ old('check_in_time', $room->check_in_time ?? '') }}"
-                               class="w-full bg-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500">
+                        <div class="flex gap-2">
+                            <input type="time"
+                                   name="check_in_time"
+                                   id="check_in_time"
+                                   value="{{ old('check_in_time', $room->formatted_check_in_time ?? '') }}"
+                                   class="flex-1 bg-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500">
+                            <button type="button" 
+                                    onclick="document.getElementById('check_in_time').value = ''"
+                                    class="px-4 py-2 bg-gray-600 hover:bg-gray-500 text-white rounded-lg transition-colors"
+                                    title="Clear time">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
                     </div>
                     <div>
                         <label for="check_out_time" class="block text-gray-300 mb-2">Check-out Time (optional)</label>
-                        <input type="time"
-                               name="check_out_time"
-                               id="check_out_time"
-                               value="{{ old('check_out_time', $room->check_out_time ?? '') }}"
-                               class="w-full bg-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500">
+                        <div class="flex gap-2">
+                            <input type="time"
+                                   name="check_out_time"
+                                   id="check_out_time"
+                                   value="{{ old('check_out_time', $room->formatted_check_out_time ?? '') }}"
+                                   class="flex-1 bg-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500">
+                            <button type="button" 
+                                    onclick="document.getElementById('check_out_time').value = ''"
+                                    class="px-4 py-2 bg-gray-600 hover:bg-gray-500 text-white rounded-lg transition-colors"
+                                    title="Clear time">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
 

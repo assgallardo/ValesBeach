@@ -90,8 +90,8 @@ class ManagerRoomController extends Controller
                 'beds' => 'nullable|integer|min:0',
                 'price' => 'required|numeric|min:0',
                 'amenities' => 'nullable|array',
-                'check_in_time' => 'nullable|date_format:H:i',
-                'check_out_time' => 'nullable|date_format:H:i',
+                'check_in_time' => 'nullable|date_format:H:i,H:i:s',
+                'check_out_time' => 'nullable|date_format:H:i,H:i:s',
                 'is_available' => 'nullable',
                 'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
             ]);
@@ -198,8 +198,8 @@ class ManagerRoomController extends Controller
             'capacity' => 'required|integer|min:1',
             'beds' => 'nullable|integer|min:0',
             'price' => 'required|numeric|min:0',
-            'check_in_time' => 'nullable|date_format:H:i',
-            'check_out_time' => 'nullable|date_format:H:i',
+            'check_in_time' => 'nullable|date_format:H:i,H:i:s',
+            'check_out_time' => 'nullable|date_format:H:i,H:i:s',
             'is_available' => 'nullable',
             'amenities' => 'nullable|array',
             'amenities.*' => 'string',

@@ -605,6 +605,7 @@ Route::middleware(['auth', 'user.status', 'role:admin,manager,staff'])->group(fu
         Route::post('/payments/{payment}/refund', [PaymentController::class, 'processRefund'])->name('payments.refund');
         Route::get('/payments/{payment}/refund', [PaymentController::class, 'showRefundForm'])->name('payments.refund.form');
         Route::get('/payments-export', [PaymentController::class, 'export'])->name('payments.export');
+        Route::delete('/payments/{payment}', [PaymentController::class, 'destroy'])->name('payments.destroy');
     });
 });
 
@@ -624,6 +625,7 @@ Route::prefix('manager')->name('manager.')->middleware(['auth', 'user.status', '
     Route::post('/payments/{payment}/refund', [PaymentController::class, 'processRefund'])->name('payments.refund');
     Route::get('/payments/{payment}/refund', [PaymentController::class, 'showRefundForm'])->name('payments.refund.form');
     Route::get('/payments-export', [PaymentController::class, 'export'])->name('payments.export');
+    Route::delete('/payments/{payment}', [PaymentController::class, 'destroy'])->name('payments.destroy');
 });
 
 // Admin routes for service requests (using Manager controller for now)

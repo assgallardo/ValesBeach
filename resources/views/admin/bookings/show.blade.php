@@ -69,7 +69,7 @@
                     <label class="text-sm text-green-200">Check-in Date</label>
                     <p class="text-green-50 text-lg">{{ $booking->check_in->format('F d, Y') }}</p>
                     <p class="text-gray-400 text-sm">{{ $booking->check_in->format('l') }}</p>
-                    @if($booking->room->check_in_time)
+                    @if($booking->room->check_in_time && $booking->room->check_in_time !== '00:00:00')
                     <p class="text-green-400 text-sm mt-1">
                         <i class="fas fa-clock mr-1"></i>Check-in time: {{ \Carbon\Carbon::parse($booking->room->check_in_time)->format('g:i A') }}
                     </p>
@@ -79,7 +79,7 @@
                     <label class="text-sm text-green-200">Check-out Date</label>
                     <p class="text-green-50 text-lg">{{ $booking->check_out->format('F d, Y') }}</p>
                     <p class="text-gray-400 text-sm">{{ $booking->check_out->format('l') }}</p>
-                    @if($booking->room->check_out_time)
+                    @if($booking->room->check_out_time && $booking->room->check_out_time !== '00:00:00')
                     <p class="text-yellow-400 text-sm mt-1">
                         <i class="fas fa-clock mr-1"></i>Check-out time: {{ \Carbon\Carbon::parse($booking->room->check_out_time)->format('g:i A') }}
                     </p>

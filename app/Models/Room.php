@@ -111,6 +111,56 @@ class Room extends Model
     }
 
     /**
+     * Format check_in_time for HTML time input (H:i format)
+     * Returns null if time is 00:00 or empty
+     */
+    public function getFormattedCheckInTimeAttribute(): ?string
+    {
+        if (!$this->check_in_time) {
+            return null;
+        }
+        $time = date('H:i', strtotime($this->check_in_time));
+        return ($time === '00:00') ? null : $time;
+    }
+
+    /**
+     * Format check_out_time for HTML time input (H:i format)
+     * Returns null if time is 00:00 or empty
+     */
+    public function getFormattedCheckOutTimeAttribute(): ?string
+    {
+        if (!$this->check_out_time) {
+            return null;
+        }
+        $time = date('H:i', strtotime($this->check_out_time));
+        return ($time === '00:00') ? null : $time;
+    }
+
+    /**
+     * Set check_in_time - convert 00:00 to null
+     */
+    public function setCheckInTimeAttribute($value): void
+    {
+        if (empty($value) || $value === '00:00' || $value === '00:00:00') {
+            $this->attributes['check_in_time'] = null;
+        } else {
+            $this->attributes['check_in_time'] = $value;
+        }
+    }
+
+    /**
+     * Set check_out_time - convert 00:00 to null
+     */
+    public function setCheckOutTimeAttribute($value): void
+    {
+        if (empty($value) || $value === '00:00' || $value === '00:00:00') {
+            $this->attributes['check_out_time'] = null;
+        } else {
+            $this->attributes['check_out_time'] = $value;
+        }
+    }
+
+    /**
      * Check if the room is available for the given dates
      */
     public function isAvailableForDates($checkIn, $checkOut): bool

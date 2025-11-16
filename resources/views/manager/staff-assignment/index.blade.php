@@ -95,7 +95,8 @@
         </h2>
         <div class="space-y-4">
             @foreach($housekeepingTasks as $task)
-            <div class="bg-gray-800 border-l-4 {{ $task->status === 'completed' ? 'border-green-600 opacity-75' : 'border-purple-600' }} rounded-lg p-6 hover:bg-gray-750 transition-colors">
+            <div class="bg-gray-800 border-l-4 {{ $task->status === 'completed' ? 'border-green-600 opacity-75' : 'border-purple-600' }} rounded-lg p-6 hover:bg-gray-750 transition-colors"
+                 style="{{ $task->status === 'completed' ? 'display: none;' : '' }}">
                 <!-- Task Header -->
                 <div class="flex items-start justify-between mb-4">
                     <div class="flex-1">
@@ -256,7 +257,8 @@
         <div class="bg-gray-800 rounded-lg p-6 hover:bg-gray-750 transition-colors {{ $request->deadline_status === 'overdue' ? 'border-l-4 border-red-500' : '' }}" 
              data-request-id="{{ $request->id }}" 
              data-status="{{ $request->status }}" 
-             data-staff="{{ $request->assigned_to }}">
+             data-staff="{{ $request->assigned_to }}"
+             style="{{ $request->status === 'completed' ? 'display: none;' : '' }}">
             <!-- Card Header -->
             <div class="flex items-start justify-between mb-4">
                 <div class="flex items-start space-x-4 w-full">
@@ -516,18 +518,40 @@ function updateStatus(requestId, status) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            showNotification('Status updated', 'success');
+            showNotification('Status updated successfully!', 'success');
             
-            // Update data attribute
+            // Find the card element
             const card = document.querySelector(`[data-request-id="${requestId}"]`);
-            card.setAttribute('data-status', status);
             
-            // Update the dropdown styling immediately
-            if (selectElement) {
-                selectElement.className = 'px-3 py-1 text-xs rounded-full border-none font-medium mr-4 ' + 
-                    (status === 'completed' ? 'bg-green-600 text-green-100' : 
-                     (status === 'assigned' || status === 'in_progress' ? 'bg-blue-600 text-blue-100' : 
-                     (status === 'pending' ? 'bg-yellow-500 text-yellow-100' : 'bg-gray-600 text-gray-100')));
+            if (card) {
+                // Update data attribute
+                card.setAttribute('data-status', status);
+                card.dataset.status = status; // Also update the dataset
+                
+                // Update the dropdown styling immediately
+                if (selectElement) {
+                    selectElement.className = 'px-3 py-1 text-xs rounded-full border-none font-medium mr-4 ' + 
+                        (status === 'completed' ? 'bg-green-600 text-green-100' : 
+                         (status === 'assigned' || status === 'in_progress' ? 'bg-blue-600 text-blue-100' : 
+                         (status === 'pending' ? 'bg-yellow-500 text-yellow-100' : 'bg-gray-600 text-gray-100')));
+                }
+                
+                // Determine current view mode
+                const btn = document.getElementById('completedTasksBtn');
+                const isShowingCompleted = btn && btn.classList.contains('bg-blue-600');
+                
+                // If we just completed a task and we're viewing active tasks, hide it immediately
+                if (status === 'completed' && !isShowingCompleted) {
+                    card.style.display = 'none';
+                    // Show a message about where to find it
+                    showNotification('Task completed! Click "Completed Tasks" to view.', 'success');
+                } else if (status !== 'completed' && isShowingCompleted) {
+                    // If we changed from completed to something else while viewing completed, hide it
+                    card.style.display = 'none';
+                } else {
+                    // Otherwise just reapply the filter
+                    filterByCompletion(isShowingCompleted);
+                }
             }
         }
     })

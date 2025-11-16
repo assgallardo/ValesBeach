@@ -222,7 +222,7 @@
                                     $bookingPayments = $customer->payments->filter(fn($p) => $p->booking_id);
                                     $servicePayments = $customer->payments->filter(fn($p) => $p->service_request_id);
                                     $foodPayments = $customer->payments->filter(fn($p) => $p->food_order_id);
-                                    $totalAmount = $customer->payments->sum('amount');
+                                    $totalAmount = $customer->payments->whereNotIn('status', ['cancelled'])->sum('amount');
                                     $latestPayment = $customer->payments->first();
                                     
                                     // Group payments by status

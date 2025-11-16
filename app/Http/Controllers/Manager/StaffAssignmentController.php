@@ -22,7 +22,8 @@ class StaffAssignmentController extends Controller
         // Get available services (removed status filter since column doesn't exist)
         $availableServices = \App\Models\Service::orderBy('name')->get();
 
-        // Get service requests with relationships, excluding cancelled ones
+        // Get all service requests (including completed for the toggle functionality)
+        // but they will be filtered client-side by default to show only active ones
         $serviceRequests = ServiceRequest::with(['assignedTo', 'guest', 'room', 'service'])
             ->active() // Use the scope to exclude cancelled
             ->orderBy('deadline', 'asc')
