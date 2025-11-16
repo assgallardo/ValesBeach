@@ -196,7 +196,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'user.status', 'role
     // Cancel refund (restore original amount)
     Route::post('/payments/{payment}/cancel-refund', [PaymentController::class, 'cancelRefund'])->name('payments.cancelRefund');
     
-    // Delete extra charge payment
+    // Extra charge management
+    Route::post('/payments/customer/{user}/extra-charge', [PaymentController::class, 'saveExtraCharge'])->name('payments.extraCharge.save');
     Route::delete('/payments/{payment}/extra-charge', [PaymentController::class, 'deleteExtraCharge'])->name('payments.extraCharge.delete');
     
     // Invoice management
@@ -345,6 +346,7 @@ Route::prefix('manager')->name('manager.')->middleware(['auth', 'user.status', '
     Route::post('/payments/customer/{user}/revert', [ManagerPaymentController::class, 'revertAllCustomerPayments'])->name('payments.customer.revert');
     Route::get('/payments/customer/{user}/invoice', [PaymentController::class, 'generateCustomerInvoice'])->name('payments.customer.invoice');
     Route::post('/payments/customer/{user}/invoice', [PaymentController::class, 'saveCustomerInvoice'])->name('payments.customer.invoice.save');
+    Route::post('/payments/customer/{user}/extra-charge', [PaymentController::class, 'saveExtraCharge'])->name('payments.extraCharge.save');
     Route::get('/payments/completed/customer/{user}', [ManagerPaymentController::class, 'showCompletedCustomerPayments'])->name('payments.completed.customer');
     Route::get('/payments/{payment}', [ManagerPaymentController::class, 'show'])->name('payments.show');
     Route::patch('/payments/{payment}/status', [ManagerPaymentController::class, 'updateStatus'])->name('payments.status');

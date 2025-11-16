@@ -1177,17 +1177,15 @@ class PaymentController extends Controller
             abort(403, 'Unauthorized access.');
         }
 
-        // Get transaction ID from request
+        // Get transaction ID from request (optional)
         $transactionId = request()->get('transaction_id');
         
-        if (!$transactionId) {
-            return redirect()->back()->with('error', 'No payment transaction specified.');
-        }
-
         $customer = \App\Models\User::with([
             'payments' => function($q) use ($transactionId) {
                 $q->with(['booking.room', 'serviceRequest.service', 'foodOrder.orderItems.menuItem'])
-                  ->where('payment_transaction_id', $transactionId)
+                  ->when($transactionId, function($query) use ($transactionId) {
+                      $query->where('payment_transaction_id', $transactionId);
+                  })
                   ->orderBy('created_at', 'desc');
             },
             'bookings' => function($q) {
@@ -1216,7 +1214,7 @@ class PaymentController extends Controller
     public function completeAllCustomerPayments($userId)
     {
         $user = Auth::user();
-        if (!in_array($user->role, ['admin', 'manager'])) {
+        if (!in_array($user->role, ['admin', 'manager', 'staff'])) {
             abort(403, 'Unauthorized access.');
         }
 
@@ -1245,7 +1243,7 @@ class PaymentController extends Controller
     public function revertAllCustomerPayments($userId)
     {
         $user = Auth::user();
-        if (!in_array($user->role, ['admin', 'manager'])) {
+        if (!in_array($user->role, ['admin', 'manager', 'staff'])) {
             abort(403, 'Unauthorized access.');
         }
 
@@ -1465,7 +1463,7 @@ class PaymentController extends Controller
 
         $totalBalance = $totalAmount - $totalPaid;
 
-        return view('invoices.customer-invoice-edit', compact('customer', 'items', 'totalAmount', 'totalPaid', 'totalBalance'));
+        return view('invoices.customer-invoice-edit', compact('customer', 'items', 'totalAmount', 'totalPaid', 'totalBalance', 'transactionId'));
     }
 
     /**
@@ -1550,6 +1548,9 @@ class PaymentController extends Controller
             ->pluck('id')
             ->toArray();
         
+        // Get or create payment_transaction_id for grouping all payments in this invoice
+        $paymentTransactionId = 'TXN-' . strtoupper(uniqid());
+        
         $newExtraPaymentIds = [];
         $items = [];
         
@@ -1598,7 +1599,8 @@ class PaymentController extends Controller
                     if ($payment && $payment->user_id === $customer->id) {
                         $payment->update([
                             'amount' => $amount,
-                            'status' => $paid >= $amount ? 'completed' : 'pending',
+                            'payment_transaction_id' => $paymentTransactionId,
+                            'status' => $paid >= $amount ? 'completed' : 'confirmed',
                             'payment_date' => $paid > 0 ? now() : null,
                             'notes' => sprintf(
                                 'Invoice #%s - Extra Charge: %s%s%s',
@@ -1630,9 +1632,10 @@ class PaymentController extends Controller
                         'service_request_id' => null,
                         'food_order_id' => null,
                         'payment_reference' => 'EXT-' . strtoupper(uniqid()),
+                        'payment_transaction_id' => $paymentTransactionId,
                         'amount' => $amount,
                         'payment_method' => 'cash', // Default, can be updated later
-                        'status' => $paid >= $amount ? 'completed' : 'pending',
+                        'status' => $paid >= $amount ? 'completed' : 'confirmed',
                         'payment_date' => $paid > 0 ? now() : null,
                         'notes' => sprintf(
                             'Invoice #%s - Extra Charge: %s%s%s',
@@ -1667,7 +1670,10 @@ class PaymentController extends Controller
         }
         
         // Update invoice with items that now include payment_id for extra charges
-        $invoice->update(['items' => $items]);
+        $invoice->update([
+            'items' => $items,
+            'payment_transaction_id' => $paymentTransactionId // Store for easy reference
+        ]);
         
         // Delete extra charge payments that were removed from invoice
         // Get payments that were loaded in the generateCustomerInvoice page but are not in submitted items
@@ -2152,6 +2158,141 @@ class PaymentController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to delete extra charge: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Save an individual extra charge immediately
+     */
+    public function saveExtraCharge(Request $request, $userId)
+    {
+        $user = Auth::user();
+        if (!in_array($user->role, ['admin', 'manager', 'staff'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized access.'
+            ], 403);
+        }
+
+        $request->validate([
+            'description' => 'required|string|max:255',
+            'amount' => 'required|numeric|min:0.01',
+            'paid' => 'nullable|numeric|min:0',
+            'reference' => 'nullable|string|max:100',
+            'details' => 'nullable|string|max:500',
+            'transaction_id' => 'nullable|string',
+            'payment_id' => 'nullable|integer|exists:payments,id'
+        ]);
+
+        try {
+            $customer = \App\Models\User::findOrFail($userId);
+            
+            // Get transaction ID - must be provided to keep extra charges in same session
+            $transactionId = $request->transaction_id;
+            
+            if (!$transactionId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Transaction ID is required to add extra charges to this payment session.'
+                ], 400);
+            }
+            
+            // Determine status based on paid amount
+            $amount = $request->amount;
+            $paid = $request->paid ?? 0;
+            $status = ($paid >= $amount) ? 'completed' : 'pending';
+            
+            // Check if we're updating an existing payment or creating new one
+            if ($request->payment_id) {
+                // UPDATE existing payment
+                $payment = Payment::findOrFail($request->payment_id);
+                
+                // Verify this payment belongs to the customer
+                if ($payment->user_id != $customer->id) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Invalid payment record.'
+                    ], 403);
+                }
+                
+                // Update the payment
+                $payment->update([
+                    'amount' => $amount,
+                    'status' => $status,
+                    'payment_details' => [
+                        'description' => $request->description,
+                        'reference' => $request->reference,
+                        'details' => $request->details,
+                        'type' => 'extra',
+                        'item_type' => 'extra_charge',
+                        'saved_individually' => true,
+                        'created_by' => $payment->payment_details['created_by'] ?? $user->name,
+                        'created_at' => $payment->payment_details['created_at'] ?? now()->toDateTimeString(),
+                        'updated_by' => $user->name,
+                        'updated_at' => now()->toDateTimeString()
+                    ]
+                ]);
+                
+                $action = 'updated';
+                
+            } else {
+                // CREATE new payment
+                $paymentReference = 'EXT-' . strtoupper(uniqid());
+                
+                $payment = Payment::create([
+                    'user_id' => $customer->id,
+                    'amount' => $amount,
+                    'payment_method' => 'cash', // Default to cash for extra charges
+                    'payment_reference' => $paymentReference,
+                    'payment_transaction_id' => $transactionId,
+                    'status' => $status,
+                    'payment_date' => now(),
+                    'payment_details' => [
+                        'description' => $request->description,
+                        'reference' => $request->reference,
+                        'details' => $request->details,
+                        'type' => 'extra',
+                        'item_type' => 'extra_charge',
+                        'saved_individually' => true,
+                        'created_by' => $user->name,
+                        'created_at' => now()->toDateTimeString()
+                    ]
+                ]);
+                
+                $action = 'saved';
+            }
+
+            \Log::info('Extra charge ' . $action, [
+                'payment_id' => $payment->id,
+                'payment_reference' => $paymentReference,
+                'customer_id' => $customer->id,
+                'amount' => $amount,
+                'created_by' => $user->id
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Extra charge ' . $action . ' successfully',
+                'action' => $action,
+                'payment' => [
+                    'id' => $payment->id,
+                    'payment_reference' => $payment->payment_reference,
+                    'payment_transaction_id' => $payment->payment_transaction_id,
+                    'amount' => $payment->amount,
+                    'status' => $payment->status
+                ]
+            ], 200);
+
+        } catch (\Exception $e) {
+            \Log::error('Failed to save extra charge: ' . $e->getMessage(), [
+                'user_id' => $userId,
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to save extra charge: ' . $e->getMessage()
             ], 500);
         }
     }

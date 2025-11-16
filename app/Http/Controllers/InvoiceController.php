@@ -134,6 +134,9 @@ class InvoiceController extends Controller
             abort(403, 'Unauthorized access to this invoice.');
         }
 
+        // Refresh invoice to ensure we have latest data including payment_transaction_id
+        $invoice->refresh();
+
         // Load necessary relationships - including all payments for the user
         $invoice->load([
             'booking.room', 
@@ -165,8 +168,15 @@ class InvoiceController extends Controller
             abort(403, 'Unauthorized access to this invoice.');
         }
 
-        // Load necessary relationships
-        $invoice->load(['booking.room', 'booking.payments', 'user']);
+        // Load necessary relationships - including all payments for the user
+        $invoice->load([
+            'booking.room', 
+            'booking.payments', 
+            'user',
+            'user.payments' => function($query) {
+                $query->orderBy('created_at', 'desc');
+            }
+        ]);
 
         // Get the general payment method (most common one used by the user)
         $userPayments = $invoice->user->payments ?? collect();

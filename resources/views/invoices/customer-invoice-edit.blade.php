@@ -13,18 +13,25 @@
             
             <!-- Header -->
             <div class="flex items-center justify-between mb-6">
-                <div>
-                    <h1 class="text-3xl font-bold text-green-50 mb-2">{{ isset($invoice) ? 'Edit Invoice' : 'Generate Invoice' }}</h1>
-                    <p class="text-gray-400">{{ isset($invoice) ? 'Modify invoice details and billings as needed' : 'Add extra charges and notes before generating the final invoice' }}</p>
-                    @if(isset($invoice))
-                        <p class="text-sm text-gray-500 mt-1">Invoice #: {{ $invoice->invoice_number }}</p>
-                    @endif
-                    
-                    @if(session('error'))
-                        <div class="mt-3 px-4 py-2 bg-red-600 bg-opacity-20 border border-red-600 rounded-lg text-red-400 text-sm">
-                            <i class="fas fa-exclamation-circle mr-2"></i>{{ session('error') }}
-                        </div>
-                    @endif
+                <div class="flex items-center gap-4">
+                    <a href="{{ route('admin.payments.customer', ['user' => $customer->id, 'transaction_id' => request('transaction_id') ?? ($transactionId ?? null)]) }}" 
+                       class="text-gray-400 hover:text-green-400 transition-colors"
+                       title="Back to Customer Payments">
+                        <i class="fas fa-arrow-left text-2xl"></i>
+                    </a>
+                    <div>
+                        <h1 class="text-3xl font-bold text-green-50 mb-2">{{ isset($invoice) ? 'Edit Invoice' : 'Generate Invoice' }}</h1>
+                        <p class="text-gray-400">{{ isset($invoice) ? 'Modify invoice details and billings as needed' : 'Add extra charges and notes before generating the final invoice' }}</p>
+                        @if(isset($invoice))
+                            <p class="text-sm text-gray-500 mt-1">Invoice #: {{ $invoice->invoice_number }}</p>
+                        @endif
+                        
+                        @if(session('error'))
+                            <div class="mt-3 px-4 py-2 bg-red-600 bg-opacity-20 border border-red-600 rounded-lg text-red-400 text-sm">
+                                <i class="fas fa-exclamation-circle mr-2"></i>{{ session('error') }}
+                            </div>
+                        @endif
+                    </div>
                 </div>
                 <div class="flex gap-3">
                     @if(isset($invoice))
@@ -33,7 +40,7 @@
                             Cancel
                         </a>
                     @else
-                        <a href="{{ route('admin.payments.customer', $customer->id) }}" 
+                        <a href="{{ route('admin.payments.customer', ['user' => $customer->id, 'transaction_id' => request('transaction_id') ?? ($transactionId ?? null)]) }}" 
                            class="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors">
                             Cancel
                         </a>
@@ -66,13 +73,18 @@
 
             <!-- Invoice Items -->
             <div class="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden mb-6">
-                <div class="px-6 py-4 bg-gray-750 border-b border-gray-700 flex items-center justify-between">
-                    <h2 class="text-lg font-semibold text-green-50">Invoice Items</h2>
-                    <button type="button" 
-                            onclick="addInvoiceItem()"
-                            class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm">
-                        <i class="fas fa-plus mr-2"></i>Additionals
-                    </button>
+                <div class="px-6 py-4 bg-gray-750 border-b border-gray-700">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h2 class="text-lg font-semibold text-green-50">Invoice Items</h2>
+                            <p class="text-xs text-gray-400 mt-1">Extra charges will be saved as payment records and appear in Customer Payment Details</p>
+                        </div>
+                        <button type="button" 
+                                onclick="confirmAndAddInvoiceItem()"
+                                class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm">
+                            <i class="fas fa-plus mr-2"></i>Additionals
+                        </button>
+                    </div>
                 </div>
 
                 @if(empty($items))
@@ -102,10 +114,11 @@
                         </thead>
                         <tbody id="invoiceItemsBody" class="divide-y divide-gray-700">
                             @foreach($items as $index => $item)
-                            <tr class="invoice-item-row" data-index="{{ $index }}">
+                            <tr class="invoice-item-row" data-index="{{ $index }}" data-item-type="{{ $item['type'] }}" data-has-payment-id="{{ isset($item['payment_id']) ? 'true' : 'false' }}">
                                 <td class="px-4 py-3">
                                     <select name="items[{{ $index }}][type]" 
                                             class="w-full px-2 py-1 text-xs bg-gray-700 border border-gray-600 rounded text-green-50 item-type"
+                                            onchange="handleExtraChargeFieldChange(this)"
                                             required>
                                         <option value="booking" {{ $item['type'] == 'booking' ? 'selected' : '' }}>Booking</option>
                                         <option value="service" {{ $item['type'] == 'service' ? 'selected' : '' }}>Service</option>
@@ -117,14 +130,16 @@
                                     <input type="text" 
                                            name="items[{{ $index }}][description]" 
                                            value="{{ $item['description'] }}"
-                                           class="w-full px-2 py-1 text-sm bg-gray-700 border border-gray-600 rounded text-green-50"
+                                           class="w-full px-2 py-1 text-sm bg-gray-700 border border-gray-600 rounded text-green-50 item-description"
+                                           oninput="handleExtraChargeFieldChange(this)"
                                            required>
                                 </td>
                                 <td class="px-4 py-3">
                                     <input type="text" 
                                            name="items[{{ $index }}][reference]" 
                                            value="{{ $item['reference'] }}"
-                                           class="w-full px-2 py-1 text-sm bg-gray-700 border border-gray-600 rounded text-green-50">
+                                           class="w-full px-2 py-1 text-sm bg-gray-700 border border-gray-600 rounded text-green-50 item-reference"
+                                           oninput="handleExtraChargeFieldChange(this)">
                                     @if(isset($item['payment_id']))
                                     <input type="hidden" 
                                            name="items[{{ $index }}][payment_id]" 
@@ -138,7 +153,8 @@
                                     <input type="text" 
                                            name="items[{{ $index }}][details]" 
                                            value="{{ $item['details'] }}"
-                                           class="w-full px-2 py-1 text-sm bg-gray-700 border border-gray-600 rounded text-green-50">
+                                           class="w-full px-2 py-1 text-sm bg-gray-700 border border-gray-600 rounded text-green-50 item-details"
+                                           oninput="handleExtraChargeFieldChange(this)">
                                 </td>
                                 <td class="px-4 py-3">
                                     <input type="number" 
@@ -147,7 +163,7 @@
                                            step="0.01"
                                            min="0"
                                            class="w-24 px-2 py-1 text-sm bg-gray-700 border border-gray-600 rounded text-right text-green-50 item-amount"
-                                           oninput="calculateRowBalance(this)"
+                                           oninput="calculateRowBalance(this); handleExtraChargeFieldChange(this);"
                                            required>
                                 </td>
                                 <td class="px-4 py-3">
@@ -157,7 +173,7 @@
                                            step="0.01"
                                            min="0"
                                            class="w-24 px-2 py-1 text-sm bg-gray-700 border border-gray-600 rounded text-right text-green-50 item-paid"
-                                           oninput="calculateRowBalance(this)"
+                                           oninput="calculateRowBalance(this); handleExtraChargeFieldChange(this);"
                                            required>
                                 </td>
                                 <td class="px-4 py-3 text-right">
@@ -166,12 +182,30 @@
                                     </span>
                                 </td>
                                 <td class="px-4 py-3 text-center">
-                                    <button type="button" 
-                                            onclick="removeInvoiceItem(this)"
-                                            class="text-red-400 hover:text-red-300"
-                                            title="Remove item">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
+                                    <div class="flex items-center justify-center gap-2">
+                                        @if($item['type'] == 'extra' && !isset($item['payment_id']))
+                                        <button type="button" 
+                                                onclick="saveExtraCharge(this)"
+                                                class="text-green-400 hover:text-green-300 save-extra-btn"
+                                                title="Save extra charge now">
+                                            <i class="fas fa-check"></i>
+                                        </button>
+                                        @elseif($item['type'] == 'extra' && isset($item['payment_id']))
+                                        <button type="button" 
+                                                onclick="saveExtraCharge(this)"
+                                                class="text-green-400 hover:text-green-300 save-extra-btn hidden"
+                                                title="Save changes"
+                                                style="display: none;">
+                                            <i class="fas fa-check"></i>
+                                        </button>
+                                        @endif
+                                        <button type="button" 
+                                                onclick="removeInvoiceItem(this)"
+                                                class="text-red-400 hover:text-red-300"
+                                                title="Remove item">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
                                 </td>
                             </tr>
                             @endforeach
@@ -220,7 +254,7 @@
                         Cancel
                     </a>
                 @else
-                    <a href="{{ route('admin.payments.customer', $customer->id) }}" 
+                    <a href="{{ route('admin.payments.customer', ['user' => $customer->id, 'transaction_id' => request('transaction_id') ?? ($transactionId ?? null)]) }}" 
                        class="px-6 py-3 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors">
                         Cancel
                     </a>
@@ -236,6 +270,17 @@
 
 <script>
 let itemIndex = {{ count($items) }};
+
+function confirmAndAddInvoiceItem() {
+    const confirmMessage = 'Add an extra charge?\n\n' +
+        'This will create a new payment record that will appear in the Customer Payment Details. ' +
+        'The extra charge will be saved when you click "Generate Invoice".\n\n' +
+        'Do you want to continue?';
+    
+    if (confirm(confirmMessage)) {
+        addInvoiceItem();
+    }
+}
 
 function addInvoiceItem() {
     const tbody = document.getElementById('invoiceItemsBody');
@@ -253,6 +298,7 @@ function addInvoiceItem() {
         <td class="px-4 py-3">
             <select name="items[${itemIndex}][type]" 
                     class="w-full px-2 py-1 text-xs bg-gray-700 border border-gray-600 rounded text-green-50 item-type"
+                    onchange="handleExtraChargeFieldChange(this)"
                     required>
                 <option value="extra" selected>Extra Charge</option>
                 <option value="booking">Booking</option>
@@ -264,19 +310,22 @@ function addInvoiceItem() {
             <input type="text" 
                    name="items[${itemIndex}][description]" 
                    placeholder="e.g., Late checkout fee"
-                   class="w-full px-2 py-1 text-sm bg-gray-700 border border-gray-600 rounded text-green-50"
+                   class="w-full px-2 py-1 text-sm bg-gray-700 border border-gray-600 rounded text-green-50 item-description"
+                   oninput="handleExtraChargeFieldChange(this)"
                    required>
         </td>
         <td class="px-4 py-3">
             <input type="text" 
                    name="items[${itemIndex}][reference]" 
-                   class="w-full px-2 py-1 text-sm bg-gray-700 border border-gray-600 rounded text-green-50">
+                   class="w-full px-2 py-1 text-sm bg-gray-700 border border-gray-600 rounded text-green-50 item-reference"
+                   oninput="handleExtraChargeFieldChange(this)">
         </td>
         <td class="px-4 py-3">
             <input type="text" 
                    name="items[${itemIndex}][details]" 
                    placeholder="Additional details"
-                   class="w-full px-2 py-1 text-sm bg-gray-700 border border-gray-600 rounded text-green-50">
+                   class="w-full px-2 py-1 text-sm bg-gray-700 border border-gray-600 rounded text-green-50 item-details"
+                   oninput="handleExtraChargeFieldChange(this)">
         </td>
         <td class="px-4 py-3">
             <input type="number" 
@@ -285,7 +334,7 @@ function addInvoiceItem() {
                    step="0.01"
                    min="0"
                    class="w-24 px-2 py-1 text-sm bg-gray-700 border border-gray-600 rounded text-right text-green-50 item-amount"
-                   oninput="calculateRowBalance(this)"
+                   oninput="calculateRowBalance(this); handleExtraChargeFieldChange(this);"
                    required>
         </td>
         <td class="px-4 py-3">
@@ -295,7 +344,7 @@ function addInvoiceItem() {
                    step="0.01"
                    min="0"
                    class="w-24 px-2 py-1 text-sm bg-gray-700 border border-gray-600 rounded text-right text-green-50 item-paid"
-                   oninput="calculateRowBalance(this)"
+                   oninput="calculateRowBalance(this); handleExtraChargeFieldChange(this);"
                    required>
         </td>
         <td class="px-4 py-3 text-right">
@@ -304,12 +353,20 @@ function addInvoiceItem() {
             </span>
         </td>
         <td class="px-4 py-3 text-center">
-            <button type="button" 
-                    onclick="removeInvoiceItem(this)"
-                    class="text-red-400 hover:text-red-300"
-                    title="Remove item">
-                <i class="fas fa-trash"></i>
-            </button>
+            <div class="flex items-center justify-center gap-2">
+                <button type="button" 
+                        onclick="saveExtraCharge(this)"
+                        class="text-green-400 hover:text-green-300 save-extra-btn"
+                        title="Save extra charge now">
+                    <i class="fas fa-check"></i>
+                </button>
+                <button type="button" 
+                        onclick="removeInvoiceItem(this)"
+                        class="text-red-400 hover:text-red-300"
+                        title="Remove item">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
         </td>
     `;
     
@@ -383,6 +440,158 @@ document.addEventListener('DOMContentLoaded', function() {
     calculateTotals();
 });
 
+// Handle field changes for extra charges
+function handleExtraChargeFieldChange(input) {
+    const row = input.closest('tr');
+    const typeSelect = row.querySelector('.item-type');
+    
+    // Only handle extra charge rows
+    if (!typeSelect || typeSelect.value !== 'extra') {
+        return;
+    }
+    
+    // Check if this row has a payment_id (already saved)
+    const hasPaymentId = row.querySelector('input[name*="[payment_id]"]');
+    
+    if (hasPaymentId) {
+        // Show the save button if hidden (for previously saved extra charges)
+        const saveBtn = row.querySelector('.save-extra-btn');
+        if (saveBtn) {
+            saveBtn.classList.remove('hidden');
+            saveBtn.style.display = '';
+            saveBtn.title = 'Save changes to extra charge';
+            
+            // Remove readonly from fields to allow editing
+            const inputs = row.querySelectorAll('.item-description, .item-reference, .item-details, .item-amount, .item-paid');
+            inputs.forEach(inp => {
+                inp.readOnly = false;
+                inp.classList.remove('bg-gray-600');
+                inp.classList.add('bg-gray-700');
+            });
+        }
+    }
+}
+
+// Save extra charge immediately
+function saveExtraCharge(button) {
+    const row = button.closest('tr');
+    const typeSelect = row.querySelector('.item-type');
+    const descriptionInput = row.querySelector('input[name*="[description]"]');
+    const referenceInput = row.querySelector('input[name*="[reference]"]');
+    const detailsInput = row.querySelector('input[name*="[details]"]');
+    const amountInput = row.querySelector('.item-amount');
+    const paidInput = row.querySelector('.item-paid');
+    
+    // Validate inputs
+    if (!descriptionInput.value.trim()) {
+        alert('Please enter a description for the extra charge.');
+        descriptionInput.focus();
+        return;
+    }
+    
+    if (!amountInput.value || parseFloat(amountInput.value) <= 0) {
+        alert('Please enter a valid amount greater than 0.');
+        amountInput.focus();
+        return;
+    }
+    
+    const confirmMessage = `Save this extra charge?\n\n` +
+        `Description: ${descriptionInput.value}\n` +
+        `Amount: ₱${parseFloat(amountInput.value).toFixed(2)}\n` +
+        `Paid: ₱${parseFloat(paidInput.value).toFixed(2)}\n\n` +
+        `This will immediately create a payment record in Customer Payment Details.`;
+    
+    if (!confirm(confirmMessage)) {
+        return;
+    }
+    
+    // Disable button during save
+    button.disabled = true;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    
+    // Get transaction ID
+    const transactionId = '{{ request("transaction_id") ?? ($transactionId ?? "") }}';
+    
+    if (!transactionId) {
+        alert('Error: No transaction ID found. Please refresh the page and try again.');
+        button.disabled = false;
+        button.innerHTML = '<i class="fas fa-check"></i>';
+        return;
+    }
+    
+    // Prepare data
+    const data = {
+        type: typeSelect.value,
+        description: descriptionInput.value,
+        reference: referenceInput.value,
+        details: detailsInput.value,
+        amount: parseFloat(amountInput.value),
+        paid: parseFloat(paidInput.value),
+        transaction_id: transactionId
+    };
+    
+    // Check if this is an update (payment_id exists)
+    const paymentIdInput = row.querySelector('input[name*="[payment_id]"]');
+    if (paymentIdInput && paymentIdInput.value) {
+        data.payment_id = paymentIdInput.value;
+    }
+    
+    // Send AJAX request
+    fetch('{{ route("admin.payments.extraCharge.save", $customer->id) }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            // If this was a new save (not update), add payment ID to the row
+            if (result.action === 'saved') {
+                const existingPaymentIdInput = row.querySelector('input[name*="[payment_id]"]');
+                if (!existingPaymentIdInput) {
+                    const paymentIdInput = document.createElement('input');
+                    paymentIdInput.type = 'hidden';
+                    paymentIdInput.name = `items[${row.dataset.index}][payment_id]`;
+                    paymentIdInput.value = result.payment.id;
+                    row.querySelector('td:nth-child(3)').appendChild(paymentIdInput);
+                    
+                    const paymentRefInput = document.createElement('input');
+                    paymentRefInput.type = 'hidden';
+                    paymentRefInput.name = `items[${row.dataset.index}][payment_reference]`;
+                    paymentRefInput.value = result.payment.payment_reference;
+                    row.querySelector('td:nth-child(3)').appendChild(paymentRefInput);
+                }
+            }
+            
+            // Hide the check button temporarily (will reappear on next edit)
+            button.style.display = 'none';
+            button.classList.add('hidden');
+            
+            // Re-enable button for next save
+            button.disabled = false;
+            button.innerHTML = '<i class="fas fa-check"></i>';
+            
+            // Show success message
+            const actionText = result.action === 'saved' ? 'saved' : 'updated';
+            alert(`✓ Extra charge ${actionText} successfully!\n\nPayment Reference: ${result.payment.payment_reference}\n\nYou can continue editing and click the check icon to save changes.`);
+        } else {
+            alert('Error: ' + (result.message || 'Failed to save extra charge'));
+            button.disabled = false;
+            button.innerHTML = '<i class="fas fa-check"></i>';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while saving the extra charge. Please try again.');
+        button.disabled = false;
+        button.innerHTML = '<i class="fas fa-check"></i>';
+    });
+}
+
 // Confirm invoice submission with extra charges
 function confirmInvoiceSubmit() {
     const rows = document.querySelectorAll('.invoice-item-row');
@@ -398,11 +607,16 @@ function confirmInvoiceSubmit() {
     });
     
     if (extraCharges.length > 0) {
-        let message = 'You are about to add the following extra charge(s) to this invoice:\n\n';
+        let message = '⚠️ CONFIRM EXTRA CHARGES ⚠️\n\n';
+        message += 'You are about to add the following extra charge(s):\n\n';
         extraCharges.forEach((charge, index) => {
             message += `${index + 1}. ${charge.description} - ₱${parseFloat(charge.amount).toFixed(2)}\n`;
         });
-        message += '\nThese charges will be added to the customer payment details table and included in the invoice.\n\nDo you want to proceed?';
+        message += '\n✅ These charges will:\n';
+        message += '  • Be saved as payment records\n';
+        message += '  • Appear in Customer Payment Details\n';
+        message += '  • Be included in this invoice\n';
+        message += '\nDo you want to proceed?';
         
         return confirm(message);
     }

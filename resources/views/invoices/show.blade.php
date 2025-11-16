@@ -8,13 +8,29 @@
         <!-- Header -->
         <div class="mb-8">
             <div class="flex items-center justify-between">
-                <div>
-                    <h1 class="text-3xl font-bold text-green-50">Invoice {{ $invoice->invoice_number }}</h1>
-                    @if($invoice->booking_id && $invoice->booking)
-                        <p class="text-gray-400 mt-2">Booking Reference: {{ $invoice->booking->booking_reference }}</p>
-                    @else
-                        <p class="text-gray-400 mt-2">Customer Invoice</p>
-                    @endif
+                <div class="flex items-center gap-4">
+                    @php
+                        $role = auth()->user()->role;
+                        // Go back to customer payment details
+                        if (in_array($role, ['admin', 'manager', 'staff'])) {
+                            $backUrl = route('admin.payments.customer', ['user' => $invoice->user_id]);
+                        } else {
+                            $backUrl = route('invoices.index');
+                        }
+                    @endphp
+                    <a href="{{ $backUrl }}" 
+                       class="text-gray-400 hover:text-green-400 transition-colors"
+                       title="Back to Customer Payments">
+                        <i class="fas fa-arrow-left text-2xl"></i>
+                    </a>
+                    <div>
+                        <h1 class="text-3xl font-bold text-green-50">Invoice {{ $invoice->invoice_number }}</h1>
+                        @if($invoice->booking_id && $invoice->booking)
+                            <p class="text-gray-400 mt-2">Booking Reference: {{ $invoice->booking->booking_reference }}</p>
+                        @else
+                            <p class="text-gray-400 mt-2">Customer Invoice</p>
+                        @endif
+                    </div>
                 </div>
                 
                 <div class="flex items-center space-x-3">
@@ -285,18 +301,21 @@
                 $role = auth()->user()->role;
                 if ($role === 'admin') {
                     $dashboardRoute = route('admin.dashboard');
-                    $paymentRoute = $invoice->items ? route('admin.payments.customer', $invoice->user_id) : route('admin.payments.index');
+                    // Always go back to specific customer payment details
+                    $paymentRoute = route('admin.payments.customer', $invoice->user_id);
                 } elseif ($role === 'manager') {
                     $dashboardRoute = route('manager.dashboard');
-                    $paymentRoute = $invoice->items ? route('manager.payments.customer', $invoice->user_id) : route('manager.payments.index');
+                    // Always go back to specific customer payment details
+                    $paymentRoute = route('admin.payments.customer', $invoice->user_id);
                 } elseif ($role === 'staff') {
                     $dashboardRoute = route('staff.dashboard');
-                    $paymentRoute = route('admin.payments.index');
+                    // Staff also uses customer payment details
+                    $paymentRoute = route('admin.payments.customer', $invoice->user_id);
                 } else {
                     $dashboardRoute = route('guest.dashboard');
                     $paymentRoute = route('invoices.index');
                 }
-                
+
                 if ($invoice->booking_id && $invoice->booking) {
                     if ($role === 'admin') {
                         $bookingRoute = route('admin.bookings.show', $invoice->booking);
@@ -322,19 +341,11 @@
             
             @if(in_array($role, ['admin', 'manager', 'staff']))
             <a 
-                href="{{ $paymentRoute }}" 
-                class="flex-1 bg-gray-600 text-white px-6 py-3 rounded-lg font-medium text-center hover:bg-gray-700 transition-colors"
+                href="{{ route('admin.payments.customer', ['user' => $invoice->user_id]) }}" 
+                class="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg font-medium text-center hover:bg-blue-700 transition-colors"
             >
                 <i class="fas fa-arrow-left mr-2"></i>
-                Back to Payments
-            </a>
-            @else
-            <a 
-                href="{{ route('invoices.index') }}" 
-                class="flex-1 bg-gray-600 text-white px-6 py-3 rounded-lg font-medium text-center hover:bg-gray-700 transition-colors"
-            >
-                <i class="fas fa-arrow-left mr-2"></i>
-                Back to Invoices
+                Back to Customer Payments
             </a>
             @endif
         </div>

@@ -255,11 +255,11 @@
                 </div>
 
                 <label class="block text-gray-300 mb-2">Add New Images (Max {{ 10 - $room->images->count() }} remaining)</label>
-                <div class="mt-2" id="imagePreview" class="grid grid-cols-2 md:grid-cols-4 gap-4"></div>
+                  <div class="mt-2 grid grid-cols-2 md:grid-cols-4 gap-4" id="imagePreview"></div>
                 <input type="file" 
                        name="room_images[]" 
                        id="roomImages"
-                       accept="image/*" 
+                      accept="image/jpeg,image/png,image/gif,image/webp" 
                        multiple
                        {{ $room->images->count() >= 10 ? 'disabled' : '' }}
                        class="mt-1 block w-full text-gray-300
@@ -269,6 +269,7 @@
                               file:bg-green-600 file:text-white
                               hover:file:bg-green-700"
                        onchange="previewImages(this, {{ 10 - $room->images->count() }})">
+                  <p id="imageError" class="text-red-400 text-sm mt-2 hidden"></p>
             </div>
 
             <!-- Submit Button -->
@@ -303,15 +304,38 @@ function deleteImage(roomId, imageId) {
 
 function previewImages(input, maxRemaining) {
     const preview = document.getElementById('imagePreview');
+    const errorEl = document.getElementById('imageError');
     preview.innerHTML = '';
-    
+    errorEl.classList.add('hidden');
+    errorEl.textContent = '';
+
     if (input.files.length > maxRemaining) {
         alert(`You can only upload up to ${maxRemaining} more images`);
         input.value = '';
         return;
     }
 
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    const allowedExts = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+    const dt = new DataTransfer();
+    const invalidFiles = [];
+
     Array.from(input.files).forEach((file) => {
+        const ext = file.name.split('.').pop().toLowerCase();
+        const isAllowed = allowedTypes.includes(file.type) || allowedExts.includes(ext);
+        const isSizeOk = file.size <= 2 * 1024 * 1024; // 2MB
+
+        if (!isAllowed) {
+            invalidFiles.push(`${file.name} (unsupported type)`);
+            return;
+        }
+        if (!isSizeOk) {
+            invalidFiles.push(`${file.name} (over 2MB)`);
+            return;
+        }
+
+        dt.items.add(file);
+
         const reader = new FileReader();
         reader.onload = function(e) {
             const div = document.createElement('div');
@@ -320,9 +344,17 @@ function previewImages(input, maxRemaining) {
                 <img src="${e.target.result}" class="w-full h-32 object-cover rounded-lg">
             `;
             preview.appendChild(div);
-        }
+        };
         reader.readAsDataURL(file);
     });
+
+    // Replace input files with only the valid selection
+    input.files = dt.files;
+
+    if (invalidFiles.length) {
+        errorEl.textContent = `Some files were skipped: ${invalidFiles.join(', ')}. Allowed: JPG, PNG, GIF, WEBP (max 2MB).`;
+        errorEl.classList.remove('hidden');
+    }
 }
 </script>
 @endpush

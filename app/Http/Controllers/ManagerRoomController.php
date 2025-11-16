@@ -93,7 +93,7 @@ class ManagerRoomController extends Controller
                 'check_in_time' => 'nullable|date_format:H:i,H:i:s',
                 'check_out_time' => 'nullable|date_format:H:i,H:i:s',
                 'is_available' => 'nullable',
-                'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
+                'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048'
             ]);
 
             \Log::info('Validation passed. Validated data:', $validated);
@@ -203,7 +203,8 @@ class ManagerRoomController extends Controller
             'is_available' => 'nullable',
             'amenities' => 'nullable|array',
             'amenities.*' => 'string',
-            'room_images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
+            'room_images' => 'nullable|array|max:10',
+            'room_images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048'
         ]);
 
         \Log::info('Validation passed. Validated data:', $validated);

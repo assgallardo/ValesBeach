@@ -21,8 +21,8 @@ class FoodOrderController extends Controller
         if ($tab === 'completed') {
             $query->where('status', 'completed');
         } else {
-            // Active orders exclude cancelled and completed
-            $query->whereNotIn('status', ['cancelled', 'completed']);
+            // Active orders include all statuses except completed
+            $query->where('status', '!=', 'completed');
         }
 
         // Filter by status
@@ -50,7 +50,7 @@ class FoodOrderController extends Controller
         $orders = $query->latest()->paginate(20);
 
         // Get counts for tabs
-        $activeCount = FoodOrder::whereNotIn('status', ['cancelled', 'completed'])->count();
+        $activeCount = FoodOrder::where('status', '!=', 'completed')->count();
         $completedCount = FoodOrder::where('status', 'completed')->count();
 
         // Get statistics

@@ -145,6 +145,7 @@
                     <option value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}>Pending</option>
                     <option value="preparing" {{ request('status') === 'preparing' ? 'selected' : '' }}>Preparing</option>
                     <option value="ready" {{ request('status') === 'ready' ? 'selected' : '' }}>Ready</option>
+                    <option value="cancelled" {{ request('status') === 'cancelled' ? 'selected' : '' }}>Cancelled</option>
                     @else
                     <option value="completed" {{ request('status') === 'completed' ? 'selected' : '' }}>Completed</option>
                     @endif

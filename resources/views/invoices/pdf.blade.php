@@ -55,6 +55,17 @@
         .table .text-center {
             text-align: center;
         }
+        .badge-type {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .badge-booking { background:#dbeafe; color:#1e3a8a; }
+        .badge-service { background:#dcfce7; color:#166534; }
+        .badge-food { background:#fef9c3; color:#854d0e; }
+        .badge-extra { background:#ede9fe; color:#5b21b6; }
         .totals {
             float: right;
             width: 300px;
@@ -154,10 +165,17 @@
         </div>
         <div class="invoice-details">
             <table style="text-align: right;">
+                @if($invoice->invoice_date)
+                <tr>
+                    <td><strong>Invoice Date:</strong></td>
+                    <td>{{ $invoice->invoice_date->format('M d, Y') }}</td>
+                </tr>
+                @elseif($invoice->issue_date)
                 <tr>
                     <td><strong>Issue Date:</strong></td>
                     <td>{{ $invoice->issue_date->format('M d, Y') }}</td>
                 </tr>
+                @endif
                 <tr>
                     <td><strong>Due Date:</strong></td>
                     <td class="{{ $invoice->isOverdue() ? 'overdue' : '' }}">
@@ -175,6 +193,7 @@
     </div>
 
     <!-- Booking Details -->
+    @if($invoice->booking_id && $invoice->booking)
     <div class="booking-details">
         <h3>Booking Details</h3>
         <p><strong>Booking Reference:</strong> {{ $invoice->booking->booking_reference }}</p>
@@ -187,8 +206,48 @@
             </tr>
         </table>
     </div>
+    @endif
 
-    <!-- Line Items -->
+    <!-- Items / Line Items -->
+    @if($invoice->items)
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Type</th>
+                <th>Description</th>
+                <th>Reference</th>
+                <th class="text-right">Amount</th>
+                <th class="text-right">Paid</th>
+                <th class="text-right">Balance</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach($invoice->items as $item)
+            <tr>
+                <td>
+                    <span class="badge-type
+                        {{ $item['type'] == 'booking' ? 'badge-booking' : '' }}
+                        {{ $item['type'] == 'service' ? 'badge-service' : '' }}
+                        {{ $item['type'] == 'food' ? 'badge-food' : '' }}
+                        {{ $item['type'] == 'extra' ? 'badge-extra' : '' }}">
+                        {{ ucfirst($item['type']) }}
+                    </span>
+                </td>
+                <td>
+                    <strong>{{ $item['description'] }}</strong>
+                    @if(!empty($item['details']))
+                        <br><small style="color:#555;">{{ $item['details'] }}</small>
+                    @endif
+                </td>
+                <td style="font-size: 12px;">{{ $item['reference'] ?? '-' }}</td>
+                <td class="text-right">₱{{ number_format($item['amount'], 2) }}</td>
+                <td class="text-right" style="color:#059669;">₱{{ number_format($item['paid'], 2) }}</td>
+                <td class="text-right" style="{{ $item['balance'] > 0 ? 'color:#dc2626; font-weight:600;' : 'color:#555;' }}">₱{{ number_format($item['balance'], 2) }}</td>
+            </tr>
+            @endforeach
+        </tbody>
+    </table>
+    @else
     <table class="table">
         <thead>
             <tr>
@@ -208,16 +267,21 @@
                     <td class="text-right">₱{{ number_format($item['total'], 2) }}</td>
                 </tr>
                 @endforeach
-            @else
+            @elseif($invoice->booking)
             <tr>
                 <td>{{ $invoice->booking->room->name }} - Room Booking</td>
                 <td class="text-center">{{ $invoice->booking->check_in->diffInDays($invoice->booking->check_out) }}</td>
                 <td class="text-right">₱{{ number_format($invoice->booking->room->price, 2) }}</td>
                 <td class="text-right">₱{{ number_format($invoice->subtotal, 2) }}</td>
             </tr>
+            @else
+            <tr>
+                <td colspan="4" class="text-center">No line items available.</td>
+            </tr>
             @endif
         </tbody>
     </table>
+    @endif
 
     <!-- Totals -->
     <div class="clearfix">
@@ -237,6 +301,16 @@
                     <td>Total:</td>
                     <td style="text-align: right; color: #059669;">{{ $invoice->formatted_total_amount }}</td>
                 </tr>
+                @if($invoice->items)
+                <tr>
+                    <td style="padding-top:10px; font-weight:600;">Amount Paid:</td>
+                    <td style="text-align:right; padding-top:10px; color:#059669; font-weight:600;">₱{{ number_format($invoice->amount_paid ?? 0, 2) }}</td>
+                </tr>
+                <tr>
+                    <td style="font-weight:600;">Balance Due:</td>
+                    <td style="text-align:right; font-weight:600; {{ ($invoice->balance_due ?? 0) > 0 ? 'color:#dc2626;' : 'color:#555;' }}">₱{{ number_format($invoice->balance_due ?? 0, 2) }}</td>
+                </tr>
+                @endif
                 @if(isset($generalPaymentMethod) && $generalPaymentMethod)
                 <tr style="border-top: 1px solid #e5e7eb; padding-top: 10px;">
                     <td style="font-weight: 600; padding-top: 10px;">Payment Method:</td>
@@ -264,5 +338,46 @@
             This is a computer-generated invoice. Generated on {{ now()->format('M d, Y g:i A') }}
         </p>
     </div>
+
+    @php
+        $role = auth()->user()->role;
+        if ($role === 'admin') {
+            $paymentRoute = route('admin.payments.customer', $invoice->user_id);
+        } elseif ($role === 'manager') {
+            $paymentRoute = route('admin.payments.customer', $invoice->user_id);
+        } elseif ($role === 'staff') {
+            $paymentRoute = route('admin.payments.customer', $invoice->user_id);
+        } else {
+            $paymentRoute = route('invoices.index');
+        }
+    @endphp
+
+    <!-- Navigation Buttons (hide on print) -->
+    <div style="margin-top: 30px; text-align: center;" class="no-print">
+        @if(in_array($role, ['admin', 'manager', 'staff']))
+        <a href="{{ $paymentRoute }}" 
+           style="display: inline-block; padding: 12px 24px; background-color: #4b5563; color: white; text-decoration: none; border-radius: 6px; font-weight: 600; margin: 0 5px;">
+            ← Back to Payments
+        </a>
+        @else
+        <a href="{{ route('invoices.index') }}" 
+           style="display: inline-block; padding: 12px 24px; background-color: #4b5563; color: white; text-decoration: none; border-radius: 6px; font-weight: 600; margin: 0 5px;">
+            ← Back to Invoices
+        </a>
+        @endif
+        
+        <button onclick="window.print()" 
+                style="display: inline-block; padding: 12px 24px; background-color: #059669; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; margin: 0 5px;">
+            🖨️ Print Invoice
+        </button>
+    </div>
+
+    <style>
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+        }
+    </style>
 </body>
 </html>

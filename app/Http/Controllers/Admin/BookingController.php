@@ -827,10 +827,10 @@ class BookingController extends Controller
             'status' => ['required', 'string', 'in:' . implode(',', $validStatuses)]
         ]);
 
-        // Prevent changing completed bookings to cancelled
-        if ($booking->status === 'completed' && $request->status === 'cancelled') {
-            return redirect()->back()->withErrors(['status' => 'Cannot cancel completed bookings.']);
-        }
+        // Allow cancellation of completed bookings (remove restriction)
+        // if ($booking->status === 'completed' && $request->status === 'cancelled') {
+        //     return redirect()->back()->withErrors(['status' => 'Cannot cancel completed bookings.']);
+        // }
 
         $oldStatus = $booking->status;
         

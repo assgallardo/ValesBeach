@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use App\Models\RoomImage;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 
 class RoomController extends Controller
 {
@@ -76,7 +77,7 @@ class RoomController extends Controller
             'check_in_time' => 'nullable|date_format:H:i',
             'check_out_time' => 'nullable|date_format:H:i',
             'images' => 'nullable|array|max:10',        // CHANGED FROM room_images
-            'images.*' => 'image|mimes:jpeg,png,jpg|max:2048'  // CHANGED FROM room_images.*
+            'images.*' => 'image|mimes:jpeg,png,jpg,gif,webp|max:2048'  // CHANGED FROM room_images.*
         ]);
 
         try {
@@ -134,20 +135,25 @@ class RoomController extends Controller
 
     public function update(Request $request, Room $room)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'key_number' => 'nullable|string|max:20',
-            'type' => 'required|string|max:255',
-            'category' => 'required|in:Rooms,Cottages,Event and Dining',
-            'description' => 'required|string',
-            'price' => 'required|numeric|min:0',
-            'capacity' => 'required|integer|min:1',
-            'beds' => 'required|integer|min:0',
-            'amenities' => 'nullable|array',
-            'check_in_time' => 'nullable|date_format:H:i',
-            'check_out_time' => 'nullable|date_format:H:i',
-            'room_images.*' => 'image|mimes:jpeg,png,jpg|max:2048'
-        ]);
+        try {
+            $validated = $request->validate([
+                'name' => 'required|string|max:255',
+                'key_number' => 'nullable|string|max:20',
+                'type' => 'required|string|max:255',
+                'category' => 'required|in:Rooms,Cottages,Event and Dining',
+                'description' => 'required|string',
+                'price' => 'required|numeric|min:0',
+                'capacity' => 'required|integer|min:1',
+                'beds' => 'required|integer|min:0',
+                'amenities' => 'nullable|array',
+                'check_in_time' => 'nullable|date_format:H:i',
+                'check_out_time' => 'nullable|date_format:H:i',
+                'room_images' => 'nullable|array|max:10',
+                'room_images.*' => 'image|mimes:jpeg,png,jpg,gif,webp|max:2048'
+            ]);
+        } catch (ValidationException $e) {
+            return back()->withErrors($e->validator)->withInput();
+        }
 
         // Handle amenities array - convert to JSON
         // If amenities is not in the request, set it to empty array

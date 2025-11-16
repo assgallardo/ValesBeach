@@ -30,7 +30,8 @@ class Invoice extends Model
         'notes',
         'line_items',
         'items',
-        'created_by'
+        'created_by',
+        'payment_transaction_id'
     ];
 
     /**
