@@ -158,7 +158,7 @@ class User extends Authenticatable
      */
     public function serviceRequests()
     {
-        return $this->hasMany(ServiceRequest::class, 'user_id');
+        return $this->hasMany(ServiceRequest::class, 'guest_id');
     }
 
     /**

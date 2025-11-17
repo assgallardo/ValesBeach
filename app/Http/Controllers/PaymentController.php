@@ -302,60 +302,118 @@ class PaymentController extends Controller
      */
     public function history()
     {
-        // Get all active (non-completed) payment transactions for this user
-        $activeTransactionIds = Payment::where('user_id', auth()->id())
-            ->whereIn('status', ['pending', 'confirmed', 'processing', 'overdue', 'failed', 'cancelled', 'refunded'])
+        // Get ALL payment transactions for this user (including completed ones)
+        // Also include payments without transaction IDs for backwards compatibility
+        $allTransactionIds = Payment::where('user_id', auth()->id())
+            ->whereNotNull('payment_transaction_id')
             ->pluck('payment_transaction_id')
             ->unique();
         
-        if ($activeTransactionIds->isEmpty()) {
-            // No active transactions
+        // Check if user has payments without transaction IDs (legacy data)
+        $hasPaymentsWithoutTxnId = Payment::where('user_id', auth()->id())
+            ->whereNull('payment_transaction_id')
+            ->exists();
+        
+        if ($allTransactionIds->isEmpty() && !$hasPaymentsWithoutTxnId) {
+            // No transactions at all
             $bookings = collect();
             $servicePayments = collect();
             $foodOrderPayments = collect();
             $extraChargePayments = collect();
         } else {
-            // Get all bookings with their NON-COMPLETED payments in active transactions
-            $bookings = \App\Models\Booking::where('user_id', auth()->id())
-                ->with(['room', 'invoice', 'payments' => function($query) use ($activeTransactionIds) {
-                    $query->whereIn('payment_transaction_id', $activeTransactionIds)
-                          ->whereIn('status', ['pending', 'confirmed', 'processing', 'overdue', 'failed', 'cancelled', 'refunded'])
-                          ->orderBy('created_at', 'desc');
+            // Build booking query
+            $bookingsQuery = \App\Models\Booking::where('user_id', auth()->id())
+                ->with(['room', 'invoice', 'payments' => function($query) use ($allTransactionIds, $hasPaymentsWithoutTxnId) {
+                    if ($allTransactionIds->isNotEmpty()) {
+                        if ($hasPaymentsWithoutTxnId) {
+                            // Include both: payments with transaction IDs AND payments without
+                            $query->where(function($q) use ($allTransactionIds) {
+                                $q->whereIn('payment_transaction_id', $allTransactionIds)
+                                  ->orWhereNull('payment_transaction_id');
+                            });
+                        } else {
+                            // Only payments with transaction IDs
+                            $query->whereIn('payment_transaction_id', $allTransactionIds);
+                        }
+                    }
+                    // If no transaction IDs but has payments without txn, show all (no filter needed)
+                    $query->orderBy('created_at', 'desc');
                 }])
-                ->where('status', '!=', 'cancelled')
-                ->whereHas('payments', function($query) use ($activeTransactionIds) {
-                    $query->whereIn('payment_transaction_id', $activeTransactionIds)
-                          ->whereIn('status', ['pending', 'confirmed', 'processing', 'overdue', 'failed', 'cancelled', 'refunded']);
-                })
-                ->orderBy('created_at', 'desc')
-                ->get();
+                ->where('status', '!=', 'cancelled');
+            
+            // Add whereHas filter only if we have transaction IDs or legacy payments
+            if ($allTransactionIds->isNotEmpty() || $hasPaymentsWithoutTxnId) {
+                $bookingsQuery->whereHas('payments', function($query) use ($allTransactionIds, $hasPaymentsWithoutTxnId) {
+                    if ($allTransactionIds->isNotEmpty()) {
+                        if ($hasPaymentsWithoutTxnId) {
+                            $query->where(function($q) use ($allTransactionIds) {
+                                $q->whereIn('payment_transaction_id', $allTransactionIds)
+                                  ->orWhereNull('payment_transaction_id');
+                            });
+                        } else {
+                            $query->whereIn('payment_transaction_id', $allTransactionIds);
+                        }
+                    }
+                    // If no transaction IDs but has payments without txn, show all (no filter)
+                });
+            }
+            
+            $bookings = $bookingsQuery->orderBy('created_at', 'desc')->get();
 
-            // Get service payments in active transactions
-            $servicePayments = auth()->user()->payments()
+            // Get service payments
+            $servicePaymentsQuery = auth()->user()->payments()
                 ->whereNotNull('service_request_id')
-                ->whereIn('payment_transaction_id', $activeTransactionIds)
-                ->whereIn('status', ['pending', 'confirmed', 'processing', 'overdue', 'failed', 'cancelled', 'refunded'])
-                ->with('serviceRequest.service')
-                ->orderBy('created_at', 'desc')
-                ->get();
+                ->with('serviceRequest.service');
+            
+            if ($allTransactionIds->isNotEmpty()) {
+                if ($hasPaymentsWithoutTxnId) {
+                    $servicePaymentsQuery->where(function($q) use ($allTransactionIds) {
+                        $q->whereIn('payment_transaction_id', $allTransactionIds)
+                          ->orWhereNull('payment_transaction_id');
+                    });
+                } else {
+                    $servicePaymentsQuery->whereIn('payment_transaction_id', $allTransactionIds);
+                }
+            }
+            
+            $servicePayments = $servicePaymentsQuery->orderBy('created_at', 'desc')->get();
 
-            // Get food order payments in active transactions
-            $foodOrderPayments = auth()->user()->payments()
+            // Get food order payments
+            $foodPaymentsQuery = auth()->user()->payments()
                 ->whereNotNull('food_order_id')
-                ->whereIn('payment_transaction_id', $activeTransactionIds)
-                ->whereIn('status', ['pending', 'confirmed', 'processing', 'overdue', 'failed', 'cancelled', 'refunded'])
-                ->with('foodOrder.orderItems.menuItem')
-                ->orderBy('created_at', 'desc')
-                ->get();
+                ->with('foodOrder.orderItems.menuItem');
+            
+            if ($allTransactionIds->isNotEmpty()) {
+                if ($hasPaymentsWithoutTxnId) {
+                    $foodPaymentsQuery->where(function($q) use ($allTransactionIds) {
+                        $q->whereIn('payment_transaction_id', $allTransactionIds)
+                          ->orWhereNull('payment_transaction_id');
+                    });
+                } else {
+                    $foodPaymentsQuery->whereIn('payment_transaction_id', $allTransactionIds);
+                }
+            }
+            
+            $foodOrderPayments = $foodPaymentsQuery->orderBy('created_at', 'desc')->get();
 
-            // Get extra charge payments in active transactions
-            $extraChargePayments = auth()->user()->payments()
+            // Get extra charge payments
+            $extraChargeQuery = auth()->user()->payments()
                 ->whereNull('booking_id')
                 ->whereNull('service_request_id')
-                ->whereNull('food_order_id')
-                ->whereIn('payment_transaction_id', $activeTransactionIds)
-                ->orderBy('created_at', 'desc')
-                ->get();
+                ->whereNull('food_order_id');
+            
+            if ($allTransactionIds->isNotEmpty()) {
+                if ($hasPaymentsWithoutTxnId) {
+                    $extraChargeQuery->where(function($q) use ($allTransactionIds) {
+                        $q->whereIn('payment_transaction_id', $allTransactionIds)
+                          ->orWhereNull('payment_transaction_id');
+                    });
+                } else {
+                    $extraChargeQuery->whereIn('payment_transaction_id', $allTransactionIds);
+                }
+            }
+            
+            $extraChargePayments = $extraChargeQuery->orderBy('created_at', 'desc')->get();
         }
 
         // Get the general payment method (most common one used by the user)

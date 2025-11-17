@@ -1,5 +1,12 @@
 @extends('layouts.manager')
 
+@section('head')
+<!-- Prevent browser caching to ensure fresh data on back navigation -->
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+@endsection
+
 @section('content')
 <div class="py-12 min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -24,12 +31,22 @@
                             Complete Payments
                         </button>
                     </form>
+                    @if(request('transaction_id'))
                     <a href="{{ route('manager.payments.customer.invoice', ['user' => $customer->id, 'transaction_id' => request('transaction_id')]) }}" 
                        class="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
-                       target="_blank">
+                       id="generate-invoice-btn"
+                       onclick="handleGenerateInvoiceClick(event, this);">
                         <i class="fas fa-file-invoice-dollar mr-2"></i>
                         Generate Invoice
                     </a>
+                    @else
+                    <button type="button" 
+                            onclick="alert('No payment transaction selected. Please access this page through the Payments list.');"
+                            class="inline-flex items-center px-4 py-2 bg-gray-500 text-white rounded-lg cursor-not-allowed opacity-60">
+                        <i class="fas fa-file-invoice-dollar mr-2"></i>
+                        Generate Invoice
+                    </button>
+                    @endif
                 </div>
             </div>
             <p class="text-gray-400">View all payment transactions for this customer</p>
@@ -572,6 +589,67 @@ function deleteCancelledPayment(paymentId, paymentRef, button) {
         button.innerHTML = originalButton;
     });
 }
+
+// Handle Generate Invoice button click
+function handleGenerateInvoiceClick(event, link) {
+    // Prevent multiple clicks
+    if (link.classList.contains('pointer-events-none')) {
+        event.preventDefault();
+        return false;
+    }
+    
+    // Add loading state
+    link.classList.add('opacity-50', 'pointer-events-none');
+    const originalContent = link.innerHTML;
+    link.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Loading...';
+    
+    // Store original content for reset
+    link.dataset.originalContent = originalContent;
+}
+
+// Handle browser back button and page visibility changes
+window.addEventListener('pageshow', function(event) {
+    // Reset Generate Invoice button if page is restored from cache
+    const invoiceBtn = document.getElementById('generate-invoice-btn');
+    if (invoiceBtn) {
+        invoiceBtn.classList.remove('opacity-50', 'pointer-events-none');
+        if (invoiceBtn.dataset.originalContent) {
+            invoiceBtn.innerHTML = invoiceBtn.dataset.originalContent;
+        } else {
+            invoiceBtn.innerHTML = '<i class="fas fa-file-invoice-dollar mr-2"></i>Generate Invoice';
+        }
+    }
+    
+    // Force page reload if coming from cache (back/forward navigation)
+    if (event.persisted || (window.performance && window.performance.navigation.type === 2)) {
+        console.log('Page restored from cache, reloading...');
+        window.location.reload();
+    }
+});
+
+// Handle page visibility changes (tab switching, window focus)
+document.addEventListener('visibilitychange', function() {
+    if (!document.hidden) {
+        // Re-enable all buttons when page becomes visible again
+        document.querySelectorAll('button[type="submit"]').forEach(button => {
+            if (button.disabled && !button.classList.contains('intentionally-disabled')) {
+                button.disabled = false;
+            }
+        });
+    }
+});
+
+// Ensure forms are enabled on page load
+window.addEventListener('load', function() {
+    document.querySelectorAll('form').forEach(form => {
+        form.reset();
+    });
+    
+    // Re-enable all buttons
+    document.querySelectorAll('button[type="submit"]').forEach(button => {
+        button.disabled = false;
+    });
+});
 </script>
 @endsection
 

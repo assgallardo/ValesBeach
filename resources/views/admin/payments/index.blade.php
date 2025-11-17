@@ -335,11 +335,21 @@
 
                                 <!-- Actions -->
                                 <td class="px-4 py-3">
-                                    <a href="{{ route('admin.payments.customer', ['user' => $customer->id, 'transaction_id' => $customer->payment_transaction_id]) }}" 
-                                       class="inline-flex items-center px-3 py-1.5 text-xs bg-green-600 text-white rounded hover:bg-green-700 transition-colors" 
-                                       title="View All Payments">
-                                        <i class="fas fa-eye mr-1"></i> View Details
-                                    </a>
+                                    @php
+                                        // Get transaction ID - try property first, then from payments
+                                        $txnId = $customer->payment_transaction_id ?? 
+                                                 ($customer->payments->first()->payment_transaction_id ?? null);
+                                    @endphp
+                                    
+                                    @if($txnId)
+                                        <a href="{{ route('admin.payments.customer', ['user' => $customer->id, 'transaction_id' => $txnId]) }}" 
+                                           class="inline-flex items-center px-3 py-1.5 text-xs bg-green-600 text-white rounded hover:bg-green-700 transition-colors" 
+                                           title="View All Payments">
+                                            <i class="fas fa-eye mr-1"></i> View Details
+                                        </a>
+                                    @else
+                                        <span class="text-xs text-gray-500">No transaction ID</span>
+                                    @endif
                                 </td>
                             </tr>
                             @endforeach

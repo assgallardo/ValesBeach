@@ -2,6 +2,13 @@
 
 @section('title', 'Invoice - ' . $invoice->invoice_number)
 
+@section('head')
+<!-- Prevent browser caching to ensure fresh data on back navigation -->
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+@endsection
+
 @section('content')
 <div class="min-h-screen bg-gray-900 py-6">
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -370,4 +377,15 @@
     }
 }
 </style>
+
+<script>
+// Handle browser back button to ensure page works correctly
+window.addEventListener('pageshow', function(event) {
+    // Force page reload if coming from cache (back/forward navigation)
+    if (event.persisted || (window.performance && window.performance.navigation.type === 2)) {
+        console.log('Page restored from cache, reloading...');
+        window.location.reload();
+    }
+});
+</script>
 @endsection

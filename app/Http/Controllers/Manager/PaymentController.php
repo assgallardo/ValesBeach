@@ -28,58 +28,51 @@ class PaymentController extends Controller
         $dateTo = $request->get('date_to');
         $search = $request->get('search');
 
-        // Build query for customer payments (grouped by user)
-        $query = \App\Models\User::whereHas('payments', function($q) {
-                // Exclude customers who have ALL payments marked as completed
-                // Only show customers with at least one non-completed payment
-                $q->whereIn('status', ['pending', 'confirmed', 'processing', 'overdue', 'failed', 'cancelled', 'refunded']);
-            })
-            ->with(['payments' => function($q) use ($status, $paymentMethod, $paymentType, $dateFrom, $dateTo) {
-                // Apply filters to payments
-                if ($status) {
-                    $q->where('status', $status);
-                }
-                if ($paymentMethod) {
-                    $q->where('payment_method', $paymentMethod);
-                }
-                if ($paymentType) {
-                    if ($paymentType === 'booking') {
-                        $q->whereNotNull('booking_id');
-                    } elseif ($paymentType === 'service') {
-                        $q->whereNotNull('service_request_id');
-                    } elseif ($paymentType === 'food_order') {
-                        $q->whereNotNull('food_order_id');
-                    }
-                }
-                if ($dateFrom) {
-                    $q->whereDate('created_at', '>=', $dateFrom);
-                }
-                if ($dateTo) {
-                    $q->whereDate('created_at', '<=', $dateTo);
-                }
-                
-                $q->with(['booking.room', 'serviceRequest.service', 'foodOrder'])
-                  ->orderBy('created_at', 'desc');
-            }]);
+        // Build query for payments (not grouped, show individual payments)
+        $query = Payment::with(['user', 'booking.room', 'serviceRequest.service', 'foodOrder'])
+            ->whereIn('status', ['pending', 'confirmed', 'processing', 'overdue', 'failed', 'cancelled', 'refunded']);
 
-        // Apply search
+        // Apply filters
+        if ($status) {
+            $query->where('status', $status);
+        }
+        if ($paymentMethod) {
+            $query->where('payment_method', $paymentMethod);
+        }
+        if ($paymentType) {
+            if ($paymentType === 'booking') {
+                $query->whereNotNull('booking_id');
+            } elseif ($paymentType === 'service') {
+                $query->whereNotNull('service_request_id');
+            } elseif ($paymentType === 'food_order') {
+                $query->whereNotNull('food_order_id');
+            }
+        }
+        if ($dateFrom) {
+            $query->whereDate('created_at', '>=', $dateFrom);
+        }
+        if ($dateTo) {
+            $query->whereDate('created_at', '<=', $dateTo);
+        }
+
+        // Apply search (search in user name or email)
         if ($search) {
-            $query->where(function($q) use ($search) {
+            $query->whereHas('user', function($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
                   ->orWhere('email', 'like', "%{$search}%");
             });
         }
 
-        $customers = $query->orderBy('created_at', 'desc')->paginate(15);
+        $payments = $query->orderBy('created_at', 'desc')->paginate(15);
 
         // Payment statistics for managers
         $stats = [
-            'total_payments' => Payment::completed()->sum('amount'),
-            'pending_payments' => Payment::pending()->sum('amount'),
-            'today_payments' => Payment::completed()->whereDate('created_at', today())->sum('amount'),
+            'total_payments' => Payment::where('status', 'completed')->sum('amount'),
+            'pending_payments' => Payment::where('status', 'pending')->sum('amount'),
+            'today_payments' => Payment::where('status', 'completed')->whereDate('created_at', today())->sum('amount'),
             'total_transactions' => Payment::count(),
-            'completed_count' => Payment::completed()->count(),
-            'pending_count' => Payment::pending()->count(),
+            'completed_count' => Payment::where('status', 'completed')->count(),
+            'pending_count' => Payment::where('status', 'pending')->count(),
             'failed_count' => Payment::where('status', 'failed')->count(),
             'refunded_count' => Payment::where('status', 'refunded')->count(),
         ];
@@ -96,12 +89,12 @@ class PaymentController extends Controller
             $date = today()->subDays($i);
             $payment_trends[] = [
                 'date' => $date->format('M d'),
-                'amount' => Payment::completed()->whereDate('created_at', $date)->sum('amount'),
-                'count' => Payment::completed()->whereDate('created_at', $date)->count(),
+                'amount' => Payment::where('status', 'completed')->whereDate('created_at', $date)->sum('amount'),
+                'count' => Payment::where('status', 'completed')->whereDate('created_at', $date)->count(),
             ];
         }
 
-        return view('manager.payments.index', compact('customers', 'stats', 'recent_payments', 'payment_trends'));
+        return view('manager.payments.index', compact('payments', 'stats', 'recent_payments', 'payment_trends'));
     }
 
     /**

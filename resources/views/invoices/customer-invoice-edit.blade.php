@@ -2,6 +2,13 @@
 
 @section('title', isset($invoice) ? 'Edit Invoice' : 'Generate Invoice')
 
+@section('head')
+<!-- Prevent browser caching to ensure fresh data on back navigation -->
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+@endsection
+
 @section('content')
 <div class="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 py-8">
     <div class="max-w-6xl mx-auto px-4">
@@ -623,6 +630,35 @@ function confirmInvoiceSubmit() {
     
     return true;
 }
+
+// Handle browser back button and page visibility changes
+window.addEventListener('pageshow', function(event) {
+    // Force page reload if coming from cache (back/forward navigation)
+    if (event.persisted || (window.performance && window.performance.navigation.type === 2)) {
+        console.log('Page restored from cache, reloading...');
+        window.location.reload();
+    }
+});
+
+// Handle page visibility changes (tab switching, window focus)
+document.addEventListener('visibilitychange', function() {
+    if (!document.hidden) {
+        // Re-enable all buttons when page becomes visible again
+        document.querySelectorAll('button[type="submit"]').forEach(button => {
+            if (button.disabled && !button.classList.contains('intentionally-disabled')) {
+                button.disabled = false;
+            }
+        });
+    }
+});
+
+// Ensure forms are enabled on page load
+window.addEventListener('load', function() {
+    // Re-enable all buttons
+    document.querySelectorAll('button[type="submit"]').forEach(button => {
+        button.disabled = false;
+    });
+});
 </script>
 @endsection
 

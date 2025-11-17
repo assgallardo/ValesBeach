@@ -24,11 +24,21 @@
                             Revert to Active
                         </button>
                     </form>
+                    @if(request('transaction_id'))
                     <a href="{{ route('manager.payments.customer.invoice', ['user' => $customer->id, 'transaction_id' => request('transaction_id')]) }}" 
-                       class="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
+                       class="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                       onclick="this.classList.add('opacity-50', 'pointer-events-none'); this.innerHTML = '<i class=\"fas fa-spinner fa-spin mr-2\"></i>Loading...';">
                         <i class="fas fa-file-invoice-dollar mr-2"></i>
                         Generate Invoice
                     </a>
+                    @else
+                    <button type="button" 
+                            onclick="alert('No payment transaction selected.');"
+                            class="inline-flex items-center px-4 py-2 bg-gray-500 text-white rounded-lg cursor-not-allowed opacity-60">
+                        <i class="fas fa-file-invoice-dollar mr-2"></i>
+                        Generate Invoice
+                    </button>
+                    @endif
                 </div>
             </div>
             <p class="text-gray-400">View completed payment transactions for this customer</p>
