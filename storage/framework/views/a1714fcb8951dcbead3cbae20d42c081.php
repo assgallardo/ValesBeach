@@ -1,6 +1,6 @@
-@extends('layouts.admin')
 
-@section('content')
+
+<?php $__env->startSection('content'); ?>
 <div class="container mx-auto px-4 lg:px-16 py-8">
     <!-- Header -->
     <div class="mb-8">
@@ -11,19 +11,19 @@
     <!-- Quick Stats -->
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <div class="bg-red-600 rounded-lg p-4 text-white text-center">
-            <div class="text-2xl font-bold">{{ $pendingRequests }}</div>
+            <div class="text-2xl font-bold"><?php echo e($pendingRequests); ?></div>
             <div class="text-sm opacity-90">Pending</div>
         </div>
         <div class="bg-blue-600 rounded-lg p-4 text-white text-center">
-            <div class="text-2xl font-bold">{{ $assignedRequests }}</div>
+            <div class="text-2xl font-bold"><?php echo e($assignedRequests); ?></div>
             <div class="text-sm opacity-90">Assigned</div>
         </div>
         <div class="bg-green-600 rounded-lg p-4 text-white text-center">
-            <div class="text-2xl font-bold">{{ $completedRequests }}</div>
+            <div class="text-2xl font-bold"><?php echo e($completedRequests); ?></div>
             <div class="text-sm opacity-90">Completed</div>
         </div>
         <div class="bg-orange-600 rounded-lg p-4 text-white text-center">
-            <div class="text-2xl font-bold">{{ $overdueRequests ?? 0 }}</div>
+            <div class="text-2xl font-bold"><?php echo e($overdueRequests ?? 0); ?></div>
             <div class="text-sm opacity-90">Overdue</div>
         </div>
     </div>
@@ -41,9 +41,9 @@
             
             <select id="filterStaff" class="bg-gray-700 text-green-100 rounded px-3 py-2 text-sm">
                 <option value="">All Staff</option>
-                @foreach($availableStaff as $staff)
-                <option value="{{ $staff->id }}">{{ $staff->name }}</option>
-                @endforeach
+                <?php $__currentLoopData = $availableStaff; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $staff): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                <option value="<?php echo e($staff->id); ?>"><?php echo e($staff->name); ?></option>
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
             </select>
             
             <button onclick="clearFilters()" class="bg-gray-600 text-white px-3 py-2 rounded text-sm hover:bg-gray-500">
@@ -54,7 +54,7 @@
                 <button onclick="toggleCompletedTasks()" id="completedTasksBtn" class="bg-green-600 text-white px-4 py-2 rounded text-sm hover:bg-green-700 flex items-center">
                     <i class="fas fa-check-circle mr-2"></i>
                     Completed Tasks
-                    <span class="ml-2 bg-green-800 px-2 py-0.5 rounded-full text-xs font-bold">{{ $completedRequests + $completedHousekeeping }}</span>
+                    <span class="ml-2 bg-green-800 px-2 py-0.5 rounded-full text-xs font-bold"><?php echo e($completedRequests + $completedHousekeeping); ?></span>
                 </button>
                 <button onclick="toggleBulkMode()" id="bulkModeBtn" class="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700">
                     Bulk Actions
@@ -68,9 +68,9 @@
                 <span class="text-green-100 text-sm">Selected: <span id="selectedCount">0</span> items</span>
                 <select id="bulkStaff" class="bg-gray-600 text-green-100 rounded px-3 py-2 text-sm">
                     <option value="">Assign to...</option>
-                    @foreach($availableStaff as $staff)
-                    <option value="{{ $staff->id }}">{{ $staff->name }}</option>
-                    @endforeach
+                    <?php $__currentLoopData = $availableStaff; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $staff): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                    <option value="<?php echo e($staff->id); ?>"><?php echo e($staff->name); ?></option>
+                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                 </select>
                 <input type="datetime-local" id="bulkDeadline" class="bg-gray-600 text-green-100 rounded px-3 py-2 text-sm">
                 <button onclick="bulkAssign()" class="bg-green-600 text-white px-3 py-2 rounded text-sm hover:bg-green-700">
@@ -84,41 +84,47 @@
     </div>
 
     <!-- Housekeeping Tasks Section -->
-    @if($housekeepingTasks->count() > 0)
+    <?php if($housekeepingTasks->count() > 0): ?>
     <div class="mb-8">
         <h2 class="text-2xl font-bold text-purple-100 mb-4 flex items-center">
             <i class="fas fa-broom mr-3"></i>
             Active Housekeeping Tasks
             <span class="ml-4 text-sm font-normal text-gray-400">
-                Pending: {{ $pendingHousekeeping }} | Assigned: {{ $assignedHousekeeping }} | Completed: {{ $completedHousekeeping }}
+                Pending: <?php echo e($pendingHousekeeping); ?> | Assigned: <?php echo e($assignedHousekeeping); ?> | Completed: <?php echo e($completedHousekeeping); ?>
+
             </span>
         </h2>
         <div class="space-y-4">
-            @foreach($housekeepingTasks as $task)
-            <div class="bg-gray-800 border-l-4 {{ $task->status === 'completed' ? 'border-green-600 opacity-75' : 'border-purple-600' }} rounded-lg p-6 hover:bg-gray-750 transition-colors"
-                 style="{{ $task->status === 'completed' ? 'display: none;' : '' }}">
+            <?php $__currentLoopData = $housekeepingTasks; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $task): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+            <div class="bg-gray-800 border-l-4 <?php echo e($task->status === 'completed' ? 'border-green-600 opacity-75' : 'border-purple-600'); ?> rounded-lg p-6 hover:bg-gray-750 transition-colors"
+                 style="<?php echo e($task->status === 'completed' ? 'display: none;' : ''); ?>">
                 <!-- Task Header -->
                 <div class="flex items-start justify-between mb-4">
                     <div class="flex-1">
                         <div class="flex items-center space-x-3 mb-2">
-                            <h3 class="text-lg font-semibold {{ $task->status === 'completed' ? 'text-green-100' : 'text-purple-100' }}">
-                                <i class="fas fa-{{ $task->status === 'completed' ? 'check-circle' : 'broom' }} mr-2"></i>{{ $task->title }}
+                            <h3 class="text-lg font-semibold <?php echo e($task->status === 'completed' ? 'text-green-100' : 'text-purple-100'); ?>">
+                                <i class="fas fa-<?php echo e($task->status === 'completed' ? 'check-circle' : 'broom'); ?> mr-2"></i><?php echo e($task->title); ?>
+
                             </h3>
                             <span class="px-3 py-1 text-xs rounded-full font-medium
-                                {{ $task->status === 'pending' ? 'bg-yellow-600 text-yellow-100' : '' }}
-                                {{ $task->status === 'assigned' ? 'bg-blue-600 text-blue-100' : '' }}
-                                {{ $task->status === 'in_progress' ? 'bg-indigo-600 text-indigo-100' : '' }}
-                                {{ $task->status === 'completed' ? 'bg-green-600 text-green-100' : '' }}">
-                                {{ ucfirst(str_replace('_', ' ', $task->status)) }}
+                                <?php echo e($task->status === 'pending' ? 'bg-yellow-600 text-yellow-100' : ''); ?>
+
+                                <?php echo e($task->status === 'assigned' ? 'bg-blue-600 text-blue-100' : ''); ?>
+
+                                <?php echo e($task->status === 'in_progress' ? 'bg-indigo-600 text-indigo-100' : ''); ?>
+
+                                <?php echo e($task->status === 'completed' ? 'bg-green-600 text-green-100' : ''); ?>">
+                                <?php echo e(ucfirst(str_replace('_', ' ', $task->status))); ?>
+
                             </span>
-                            @if($task->status === 'completed')
+                            <?php if($task->status === 'completed'): ?>
                             <span class="text-xs text-green-400">
                                 <i class="fas fa-check mr-1"></i>Finished
                             </span>
-                            @endif
+                            <?php endif; ?>
                         </div>
                         <div class="text-purple-200 text-sm whitespace-pre-line">
-                            @php
+                            <?php
                                 // Replace the check-out time in description with facility time
                                 $description = $task->description;
                                 if ($task->booking && $task->booking->room && $task->booking->check_out) {
@@ -134,8 +140,9 @@
                                         $description
                                     );
                                 }
-                            @endphp
-                            {{ $description }}
+                            ?>
+                            <?php echo e($description); ?>
+
                         </div>
                     </div>
                 </div>
@@ -145,105 +152,115 @@
                     <!-- Facility Info -->
                     <div class="space-y-1">
                         <label class="text-xs text-gray-400 uppercase tracking-wide">Facility</label>
-                        @if($task->booking && $task->booking->room)
+                        <?php if($task->booking && $task->booking->room): ?>
                         <p class="text-purple-100 font-medium">
-                            <i class="fas fa-door-open mr-1"></i>{{ $task->booking->room->name }}
+                            <i class="fas fa-door-open mr-1"></i><?php echo e($task->booking->room->name); ?>
+
                         </p>
-                        <p class="text-gray-400 text-sm">{{ $task->booking->room->category }}</p>
-                        @else
+                        <p class="text-gray-400 text-sm"><?php echo e($task->booking->room->category); ?></p>
+                        <?php else: ?>
                         <p class="text-gray-400">N/A</p>
-                        @endif
+                        <?php endif; ?>
                     </div>
 
                     <!-- Guest Info -->
                     <div class="space-y-1">
                         <label class="text-xs text-gray-400 uppercase tracking-wide">Guest</label>
-                        @if($task->booking && $task->booking->user)
-                        <p class="text-purple-100 font-medium">{{ $task->booking->user->name }}</p>
-                        @else
+                        <?php if($task->booking && $task->booking->user): ?>
+                        <p class="text-purple-100 font-medium"><?php echo e($task->booking->user->name); ?></p>
+                        <?php else: ?>
                         <p class="text-gray-400">N/A</p>
-                        @endif
+                        <?php endif; ?>
                     </div>
 
                     <!-- Assignment -->
                     <div class="space-y-1">
                         <label class="text-xs text-gray-400 uppercase tracking-wide">Assign To</label>
-                        <select onchange="updateHousekeepingAssignment({{ $task->id }}, this.value)" 
+                        <select onchange="updateHousekeepingAssignment(<?php echo e($task->id); ?>, this.value)" 
                                 class="w-full bg-gray-700 text-purple-100 rounded px-3 py-2 text-sm">
                             <option value="">Unassigned</option>
-                            @foreach($availableStaff as $staff)
-                            <option value="{{ $staff->id }}" {{ $task->assigned_to == $staff->id ? 'selected' : '' }}>
-                                {{ $staff->name }}
+                            <?php $__currentLoopData = $availableStaff; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $staff): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                            <option value="<?php echo e($staff->id); ?>" <?php echo e($task->assigned_to == $staff->id ? 'selected' : ''); ?>>
+                                <?php echo e($staff->name); ?>
+
                             </option>
-                            @endforeach
+                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                         </select>
                     </div>
 
                     <!-- Status -->
                     <div class="space-y-1">
                         <label class="text-xs text-gray-400 uppercase tracking-wide">Status</label>
-                        <select onchange="updateHousekeepingStatus({{ $task->id }}, this.value)" 
+                        <select onchange="updateHousekeepingStatus(<?php echo e($task->id); ?>, this.value)" 
                                 class="w-full rounded px-3 py-2 text-sm font-medium
-                                {{ $task->status === 'pending' ? 'bg-yellow-600 text-yellow-100' : '' }}
-                                {{ $task->status === 'confirmed' ? 'bg-blue-500 text-blue-100' : '' }}
-                                {{ $task->status === 'assigned' ? 'bg-blue-600 text-blue-100' : '' }}
-                                {{ $task->status === 'in_progress' ? 'bg-indigo-600 text-indigo-100' : '' }}
-                                {{ $task->status === 'completed' ? 'bg-green-600 text-green-100' : '' }}">
-                            <option value="pending" {{ $task->status === 'pending' ? 'selected' : '' }}>Pending</option>
-                            <option value="confirmed" {{ $task->status === 'confirmed' ? 'selected' : '' }}>Confirmed</option>
-                            <option value="assigned" {{ $task->status === 'assigned' ? 'selected' : '' }}>Assigned</option>
-                            <option value="in_progress" {{ $task->status === 'in_progress' ? 'selected' : '' }}>In Progress</option>
-                            <option value="completed" {{ $task->status === 'completed' ? 'selected' : '' }}>Completed</option>
+                                <?php echo e($task->status === 'pending' ? 'bg-yellow-600 text-yellow-100' : ''); ?>
+
+                                <?php echo e($task->status === 'confirmed' ? 'bg-blue-500 text-blue-100' : ''); ?>
+
+                                <?php echo e($task->status === 'assigned' ? 'bg-blue-600 text-blue-100' : ''); ?>
+
+                                <?php echo e($task->status === 'in_progress' ? 'bg-indigo-600 text-indigo-100' : ''); ?>
+
+                                <?php echo e($task->status === 'completed' ? 'bg-green-600 text-green-100' : ''); ?>">
+                            <option value="pending" <?php echo e($task->status === 'pending' ? 'selected' : ''); ?>>Pending</option>
+                            <option value="confirmed" <?php echo e($task->status === 'confirmed' ? 'selected' : ''); ?>>Confirmed</option>
+                            <option value="assigned" <?php echo e($task->status === 'assigned' ? 'selected' : ''); ?>>Assigned</option>
+                            <option value="in_progress" <?php echo e($task->status === 'in_progress' ? 'selected' : ''); ?>>In Progress</option>
+                            <option value="completed" <?php echo e($task->status === 'completed' ? 'selected' : ''); ?>>Completed</option>
                         </select>
                     </div>
 
                     <!-- Facility Check-out Time -->
                     <div class="space-y-1">
-                        @if($task->booking && $task->booking->room && $task->booking->room->check_out_time)
+                        <?php if($task->booking && $task->booking->room && $task->booking->room->check_out_time): ?>
                         <p class="text-yellow-400 font-medium">
-                            <i class="fas fa-clock mr-1"></i>Facility Check-out: {{ \Carbon\Carbon::parse($task->booking->room->check_out_time)->format('g:i A') }}
+                            <i class="fas fa-clock mr-1"></i>Facility Check-out: <?php echo e(\Carbon\Carbon::parse($task->booking->room->check_out_time)->format('g:i A')); ?>
+
                         </p>
-                        @elseif($task->booking && $task->booking->check_out)
+                        <?php elseif($task->booking && $task->booking->check_out): ?>
                         <p class="text-gray-400 text-sm">
-                            <i class="fas fa-calendar-alt mr-1"></i>{{ \Carbon\Carbon::parse($task->booking->check_out)->format('M d, Y') }}
+                            <i class="fas fa-calendar-alt mr-1"></i><?php echo e(\Carbon\Carbon::parse($task->booking->check_out)->format('M d, Y')); ?>
+
                         </p>
-                        @elseif($task->due_date)
+                        <?php elseif($task->due_date): ?>
                         <p class="text-gray-400 text-sm">
-                            <i class="fas fa-calendar-alt mr-1"></i>{{ $task->due_date->format('M d, Y') }}
+                            <i class="fas fa-calendar-alt mr-1"></i><?php echo e($task->due_date->format('M d, Y')); ?>
+
                         </p>
-                        @else
+                        <?php else: ?>
                         <p class="text-gray-400">N/A</p>
-                        @endif
-                        @if($task->booking && $task->booking->check_out && \Carbon\Carbon::parse($task->booking->check_out)->isPast() && $task->status !== 'completed')
+                        <?php endif; ?>
+                        <?php if($task->booking && $task->booking->check_out && \Carbon\Carbon::parse($task->booking->check_out)->isPast() && $task->status !== 'completed'): ?>
                         <p class="text-red-400 text-xs mt-1">
                             <i class="fas fa-exclamation-triangle mr-1"></i>Overdue
                         </p>
-                        @elseif($task->due_date && $task->due_date->isPast() && $task->status !== 'completed')
+                        <?php elseif($task->due_date && $task->due_date->isPast() && $task->status !== 'completed'): ?>
                         <p class="text-red-400 text-xs mt-1">
                             <i class="fas fa-exclamation-triangle mr-1"></i>Overdue
                         </p>
-                        @endif
+                        <?php endif; ?>
                     </div>
                 </div>
 
                 <!-- Timeline Footer -->
                 <div class="mt-4 pt-3 border-t border-gray-700">
                     <div class="flex justify-between text-xs text-gray-400">
-                        <span>Created: {{ $task->created_at->format('M d, Y H:i') }}</span>
-                        @if($task->status === 'completed')
+                        <span>Created: <?php echo e($task->created_at->format('M d, Y H:i')); ?></span>
+                        <?php if($task->status === 'completed'): ?>
                         <span class="text-green-400">
-                            <i class="fas fa-check-circle mr-1"></i>Completed: {{ $task->updated_at->format('M d, Y H:i') }}
+                            <i class="fas fa-check-circle mr-1"></i>Completed: <?php echo e($task->updated_at->format('M d, Y H:i')); ?>
+
                         </span>
-                        @elseif($task->assigned_to)
-                        <span>Assigned to: {{ $task->assignedTo->name ?? 'N/A' }}</span>
-                        @endif
+                        <?php elseif($task->assigned_to): ?>
+                        <span>Assigned to: <?php echo e($task->assignedTo->name ?? 'N/A'); ?></span>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
-            @endforeach
+            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
         </div>
     </div>
-    @endif
+    <?php endif; ?>
 
     <!-- Service Requests Section -->
     <h2 class="text-2xl font-bold text-green-100 mb-4 flex items-center">
@@ -253,61 +270,64 @@
 
     <!-- Service Requests Cards -->
     <div class="space-y-4" id="requestsContainer">
-        @forelse($serviceRequests as $request)
-        <div class="bg-gray-800 rounded-lg p-6 hover:bg-gray-750 transition-colors {{ $request->deadline_status === 'overdue' ? 'border-l-4 border-red-500' : '' }}" 
-             data-request-id="{{ $request->id }}" 
-             data-status="{{ $request->status }}" 
-             data-staff="{{ $request->assigned_to }}"
-             style="{{ $request->status === 'completed' ? 'display: none;' : '' }}">
+        <?php $__empty_1 = true; $__currentLoopData = $serviceRequests; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $request): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+        <div class="bg-gray-800 rounded-lg p-6 hover:bg-gray-750 transition-colors <?php echo e($request->deadline_status === 'overdue' ? 'border-l-4 border-red-500' : ''); ?>" 
+             data-request-id="<?php echo e($request->id); ?>" 
+             data-status="<?php echo e($request->status); ?>" 
+             data-staff="<?php echo e($request->assigned_to); ?>"
+             style="<?php echo e($request->status === 'completed' ? 'display: none;' : ''); ?>">
             <!-- Card Header -->
             <div class="flex items-start justify-between mb-4">
                 <div class="flex items-start space-x-4 w-full">
                     <div class="bulk-checkbox hidden">
-                        <input type="checkbox" value="{{ $request->id }}" class="request-checkbox rounded mt-1">
+                        <input type="checkbox" value="<?php echo e($request->id); ?>" class="request-checkbox rounded mt-1">
                     </div>
                     <div class="flex-1 w-full">
                         <div class="flex items-center justify-between mb-2">
                             <h3 class="text-2xl font-bold text-green-100">
-                                {{ $request->service->name ?? $request->service_type ?? 'Service Request' }}
-                                @if(isset($request->service) && $request->service && $request->service->price)
+                                <?php echo e($request->service->name ?? $request->service_type ?? 'Service Request'); ?>
+
+                                <?php if(isset($request->service) && $request->service && $request->service->price): ?>
                                     <span class="text-lg font-semibold text-green-400 ml-2">
-                                        ${{ number_format($request->service->price, 2) }}
+                                        $<?php echo e(number_format($request->service->price, 2)); ?>
+
                                     </span>
-                                @endif
+                                <?php endif; ?>
                             </h3>
                             <!-- Status Badge (dropdown always visible) -->
-                <select onchange="updateStatus({{ $request->id }}, this.value)" 
+                <select onchange="updateStatus(<?php echo e($request->id); ?>, this.value)" 
                           class="px-3 py-1 text-xs rounded-full border-none font-medium mr-4
-                          {{ $request->status === 'completed' ? 'bg-green-600 text-green-100' : 
+                          <?php echo e($request->status === 'completed' ? 'bg-green-600 text-green-100' : 
                               ($request->status === 'assigned' || $request->status === 'in_progress' ? 'bg-blue-600 text-blue-100' : 
-                              ($request->status === 'pending' ? 'bg-yellow-500 text-yellow-100' : 'bg-gray-600 text-gray-100')) }}">
-                                <option value="pending" {{ $request->status === 'pending' ? 'selected' : '' }}>Pending</option>
-                                <option value="confirmed" {{ $request->status === 'confirmed' ? 'selected' : '' }}>Confirmed</option>
-                                <option value="assigned" {{ $request->status === 'assigned' ? 'selected' : '' }}>Assigned</option>
-                                <option value="in_progress" {{ $request->status === 'in_progress' ? 'selected' : '' }}>In Progress</option>
-                                <option value="completed" {{ $request->status === 'completed' ? 'selected' : '' }}>Completed</option>
+                              ($request->status === 'pending' ? 'bg-yellow-500 text-yellow-100' : 'bg-gray-600 text-gray-100'))); ?>">
+                                <option value="pending" <?php echo e($request->status === 'pending' ? 'selected' : ''); ?>>Pending</option>
+                                <option value="confirmed" <?php echo e($request->status === 'confirmed' ? 'selected' : ''); ?>>Confirmed</option>
+                                <option value="assigned" <?php echo e($request->status === 'assigned' ? 'selected' : ''); ?>>Assigned</option>
+                                <option value="in_progress" <?php echo e($request->status === 'in_progress' ? 'selected' : ''); ?>>In Progress</option>
+                                <option value="completed" <?php echo e($request->status === 'completed' ? 'selected' : ''); ?>>Completed</option>
                             </select>
                         </div>
-                        @if($request->status !== 'completed')
+                        <?php if($request->status !== 'completed'): ?>
                             <!-- Description - Editable -->
                             <textarea class="description-input bg-transparent text-gray-300 border-none outline-none hover:bg-gray-700 focus:bg-gray-700 rounded px-2 py-1 w-full resize-none"
                                       rows="2"
                                       data-field="description"
-                                      data-request-id="{{ $request->id }}"
+                                      data-request-id="<?php echo e($request->id); ?>"
                                       onblur="updateField(this)"
-                                      placeholder="Service description...">{{ $request->description }}</textarea>
-                        @else
+                                      placeholder="Service description..."><?php echo e($request->description); ?></textarea>
+                        <?php else: ?>
                             <div class="text-gray-300 text-base mb-2">
-                                {{ $request->description }}
+                                <?php echo e($request->description); ?>
+
                             </div>
-                        @endif
+                        <?php endif; ?>
                     </div>
                 </div>
                 
                 <!-- Actions - Simplified -->
                 <div class="flex gap-2">
                     <!-- Cancel Button -->
-                    <button onclick="cancelRequest({{ $request->id }})" 
+                    <button onclick="cancelRequest(<?php echo e($request->id); ?>)" 
                             class="inline-flex items-center px-3 py-2 bg-orange-600 text-white text-sm rounded-lg hover:bg-orange-700 transition-colors" 
                             title="Cancel Service">
                         <i class="fas fa-times mr-2"></i>
@@ -315,7 +335,7 @@
                     </button>
                     
                     <!-- Delete Button -->
-                    <button onclick="deleteRequest({{ $request->id }})" 
+                    <button onclick="deleteRequest(<?php echo e($request->id); ?>)" 
                             class="inline-flex items-center px-3 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 transition-colors" 
                             title="Delete Permanently">
                         <i class="fas fa-trash mr-2"></i>
@@ -329,84 +349,89 @@
                 <!-- Guest Info -->
                 <div class="space-y-1">
                     <label class="text-xs text-gray-400 uppercase tracking-wide">Guest</label>
-                    <p class="text-green-100 font-medium">{{ $request->guest->name ?? $request->guest_name ?? 'N/A' }}</p>
-                    @if($request->room)
-                    <p class="text-gray-400 text-sm">Room: {{ $request->room->name }}</p>
-                    @endif
+                    <p class="text-green-100 font-medium"><?php echo e($request->guest->name ?? $request->guest_name ?? 'N/A'); ?></p>
+                    <?php if($request->room): ?>
+                    <p class="text-gray-400 text-sm">Room: <?php echo e($request->room->name); ?></p>
+                    <?php endif; ?>
                     <!-- Editable Guests Count -->
                     <input type="number" 
-                           value="{{ $request->guests_count ?? $request->guests ?? 1 }}" 
+                           value="<?php echo e($request->guests_count ?? $request->guests ?? 1); ?>" 
                            min="1"
                            placeholder="Guests count"
                            class="w-full bg-gray-700 text-green-100 rounded px-2 py-1 text-sm border-none mt-1"
                            data-field="guests_count"
-                           data-request-id="{{ $request->id }}"
+                           data-request-id="<?php echo e($request->id); ?>"
                            onblur="updateField(this)">
                 </div>
 
                 <!-- Assignment -->
                 <div class="space-y-1">
                     <label class="text-xs text-gray-400 uppercase tracking-wide">Assigned To</label>
-                    @if($request->status === 'completed')
+                    <?php if($request->status === 'completed'): ?>
                         <p class="w-full bg-gray-700 text-green-100 rounded px-3 py-2 text-sm">
-                            @if(empty($request->assigned_to))
+                            <?php if(empty($request->assigned_to)): ?>
                                 Unassigned
-                            @else
-                                {{ optional($availableStaff->firstWhere('id', $request->assigned_to))->name ?? 'Staff' }}
-                            @endif
+                            <?php else: ?>
+                                <?php echo e(optional($availableStaff->firstWhere('id', $request->assigned_to))->name ?? 'Staff'); ?>
+
+                            <?php endif; ?>
                         </p>
-                    @else
-                        <select onchange="updateAssignment({{ $request->id }}, this.value)" 
+                    <?php else: ?>
+                        <select onchange="updateAssignment(<?php echo e($request->id); ?>, this.value)" 
                                 class="w-full bg-gray-700 text-green-100 rounded px-3 py-2 text-sm border-none">
-                            <option value="" {{ empty($request->assigned_to) ? 'selected' : '' }}>Unassigned</option>
-                            @foreach($availableStaff as $staff)
-                            <option value="{{ $staff->id }}" {{ $request->assigned_to == $staff->id ? 'selected' : '' }}>
-                                {{ $staff->name }}
+                            <option value="" <?php echo e(empty($request->assigned_to) ? 'selected' : ''); ?>>Unassigned</option>
+                            <?php $__currentLoopData = $availableStaff; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $staff): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                            <option value="<?php echo e($staff->id); ?>" <?php echo e($request->assigned_to == $staff->id ? 'selected' : ''); ?>>
+                                <?php echo e($staff->name); ?>
+
                             </option>
-                            @endforeach
+                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                         </select>
-                    @endif
+                    <?php endif; ?>
                 </div>
 
                 <!-- Deadline -->
                 <div class="space-y-1">
                     <label class="text-xs text-gray-400 uppercase tracking-wide">Due On</label>
-                    @if($request->status === 'completed')
+                    <?php if($request->status === 'completed'): ?>
                         <p class="w-full bg-gray-700 text-green-100 rounded px-3 py-2 text-sm">
-                            @if($request->deadline)
-                                {{ $request->deadline->format('M d, Y g:i A') }}
-                            @else
+                            <?php if($request->deadline): ?>
+                                <?php echo e($request->deadline->format('M d, Y g:i A')); ?>
+
+                            <?php else: ?>
                                 N/A
-                            @endif
+                            <?php endif; ?>
                         </p>
-                        @if($request->deadline)
+                        <?php if($request->deadline): ?>
                         <div class="flex items-center space-x-2 mt-1">
-                            <span class="px-2 py-1 text-xs rounded {{ $request->deadline_color }}">
-                                {{ $request->deadline->diffForHumans() }}
+                            <span class="px-2 py-1 text-xs rounded <?php echo e($request->deadline_color); ?>">
+                                <?php echo e($request->deadline->diffForHumans()); ?>
+
                             </span>
                         </div>
-                        @endif
-                    @else
+                        <?php endif; ?>
+                    <?php else: ?>
                         <input type="datetime-local" 
-                               value="{{ $request->deadline ? $request->deadline->format('Y-m-d\TH:i') : '' }}"
+                               value="<?php echo e($request->deadline ? $request->deadline->format('Y-m-d\TH:i') : ''); ?>"
                                class="w-full bg-gray-700 text-green-100 rounded px-3 py-2 text-sm border-none"
-                               onchange="updateDeadline({{ $request->id }}, this.value)">
-                        @if($request->deadline)
+                               onchange="updateDeadline(<?php echo e($request->id); ?>, this.value)">
+                        <?php if($request->deadline): ?>
                             <div class="flex items-center space-x-2 mt-1">
-                                <span class="px-2 py-1 text-xs rounded {{ $request->deadline_color }}">
-                                    {{ $request->deadline->diffForHumans() }}
+                                <span class="px-2 py-1 text-xs rounded <?php echo e($request->deadline_color); ?>">
+                                    <?php echo e($request->deadline->diffForHumans()); ?>
+
                                 </span>
                             </div>
-                        @endif
-                    @endif
+                        <?php endif; ?>
+                    <?php endif; ?>
                 </div>
 
                 <!-- Duration & Notes -->
                 <div class="space-y-1">
                     <label class="text-xs text-gray-400 uppercase tracking-wide">Duration & Notes</label>
-                    @if($request->status === 'completed')
+                    <?php if($request->status === 'completed'): ?>
                         <p class="w-full bg-gray-700 text-green-100 rounded px-3 py-2 text-sm">
-                            @php
+                            <?php
                                 $durationMap = [
                                     30 => '30 min',
                                     60 => '1 hour',
@@ -415,61 +440,64 @@
                                     '' => 'No estimate',
                                     null => 'No estimate'
                                 ];
-                            @endphp
-                            {{ $durationMap[$request->estimated_duration ?? ''] ?? 'No estimate' }}
+                            ?>
+                            <?php echo e($durationMap[$request->estimated_duration ?? ''] ?? 'No estimate'); ?>
+
                         </p>
-                        @if($request->manager_notes)
+                        <?php if($request->manager_notes): ?>
                         <div class="w-full bg-gray-700 text-green-100 rounded px-3 py-1 text-sm mt-1">
-                            {{ $request->manager_notes }}
+                            <?php echo e($request->manager_notes); ?>
+
                         </div>
-                        @endif
-                    @else
-                        <select onchange="updateDuration({{ $request->id }}, this.value)" 
+                        <?php endif; ?>
+                    <?php else: ?>
+                        <select onchange="updateDuration(<?php echo e($request->id); ?>, this.value)" 
                                 class="w-full bg-gray-700 text-green-100 rounded px-3 py-2 text-sm border-none">
                             <option value="">No estimate</option>
-                            <option value="30" {{ $request->estimated_duration == 30 ? 'selected' : '' }}>30 min</option>
-                            <option value="60" {{ $request->estimated_duration == 60 ? 'selected' : '' }}>1 hour</option>
-                            <option value="120" {{ $request->estimated_duration == 120 ? 'selected' : '' }}>2 hours</option>
-                            <option value="240" {{ $request->estimated_duration == 240 ? 'selected' : '' }}>4 hours</option>
+                            <option value="30" <?php echo e($request->estimated_duration == 30 ? 'selected' : ''); ?>>30 min</option>
+                            <option value="60" <?php echo e($request->estimated_duration == 60 ? 'selected' : ''); ?>>1 hour</option>
+                            <option value="120" <?php echo e($request->estimated_duration == 120 ? 'selected' : ''); ?>>2 hours</option>
+                            <option value="240" <?php echo e($request->estimated_duration == 240 ? 'selected' : ''); ?>>4 hours</option>
                         </select>
                         <input type="text" 
-                               value="{{ $request->manager_notes }}" 
+                               value="<?php echo e($request->manager_notes); ?>" 
                                placeholder="Manager notes..."
                                class="w-full bg-gray-700 text-green-100 rounded px-3 py-1 text-sm border-none mt-1"
                                data-field="manager_notes"
-                               data-request-id="{{ $request->id }}"
+                               data-request-id="<?php echo e($request->id); ?>"
                                onblur="updateField(this)">
-                    @endif
+                    <?php endif; ?>
                 </div>
             </div>
 
             <!-- Timeline Footer -->
             <div class="mt-4 pt-3 border-t border-gray-700">
                 <div class="flex justify-between text-xs text-gray-400">
-                    <span>Created: {{ $request->created_at->format('M d, Y H:i') }}</span>
-                    @if($request->assigned_at)
-                    <span>Assigned: {{ $request->assigned_at->format('M d, H:i') }}</span>
-                    @endif
-                    @if($request->completed_at)
-                    <span>Completed: {{ $request->completed_at->format('M d, H:i') }}</span>
-                    @endif
+                    <span>Created: <?php echo e($request->created_at->format('M d, Y H:i')); ?></span>
+                    <?php if($request->assigned_at): ?>
+                    <span>Assigned: <?php echo e($request->assigned_at->format('M d, H:i')); ?></span>
+                    <?php endif; ?>
+                    <?php if($request->completed_at): ?>
+                    <span>Completed: <?php echo e($request->completed_at->format('M d, H:i')); ?></span>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
-        @empty
+        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
         <div class="bg-gray-800 rounded-lg p-8 text-center">
             <i class="fas fa-clipboard-list text-4xl text-gray-600 mb-4"></i>
             <p class="text-gray-400 text-lg">No service requests found</p>
         </div>
-        @endforelse
+        <?php endif; ?>
     </div>
 
     <!-- Pagination -->
-    @if($serviceRequests->hasPages())
+    <?php if($serviceRequests->hasPages()): ?>
     <div class="mt-6">
-        {{ $serviceRequests->links() }}
+        <?php echo e($serviceRequests->links()); ?>
+
     </div>
-    @endif
+    <?php endif; ?>
 </div>
 
 <script>
@@ -1027,7 +1055,7 @@ function toggleCompletedTasks() {
         filterByCompletion(true);
     } else {
         // Show all active tasks
-        btn.innerHTML = '<i class="fas fa-check-circle mr-2"></i>Completed Tasks<span class="ml-2 bg-green-800 px-2 py-0.5 rounded-full text-xs font-bold">{{ $completedRequests + $completedHousekeeping }}</span>';
+        btn.innerHTML = '<i class="fas fa-check-circle mr-2"></i>Completed Tasks<span class="ml-2 bg-green-800 px-2 py-0.5 rounded-full text-xs font-bold"><?php echo e($completedRequests + $completedHousekeeping); ?></span>';
         btn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
         btn.classList.add('bg-green-600', 'hover:bg-green-700');
         
@@ -1084,5 +1112,6 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <!-- Add CSRF token for AJAX requests -->
-<meta name="csrf-token" content="{{ csrf_token() }}">
-@endsection
+<meta name="csrf-token" content="<?php echo e(csrf_token()); ?>">
+<?php $__env->stopSection(); ?>
+<?php echo $__env->make('layouts.admin', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\VALESBEACH_LATEST\ValesBeach\resources\views/manager/staff-assignment/index.blade.php ENDPATH**/ ?>

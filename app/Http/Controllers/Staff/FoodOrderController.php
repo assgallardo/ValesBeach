@@ -42,8 +42,8 @@ class FoodOrderController extends Controller
         if ($request->has('search') && $request->search != '') {
             $query->where(function($q) use ($request) {
                 $q->where('order_number', 'like', '%' . $request->search . '%')
-                  ->orWhere('customer_name', 'like', '%' . $request->search . '%')
-                  ->orWhere('customer_email', 'like', '%' . $request->search . '%');
+                  ->orWhere('guest_name', 'like', '%' . $request->search . '%')
+                  ->orWhere('guest_email', 'like', '%' . $request->search . '%');
             });
         }
 

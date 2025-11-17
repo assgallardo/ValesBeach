@@ -354,35 +354,81 @@ class ReportsController extends Controller
         $startDate = $dateRange['start'];
         $endDate = $dateRange['end'];
 
-        // Staff performance metrics
+        // Staff performance metrics including both service requests and housekeeping tasks
         $staffMetrics = User::where('role', 'staff')
             ->withCount([
-                'assignedServiceRequests as total_assigned' => function ($query) use ($startDate, $endDate) {
+                'assignedServiceRequests as service_requests_assigned' => function ($query) use ($startDate, $endDate) {
                     $query->whereBetween('assigned_at', [$startDate, $endDate]);
                 },
-                'assignedServiceRequests as completed_tasks' => function ($query) use ($startDate, $endDate) {
+                'assignedServiceRequests as service_requests_completed' => function ($query) use ($startDate, $endDate) {
                     $query->where('status', 'completed')
                           ->whereBetween('assigned_at', [$startDate, $endDate]);
                 },
-                'assignedServiceRequests as pending_tasks' => function ($query) use ($startDate, $endDate) {
+                'assignedServiceRequests as service_requests_pending' => function ($query) use ($startDate, $endDate) {
                     $query->whereIn('status', ['assigned', 'in_progress'])
                           ->whereBetween('assigned_at', [$startDate, $endDate]);
                 }
             ])
             ->get()
-            ->map(function ($staff) {
+            ->map(function ($staff) use ($startDate, $endDate) {
+                // Get housekeeping metrics from tasks table
+                $housekeepingAssigned = Task::where('assigned_to', $staff->id)
+                    ->where('task_type', 'housekeeping')
+                    ->whereBetween('created_at', [$startDate, $endDate])
+                    ->count();
+                    
+                $housekeepingCompleted = Task::where('assigned_to', $staff->id)
+                    ->where('task_type', 'housekeeping')
+                    ->where('status', 'completed')
+                    ->whereBetween('created_at', [$startDate, $endDate])
+                    ->count();
+                    
+                $housekeepingPending = Task::where('assigned_to', $staff->id)
+                    ->where('task_type', 'housekeeping')
+                    ->whereIn('status', ['pending', 'assigned', 'in_progress'])
+                    ->whereBetween('created_at', [$startDate, $endDate])
+                    ->count();
+                
+                // Combine service requests and housekeeping
+                $staff->housekeeping_assigned = $housekeepingAssigned;
+                $staff->housekeeping_completed = $housekeepingCompleted;
+                $staff->housekeeping_pending = $housekeepingPending;
+                
+                $staff->total_assigned = $staff->service_requests_assigned + $housekeepingAssigned;
+                $staff->completed_tasks = $staff->service_requests_completed + $housekeepingCompleted;
+                $staff->pending_tasks = $staff->service_requests_pending + $housekeepingPending;
+                
                 $staff->completion_rate = $staff->total_assigned > 0 
                     ? round(($staff->completed_tasks / $staff->total_assigned) * 100, 1)
                     : 0;
                 
-                // Calculate average completion time for this staff member - FIXED FOR MYSQL
-                $avgTime = ServiceRequest::where('assigned_to', $staff->id)
+                // Calculate average completion time for service requests
+                $serviceAvgTime = ServiceRequest::where('assigned_to', $staff->id)
                     ->whereNotNull('completed_at')
                     ->whereNotNull('assigned_at')
+                    ->whereBetween('assigned_at', [$startDate, $endDate])
                     ->selectRaw('AVG(TIMESTAMPDIFF(HOUR, assigned_at, completed_at)) as avg_hours')
                     ->first()->avg_hours ?? 0;
                 
-                $staff->avg_completion_time = round($avgTime, 1);
+                // Calculate average completion time for housekeeping tasks
+                $housekeepingAvgTime = Task::where('assigned_to', $staff->id)
+                    ->where('task_type', 'housekeeping')
+                    ->whereNotNull('completed_at')
+                    ->whereBetween('created_at', [$startDate, $endDate])
+                    ->selectRaw('AVG(TIMESTAMPDIFF(HOUR, created_at, completed_at)) as avg_hours')
+                    ->first()->avg_hours ?? 0;
+                
+                // Calculate weighted average
+                $totalCompleted = $staff->completed_tasks;
+                if ($totalCompleted > 0) {
+                    $staff->avg_completion_time = round(
+                        (($serviceAvgTime * $staff->service_requests_completed) + 
+                         ($housekeepingAvgTime * $housekeepingCompleted)) / $totalCompleted,
+                        1
+                    );
+                } else {
+                    $staff->avg_completion_time = 0;
+                }
                 
                 return $staff;
             });
@@ -573,37 +619,81 @@ class ReportsController extends Controller
      */
     private function exportStaffPerformance($handle, $startDate, $endDate)
     {
-        fputcsv($handle, ['Staff Name', 'Total Assigned', 'Completed Tasks', 'Pending Tasks', 'Completion Rate %', 'Avg Completion Time (Hours)']);
+        // Header with detailed columns
+        fputcsv($handle, ['Staff Name', 'Service Requests Assigned', 'Service Requests Completed', 'Housekeeping Assigned', 'Housekeeping Completed', 'Total Assigned', 'Total Completed', 'Total Pending', 'Completion Rate %', 'Avg Completion Time (Hours)']);
         
         $staff = User::where('role', 'staff')->get();
         
         foreach ($staff as $member) {
-            $assigned = ServiceRequest::where('assigned_to', $member->id)
+            // Service requests metrics
+            $serviceAssigned = ServiceRequest::where('assigned_to', $member->id)
                 ->whereBetween('assigned_at', [$startDate, $endDate])->count();
-            $completed = ServiceRequest::where('assigned_to', $member->id)
+            $serviceCompleted = ServiceRequest::where('assigned_to', $member->id)
                 ->where('status', 'completed')
                 ->whereBetween('assigned_at', [$startDate, $endDate])->count();
-            $pending = ServiceRequest::where('assigned_to', $member->id)
+            $servicePending = ServiceRequest::where('assigned_to', $member->id)
                 ->whereIn('status', ['assigned', 'in_progress'])
                 ->whereBetween('assigned_at', [$startDate, $endDate])->count();
             
-            $completionRate = $assigned > 0 ? round(($completed / $assigned) * 100, 1) : 0;
+            // Housekeeping metrics from tasks table
+            $housekeepingAssigned = Task::where('assigned_to', $member->id)
+                ->where('task_type', 'housekeeping')
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->count();
+            $housekeepingCompleted = Task::where('assigned_to', $member->id)
+                ->where('task_type', 'housekeeping')
+                ->where('status', 'completed')
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->count();
+            $housekeepingPending = Task::where('assigned_to', $member->id)
+                ->where('task_type', 'housekeeping')
+                ->whereIn('status', ['pending', 'assigned', 'in_progress'])
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->count();
             
-            // FIXED: Replace julianday with TIMESTAMPDIFF for MySQL
-            $avgTime = ServiceRequest::where('assigned_to', $member->id)
+            // Combined metrics
+            $totalAssigned = $serviceAssigned + $housekeepingAssigned;
+            $totalCompleted = $serviceCompleted + $housekeepingCompleted;
+            $totalPending = $servicePending + $housekeepingPending;
+            
+            $completionRate = $totalAssigned > 0 ? round(($totalCompleted / $totalAssigned) * 100, 1) : 0;
+            
+            // Average completion time for service requests
+            $serviceAvgTime = ServiceRequest::where('assigned_to', $member->id)
                 ->whereNotNull('completed_at')
                 ->whereNotNull('assigned_at')
                 ->whereBetween('assigned_at', [$startDate, $endDate])
                 ->selectRaw('AVG(TIMESTAMPDIFF(HOUR, assigned_at, completed_at)) as avg_hours')
                 ->first()->avg_hours ?? 0;
             
+            // Average completion time for housekeeping tasks
+            $housekeepingAvgTime = Task::where('assigned_to', $member->id)
+                ->where('task_type', 'housekeeping')
+                ->whereNotNull('completed_at')
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->selectRaw('AVG(TIMESTAMPDIFF(HOUR, created_at, completed_at)) as avg_hours')
+                ->first()->avg_hours ?? 0;
+            
+            // Weighted average
+            $avgTime = 0;
+            if ($totalCompleted > 0) {
+                $avgTime = round(
+                    (($serviceAvgTime * $serviceCompleted) + ($housekeepingAvgTime * $housekeepingCompleted)) / $totalCompleted,
+                    1
+                );
+            }
+            
             fputcsv($handle, [
                 $member->name,
-                $assigned,
-                $completed,
-                $pending,
+                $serviceAssigned,
+                $serviceCompleted,
+                $housekeepingAssigned,
+                $housekeepingCompleted,
+                $totalAssigned,
+                $totalCompleted,
+                $totalPending,
                 $completionRate,
-                round($avgTime, 1)
+                $avgTime
             ]);
         }
     }

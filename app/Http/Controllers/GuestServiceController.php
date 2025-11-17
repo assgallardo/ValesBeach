@@ -74,7 +74,7 @@ class GuestServiceController extends Controller
             'service_id' => 'required|exists:services,id',
             'service_type' => 'required|string|max:255',
             'description' => 'nullable|string|max:1000',
-            'scheduled_date' => 'required|date|after:now',
+            'scheduled_date' => 'required|date|after_or_equal:today',
             'guests_count' => 'required|integer|min:1|max:20',
             'special_requests' => 'nullable|string|max:1000',
         ]);

@@ -2265,7 +2265,7 @@ class PaymentController extends Controller
 
             \Log::info('Extra charge ' . $action, [
                 'payment_id' => $payment->id,
-                'payment_reference' => $paymentReference,
+                'payment_reference' => $payment->payment_reference,
                 'customer_id' => $customer->id,
                 'amount' => $amount,
                 'created_by' => $user->id
