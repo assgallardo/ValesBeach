@@ -46,6 +46,10 @@
                                     $bookingPayments = $customer->payments->filter(fn($p) => $p->booking_id);
                                     $servicePayments = $customer->payments->filter(fn($p) => $p->service_request_id);
                                     $foodPayments = $customer->payments->filter(fn($p) => $p->food_order_id);
+                                    $extraChargePayments = $customer->payments->filter(function($p) {
+                                        return !$p->booking_id && !$p->service_request_id && !$p->food_order_id 
+                                            && strpos($p->payment_reference, 'EXT-') === 0;
+                                    });
                                     $totalAmount = $customer->payments->sum('amount');
                                     $latestPayment = $customer->payments->first();
                                     
@@ -83,6 +87,12 @@
                                             <div class="flex items-center gap-2">
                                                 <i class="fas fa-utensils text-orange-400 text-xs"></i>
                                                 <span class="text-xs text-gray-300">{{ $foodPayments->count() }} Food Order{{ $foodPayments->count() > 1 ? 's' : '' }}</span>
+                                            </div>
+                                        @endif
+                                        @if($extraChargePayments->count() > 0)
+                                            <div class="flex items-center gap-2">
+                                                <i class="fas fa-plus-circle text-yellow-400 text-xs"></i>
+                                                <span class="text-xs text-gray-300">{{ $extraChargePayments->count() }} Extra Charge{{ $extraChargePayments->count() > 1 ? 's' : '' }}</span>
                                             </div>
                                         @endif
                                     </div>

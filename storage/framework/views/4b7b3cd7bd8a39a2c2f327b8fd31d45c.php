@@ -220,6 +220,12 @@
                                                 <?php echo e($isPartial ? 'Partial' : ucfirst($payment->status)); ?>
 
                                             </span>
+                                            <?php if($payment->refund_amount > 0): ?>
+                                                <span class="text-xs font-semibold text-red-400">
+                                                    Refunded: ₱<?php echo e(number_format($payment->refund_amount, 2)); ?>
+
+                                                </span>
+                                            <?php endif; ?>
                                             <span class="text-xs text-gray-400"><?php echo e($payment->payment_reference); ?></span>
                                             <span class="text-xs text-gray-500"><?php echo e($payment->created_at->format('M d, Y')); ?></span>
                                         </div>
@@ -299,6 +305,12 @@
                                                 <?php echo e(ucfirst($payment->status)); ?>
 
                                             </span>
+                                            <?php if($payment->refund_amount > 0): ?>
+                                                <span class="text-xs font-semibold text-red-400">
+                                                    Refunded: ₱<?php echo e(number_format($payment->refund_amount, 2)); ?>
+
+                                                </span>
+                                            <?php endif; ?>
                                         </div>
                                         
                                         <!-- Compact Info -->
@@ -387,6 +399,12 @@
                                                 <?php echo e(ucfirst($payment->status)); ?>
 
                                             </span>
+                                            <?php if($payment->refund_amount > 0): ?>
+                                                <span class="text-xs font-semibold text-red-400">
+                                                    Refunded: ₱<?php echo e(number_format($payment->refund_amount, 2)); ?>
+
+                                                </span>
+                                            <?php endif; ?>
                                             <?php if($payment->foodOrder): ?>
                                             <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
                                                 <?php echo e($payment->foodOrder->status === 'pending' ? 'bg-yellow-600 text-white' : 

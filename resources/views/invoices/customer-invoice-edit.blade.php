@@ -18,6 +18,11 @@
                 @method('PATCH')
             @endif
             
+            <!-- Hidden field to pass transaction_id to saveCustomerInvoice -->
+            @if(!isset($invoice) && (request('transaction_id') || isset($transactionId)))
+                <input type="hidden" name="transaction_id" value="{{ request('transaction_id') ?? $transactionId }}">
+            @endif
+            
             <!-- Header -->
             <div class="flex items-center justify-between mb-6">
                 <div class="flex items-center gap-4">

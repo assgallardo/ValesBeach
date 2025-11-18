@@ -74,10 +74,19 @@
                                     $fallbackTotal = $roomPrice * $nights;
                                     $rawTotal = (float)($booking->total_price ?? 0);
                                     $displayTotal = $rawTotal > 0 ? $rawTotal : $fallbackTotal;
+                                    
+                                    // Calculate total refunds for this booking
+                                    $totalRefunded = $booking->payments->sum('refund_amount');
                                 ?>
                                 <?php echo e('₱' . number_format($displayTotal, 2)); ?>
 
                             </p>
+                            <?php if($totalRefunded > 0): ?>
+                                <p class="text-sm font-semibold text-red-400 mt-1">
+                                    Refunded: ₱<?php echo e(number_format($totalRefunded, 2)); ?>
+
+                                </p>
+                            <?php endif; ?>
                             <p class="text-sm text-gray-400 mt-2">
                                 Status: <span class="capitalize px-2 py-1 rounded text-xs font-medium
                                     <?php if($booking->status === 'confirmed'): ?> bg-green-600 text-white

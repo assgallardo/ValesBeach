@@ -1,5 +1,3 @@
-
-
 <?php $__env->startSection('title', 'Completed Transactions'); ?>
 
 <?php $__env->startSection('content'); ?>

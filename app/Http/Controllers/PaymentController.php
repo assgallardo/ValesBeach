@@ -302,16 +302,28 @@ class PaymentController extends Controller
      */
     public function history()
     {
-        // Get ALL payment transactions for this user (including completed ones)
-        // Also include payments without transaction IDs for backwards compatibility
+        // Get all COMPLETED payment transaction IDs (where ALL payments are completed)
+        $completedTransactionIds = DB::table('payments')
+            ->select('payment_transaction_id')
+            ->where('user_id', auth()->id())
+            ->whereNotNull('payment_transaction_id')
+            ->groupBy('payment_transaction_id')
+            ->havingRaw('COUNT(*) = SUM(CASE WHEN status = ? THEN 1 ELSE 0 END)', ['completed'])
+            ->pluck('payment_transaction_id');
+        
+        // Get ACTIVE (non-completed) payment transactions for this user
+        // Exclude completed transactions from history view
         $allTransactionIds = Payment::where('user_id', auth()->id())
             ->whereNotNull('payment_transaction_id')
+            ->whereNotIn('payment_transaction_id', $completedTransactionIds)
             ->pluck('payment_transaction_id')
             ->unique();
         
         // Check if user has payments without transaction IDs (legacy data)
+        // Only show them if they're not completed
         $hasPaymentsWithoutTxnId = Payment::where('user_id', auth()->id())
             ->whereNull('payment_transaction_id')
+            ->where('status', '!=', 'completed')
             ->exists();
         
         if ($allTransactionIds->isEmpty() && !$hasPaymentsWithoutTxnId) {
@@ -1547,7 +1559,8 @@ class PaymentController extends Controller
             'items.*.payment_id' => 'nullable|integer|exists:payments,id',
             'items.*.payment_reference' => 'nullable|string',
             'notes' => 'nullable|string|max:2000',
-            'due_date' => 'nullable|date'
+            'due_date' => 'nullable|date',
+            'transaction_id' => 'nullable|string' // Accept transaction_id from form
         ]);
 
         // If no items provided, return with error
@@ -1606,8 +1619,18 @@ class PaymentController extends Controller
             ->pluck('id')
             ->toArray();
         
-        // Get or create payment_transaction_id for grouping all payments in this invoice
-        $paymentTransactionId = 'TXN-' . strtoupper(uniqid());
+        // Get transaction ID from the invoice form (passed from generateCustomerInvoice)
+        // Use existing transaction ID to keep extra charges grouped with bookings/services
+        $paymentTransactionId = request('transaction_id');
+        
+        if (!$paymentTransactionId) {
+            // Fallback: create new transaction ID only if none provided
+            $paymentTransactionId = 'TXN-' . strtoupper(uniqid());
+            \Log::warning('No transaction_id provided to saveCustomerInvoice, creating new one', [
+                'customer_id' => $customer->id,
+                'new_transaction_id' => $paymentTransactionId
+            ]);
+        }
         
         $newExtraPaymentIds = [];
         $items = [];

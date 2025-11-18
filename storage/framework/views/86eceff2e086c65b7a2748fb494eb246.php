@@ -1,5 +1,3 @@
-
-
 <?php $__env->startSection('content'); ?>
 <div class="py-12 min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -46,6 +44,10 @@
                                     $bookingPayments = $customer->payments->filter(fn($p) => $p->booking_id);
                                     $servicePayments = $customer->payments->filter(fn($p) => $p->service_request_id);
                                     $foodPayments = $customer->payments->filter(fn($p) => $p->food_order_id);
+                                    $extraChargePayments = $customer->payments->filter(function($p) {
+                                        return !$p->booking_id && !$p->service_request_id && !$p->food_order_id 
+                                            && strpos($p->payment_reference, 'EXT-') === 0;
+                                    });
                                     $totalAmount = $customer->payments->sum('amount');
                                     $latestPayment = $customer->payments->first();
                                     
@@ -85,6 +87,12 @@
                                             <div class="flex items-center gap-2">
                                                 <i class="fas fa-utensils text-orange-400 text-xs"></i>
                                                 <span class="text-xs text-gray-300"><?php echo e($foodPayments->count()); ?> Food Order<?php echo e($foodPayments->count() > 1 ? 's' : ''); ?></span>
+                                            </div>
+                                        <?php endif; ?>
+                                        <?php if($extraChargePayments->count() > 0): ?>
+                                            <div class="flex items-center gap-2">
+                                                <i class="fas fa-plus-circle text-yellow-400 text-xs"></i>
+                                                <span class="text-xs text-gray-300"><?php echo e($extraChargePayments->count()); ?> Extra Charge<?php echo e($extraChargePayments->count() > 1 ? 's' : ''); ?></span>
                                             </div>
                                         <?php endif; ?>
                                     </div>
@@ -133,11 +141,21 @@
 
                                 <!-- Actions -->
                                 <td class="px-4 py-3">
-                                    <a href="<?php echo e(route('admin.payments.completed.customer', ['user' => $customer->id, 'transaction_id' => $customer->payment_transaction_id])); ?>" 
-                                       class="inline-flex items-center px-3 py-1.5 text-xs bg-green-600 text-white rounded hover:bg-green-700 transition-colors" 
-                                       title="View All Payments">
-                                        <i class="fas fa-eye mr-1"></i> View Details
-                                    </a>
+                                    <?php
+                                        // Get transaction ID - try property first, then from payments
+                                        $txnId = $customer->payment_transaction_id ?? 
+                                                 ($customer->payments->first()->payment_transaction_id ?? null);
+                                    ?>
+                                    
+                                    <?php if($txnId): ?>
+                                        <a href="<?php echo e(route('admin.payments.completed.customer', ['user' => $customer->id, 'transaction_id' => $txnId])); ?>" 
+                                           class="inline-flex items-center px-3 py-1.5 text-xs bg-green-600 text-white rounded hover:bg-green-700 transition-colors" 
+                                           title="View All Payments">
+                                            <i class="fas fa-eye mr-1"></i> View Details
+                                        </a>
+                                    <?php else: ?>
+                                        <span class="text-xs text-gray-500">No transaction ID</span>
+                                    <?php endif; ?>
                                 </td>
                             </tr>
                             <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>

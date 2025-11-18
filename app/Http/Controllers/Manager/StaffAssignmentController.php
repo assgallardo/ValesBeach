@@ -422,7 +422,11 @@ class StaffAssignmentController extends Controller
             }
         }
 
-        return redirect()->back()->with('success', "{$assignedCount} service requests assigned to {$staff->name} successfully!");
+        return response()->json([
+            'success' => true,
+            'message' => "{$assignedCount} service requests assigned to {$staff->name} successfully!",
+            'assigned_count' => $assignedCount
+        ]);
     }
 
     /**

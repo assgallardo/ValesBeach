@@ -218,6 +218,11 @@
                                                 @endif">
                                                 {{ $isPartial ? 'Partial' : ucfirst($payment->status) }}
                                             </span>
+                                            @if($payment->refund_amount > 0)
+                                                <span class="text-xs font-semibold text-red-400">
+                                                    Refunded: ₱{{ number_format($payment->refund_amount, 2) }}
+                                                </span>
+                                            @endif
                                             <span class="text-xs text-gray-400">{{ $payment->payment_reference }}</span>
                                             <span class="text-xs text-gray-500">{{ $payment->created_at->format('M d, Y') }}</span>
                                         </div>
@@ -296,6 +301,11 @@
                                                 @endif">
                                                 {{ ucfirst($payment->status) }}
                                             </span>
+                                            @if($payment->refund_amount > 0)
+                                                <span class="text-xs font-semibold text-red-400">
+                                                    Refunded: ₱{{ number_format($payment->refund_amount, 2) }}
+                                                </span>
+                                            @endif
                                         </div>
                                         
                                         <!-- Compact Info -->
@@ -383,6 +393,11 @@
                                                 @endif">
                                                 {{ ucfirst($payment->status) }}
                                             </span>
+                                            @if($payment->refund_amount > 0)
+                                                <span class="text-xs font-semibold text-red-400">
+                                                    Refunded: ₱{{ number_format($payment->refund_amount, 2) }}
+                                                </span>
+                                            @endif
                                             @if($payment->foodOrder)
                                             <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
                                                 {{ $payment->foodOrder->status === 'pending' ? 'bg-yellow-600 text-white' : 

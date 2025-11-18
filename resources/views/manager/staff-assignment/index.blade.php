@@ -5,6 +5,10 @@
     <!-- Header -->
     <div class="mb-8">
         <h1 class="text-3xl font-bold text-green-50 mb-2">Service Requests Management</h1>
+         </h2>
+            <p class="text-green-50 opacity-80 text-lg">
+                Manage and assign service requests & housekeeping to staff
+            </p>
             
     </div>
 
@@ -59,6 +63,17 @@
                 <button onclick="toggleBulkMode()" id="bulkModeBtn" class="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700">
                     Bulk Actions
                 </button>
+                <!-- View Mode Toggle -->
+                <div class="bg-gray-700 rounded-lg p-1 flex gap-1">
+                    <button onclick="setViewMode('compact')" id="compactViewBtn" 
+                            class="px-3 py-1.5 text-xs rounded bg-green-600 text-white transition-colors">
+                        <i class="fas fa-th mr-1"></i>Compact
+                    </button>
+                    <button onclick="setViewMode('list')" id="listViewBtn" 
+                            class="px-3 py-1.5 text-xs rounded bg-gray-600 text-gray-300 hover:bg-gray-500 transition-colors">
+                        <i class="fas fa-list mr-1"></i>List
+                    </button>
+                </div>
             </div>
         </div>
         
@@ -72,7 +87,6 @@
                     <option value="{{ $staff->id }}">{{ $staff->name }}</option>
                     @endforeach
                 </select>
-                <input type="datetime-local" id="bulkDeadline" class="bg-gray-600 text-green-100 rounded px-3 py-2 text-sm">
                 <button onclick="bulkAssign()" class="bg-green-600 text-white px-3 py-2 rounded text-sm hover:bg-green-700">
                     Apply
                 </button>
@@ -271,7 +285,7 @@
                                 {{ $request->service->name ?? $request->service_type ?? 'Service Request' }}
                                 @if(isset($request->service) && $request->service && $request->service->price)
                                     <span class="text-lg font-semibold text-green-400 ml-2">
-                                        ${{ number_format($request->service->price, 2) }}
+                                         ₱{{ number_format($request->service->price, 2) }}
                                     </span>
                                 @endif
                             </h3>
@@ -368,36 +382,23 @@
                     @endif
                 </div>
 
-                <!-- Deadline -->
+                <!-- Scheduled Date (Guest Requested) -->
                 <div class="space-y-1">
-                    <label class="text-xs text-gray-400 uppercase tracking-wide">Due On</label>
-                    @if($request->status === 'completed')
-                        <p class="w-full bg-gray-700 text-green-100 rounded px-3 py-2 text-sm">
-                            @if($request->deadline)
-                                {{ $request->deadline->format('M d, Y g:i A') }}
-                            @else
-                                N/A
-                            @endif
-                        </p>
-                        @if($request->deadline)
-                        <div class="flex items-center space-x-2 mt-1">
-                            <span class="px-2 py-1 text-xs rounded {{ $request->deadline_color }}">
-                                {{ $request->deadline->diffForHumans() }}
-                            </span>
-                        </div>
+                    <label class="text-xs text-gray-400 uppercase tracking-wide">Scheduled Date & Time</label>
+                    <p class="w-full bg-gray-700 text-green-100 rounded px-3 py-2 text-sm">
+                        @if($request->scheduled_date)
+                            {{ $request->scheduled_date->format('M d, Y g:i A') }}
+                        @else
+                            Not scheduled
                         @endif
-                    @else
-                        <input type="datetime-local" 
-                               value="{{ $request->deadline ? $request->deadline->format('Y-m-d\TH:i') : '' }}"
-                               class="w-full bg-gray-700 text-green-100 rounded px-3 py-2 text-sm border-none"
-                               onchange="updateDeadline({{ $request->id }}, this.value)">
-                        @if($request->deadline)
-                            <div class="flex items-center space-x-2 mt-1">
-                                <span class="px-2 py-1 text-xs rounded {{ $request->deadline_color }}">
-                                    {{ $request->deadline->diffForHumans() }}
-                                </span>
-                            </div>
-                        @endif
+                    </p>
+                    @if($request->scheduled_date)
+                    <div class="flex items-center space-x-2 mt-1">
+                        <span class="px-2 py-1 text-xs rounded bg-blue-600 text-blue-100">
+                            <i class="fas fa-calendar-check mr-1"></i>
+                            {{ $request->scheduled_date->diffForHumans() }}
+                        </span>
+                    </div>
                     @endif
                 </div>
 
@@ -636,27 +637,7 @@ function sendAssignment(requestId, staffId, status, selectElement) {
     });
 }
 
-// Deadline update
-function updateDeadline(requestId, deadline) {
-    fetch(`/manager/staff-assignment/${requestId}/quick-update`, {
-        method: 'PATCH',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-        },
-        body: JSON.stringify({ deadline: deadline })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showNotification('Deadline updated', 'success');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showNotification('Deadline update failed', 'error');
-    });
-}
+// Deadline update function removed - scheduled_date is read-only from guest booking
 
 // Duration update
 function updateDuration(requestId, duration) {
@@ -679,6 +660,8 @@ function updateDuration(requestId, duration) {
         showNotification('Duration update failed', 'error');
     });
 }
+
+// Note: Deadline update function removed - scheduled_date is read-only from guest booking
 
 // Housekeeping task assignment
 function updateHousekeepingAssignment(taskId, staffId) {
@@ -871,7 +854,6 @@ document.addEventListener('change', function(e) {
 // Bulk assign
 function bulkAssign() {
     const staffId = document.getElementById('bulkStaff').value;
-    const deadline = document.getElementById('bulkDeadline').value;
     const selectedRequests = Array.from(document.querySelectorAll('.request-checkbox:checked')).map(cb => cb.value);
     
     if (!staffId) {
@@ -893,20 +875,27 @@ function bulkAssign() {
         body: JSON.stringify({
             service_requests: selectedRequests,
             assigned_to: staffId,
-            deadline: deadline,
             estimated_duration: 60
         })
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            return response.json().then(err => Promise.reject(err));
+        }
+        return response.json();
+    })
     .then(data => {
         if (data.success) {
-            showNotification('Bulk assignment completed', 'success');
+            showNotification(data.message || 'Bulk assignment completed', 'success');
             setTimeout(() => location.reload(), 1000);
+        } else {
+            showNotification(data.message || 'Bulk assignment failed', 'error');
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        showNotification('Bulk assignment failed', 'error');
+        const errorMessage = error.message || (error.errors ? Object.values(error.errors).flat().join(', ') : 'Bulk assignment failed');
+        showNotification(errorMessage, 'error');
     });
 }
 
@@ -1080,7 +1069,48 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('select[onchange^="updateAssignment"]').forEach(select => {
         select.setAttribute('data-previous', select.value);
     });
+    
+    // Initialize view mode from localStorage or default to compact
+    const savedView = localStorage.getItem('taskViewMode') || 'compact';
+    setViewMode(savedView);
 });
+
+// View mode toggle
+function setViewMode(mode) {
+    localStorage.setItem('taskViewMode', mode);
+    const container = document.getElementById('requestsContainer');
+    const housekeepingContainer = document.querySelector('.space-y-4');
+    const compactBtn = document.getElementById('compactViewBtn');
+    const listBtn = document.getElementById('listViewBtn');
+    
+    if (mode === 'compact') {
+        // Compact view: Grid layout with smaller cards
+        container.className = 'grid grid-cols-1 lg:grid-cols-2 gap-4';
+        if (housekeepingContainer) housekeepingContainer.className = 'grid grid-cols-1 lg:grid-cols-2 gap-4';
+        
+        // Update buttons
+        compactBtn.className = 'px-3 py-1.5 text-xs rounded bg-green-600 text-white transition-colors';
+        listBtn.className = 'px-3 py-1.5 text-xs rounded bg-gray-600 text-gray-300 hover:bg-gray-500 transition-colors';
+        
+        // Update card styles
+        document.querySelectorAll('[data-request-id], .bg-gray-800.border-l-4').forEach(card => {
+            card.classList.remove('mb-4');
+        });
+    } else {
+        // List view: Full width stacked cards
+        container.className = 'space-y-4';
+        if (housekeepingContainer) housekeepingContainer.className = 'space-y-4';
+        
+        // Update buttons
+        compactBtn.className = 'px-3 py-1.5 text-xs rounded bg-gray-600 text-gray-300 hover:bg-gray-500 transition-colors';
+        listBtn.className = 'px-3 py-1.5 text-xs rounded bg-green-600 text-white transition-colors';
+        
+        // Update card styles
+        document.querySelectorAll('[data-request-id], .bg-gray-800.border-l-4').forEach(card => {
+            card.classList.add('mb-4');
+        });
+    }
+}
 </script>
 
 <!-- Add CSRF token for AJAX requests -->

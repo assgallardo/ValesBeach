@@ -152,7 +152,7 @@
                         <span class="ml-3 text-white font-medium">Early Check-in</span>
                     </label>
                     <p class="text-gray-400 text-sm mt-2 ml-8">
-                        Check-in before standard time (Fee: ₱500)
+                        Check-in before standard time 
                     </p>
                     <div class="ml-8 mt-2">
                         <input type="time" name="early_checkin_time" {{ old('early_checkin_time') }}
@@ -167,7 +167,7 @@
                         <span class="ml-3 text-white font-medium">Late Check-out</span>
                     </label>
                     <p class="text-gray-400 text-sm mt-2 ml-8">
-                        Check-out after standard time (Fee: ₱500)
+                        Check-out after standard time 
                     </p>
                     <div class="ml-8 mt-2">
                         <input type="time" name="late_checkout_time" {{ old('late_checkout_time') }}
